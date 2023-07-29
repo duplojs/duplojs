@@ -1,0 +1,49 @@
+{
+  "name": "duplojs",
+  "version": "0.0.0",
+  "files": ["dist", "types"],
+  "types": "./types/index.ts",
+  "exports": {
+    "default": {
+		"import": "./dist/anotherback.mjs",
+		"require": "./dist/anotherback.cjs"
+	}
+  },
+  "publishConfig": {
+	"access": "public"
+  },
+  "scripts": {
+    "dev": "nodemon --exec 'ts-node test/index.ts'",
+    "build": "rollup --config && npx tsc"
+  },
+  "dependencies": {
+    "@types/jsonwebtoken": "^9.0.2",
+    "cookie": "^0.5.0",
+    "dotenv": "^16.0.3",
+    "jsonwebtoken": "^9.0.0",
+    "mime": "^3.0.0",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "@types/cookie": "^0.5.1",
+    "@types/mime": "^3.0.1",
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
+    "nodemon": "^3.0.1",
+    "rollup": "^3.26.2",
+    "rollup-plugin-dts": "^5.3.0",
+    "rollup-plugin-esbuild": "^5.0.0",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^5.0.2"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "scripts",
+      "test"
+    ],
+    "ext": "ts, js"
+  }
+}

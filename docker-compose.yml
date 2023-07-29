@@ -1,0 +1,40 @@
+version: '3'
+services:
+  installer:
+    container_name: installer
+    image: node:20.4.0-alpine
+    volumes:
+      - ./:/home/node/anotherback
+    user: node
+    environment:
+      npm_config_cache: /home/node/cache
+    working_dir: /home/node/anotherback
+    entrypoint: npm i
+
+  # compiler:
+  #   container_name: compiler
+  #   image: node:18.13.0-alpine
+  #   volumes:
+  #     - ./:/home/node/anotherback
+  #   environment:
+  #     npm_config_cache: /home/node/cache
+  #   working_dir: /home/node/anotherback
+  #   command: npm run dev
+  #   depends_on:
+  #     installer: 
+  #       condition: service_completed_successfully
+
+  test:
+    container_name: test
+    image: node:20.4.0-alpine
+    volumes:
+      - ./:/home/node/anotherback
+    ports:
+      - 1506:1506
+    environment:
+      npm_config_cache: /home/node/cache
+    working_dir: /home/node/anotherback
+    command: npm run test
+    depends_on:
+      installer: 
+        condition: service_completed_successfully
