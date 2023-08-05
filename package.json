@@ -1,16 +1,19 @@
 {
   "name": "duplojs",
   "version": "0.0.0",
-  "files": ["dist", "types"],
+  "files": [
+    "dist",
+    "types"
+  ],
   "types": "./types/index.ts",
   "exports": {
     "default": {
-		"import": "./dist/anotherback.mjs",
-		"require": "./dist/anotherback.cjs"
-	}
+      "import": "./dist/duplo.mjs",
+      "require": "./dist/duplo.cjs"
+    }
   },
   "publishConfig": {
-	"access": "public"
+    "access": "public"
   },
   "scripts": {
     "dev": "nodemon --exec 'ts-node test/index.ts'",
@@ -20,6 +23,7 @@
     "@types/jsonwebtoken": "^9.0.2",
     "cookie": "^0.5.0",
     "dotenv": "^16.0.3",
+    "fast-querystring": "^1.1.2",
     "jsonwebtoken": "^9.0.0",
     "mime": "^3.0.0",
     "zod": "^3.21.4"
@@ -30,6 +34,7 @@
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "autocannon": "^7.11.0",
     "eslint": "^8.45.0",
     "nodemon": "^3.0.1",
     "rollup": "^3.26.2",

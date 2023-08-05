@@ -4,21 +4,21 @@ services:
     container_name: installer
     image: node:20.4.0-alpine
     volumes:
-      - ./:/home/node/anotherback
+      - ./:/home/node/duplo
     user: node
     environment:
       npm_config_cache: /home/node/cache
-    working_dir: /home/node/anotherback
+    working_dir: /home/node/duplo
     entrypoint: npm i
 
   # compiler:
   #   container_name: compiler
   #   image: node:18.13.0-alpine
   #   volumes:
-  #     - ./:/home/node/anotherback
+  #     - ./:/home/node/duplo
   #   environment:
   #     npm_config_cache: /home/node/cache
-  #   working_dir: /home/node/anotherback
+  #   working_dir: /home/node/duplo
   #   command: npm run dev
   #   depends_on:
   #     installer: 
@@ -28,13 +28,13 @@ services:
     container_name: test
     image: node:20.4.0-alpine
     volumes:
-      - ./:/home/node/anotherback
+      - ./:/home/node/duplo
     ports:
       - 1506:1506
     environment:
       npm_config_cache: /home/node/cache
-    working_dir: /home/node/anotherback
-    command: npm run test
+    working_dir: /home/node/duplo
+    command: npm run dev
     depends_on:
       installer: 
         condition: service_completed_successfully

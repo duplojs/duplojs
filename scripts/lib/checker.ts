@@ -1,45 +1,50 @@
 import makeFloor from "./floor";
-import {Response} from "./response";
+import Response from "./response";
 
-type output<outputInfo> = {
+export type CheckerOutput<outputInfo> = {
 	info: outputInfo,
 	data?: any,
 };
 
-type outputChecker<outputInfo> = (info: outputInfo, data?: any) => output<outputInfo>;
-
-export interface checkerObj<input, outputInfo, options> {
-	handler(input: input, output: outputChecker<outputInfo>, options: options): output<outputInfo> | Promise<output<outputInfo>>;
+export interface CreateCheckerParameters<input, outputInfo, options> {
+	handler(
+		input: input, 
+		output: (info: outputInfo, data?: any) => CheckerOutput<outputInfo>, 
+		options: options
+	): CheckerOutput<outputInfo> | Promise<CheckerOutput<outputInfo>>;
 	readonly outputInfo: outputInfo[];
 	readonly options?: options;
 }
-
-export interface checkerExec<input, outputInfo, options> {
+export interface CheckerParameters<input, outputInfo, options> {
 	input(pickup: ReturnType<typeof makeFloor>["pickup"]): input;
 	validate(info: outputInfo, data?: any): boolean;
 	catch(response: Response, info: outputInfo, data: any, existProcess: () => never): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], data?: any) => void;
+	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: outputInfo, data?: any) => void;
 	readonly options?: options;
 }
 
-export interface useCheckerExec<input, outputInfo, options> {
+export interface CheckerParametersUse<input, outputInfo, options> {
 	input(): input;
 	validate(info: outputInfo, data?: any): boolean;
 	catch: (info: outputInfo, data?: any) => void;
-	output?: (data?: any) => void;
+	output?: (info: outputInfo, data?: any) => void;
 	readonly options?: options;
 }
 
-export type shortChecker = (floor: {pickup: ReturnType<typeof makeFloor>["pickup"], drop: ReturnType<typeof makeFloor>["drop"]}, response: Response, existProcess: () => never) => void
+export interface Checker<input, outputInfo, options> {
+	(checkerParameters: CheckerParameters<input, outputInfo, options>): CheckerExport;
+	use(checkerParametersUse: CheckerParametersUse<input, outputInfo, options>): void;
+	useAsync(checkerParametersUse: CheckerParametersUse<input, outputInfo, options>): Promise<void>;
+}
 
-export type returnCheckerExec<input = any, outputInfo = string, options = any> = {
+export type CheckerExport<input = any, outputInfo = string, options = any> = {
 	name: string,
-	handler: checkerObj<input, outputInfo, options>["handler"],
-	options: checkerObj<input, outputInfo, options>["options"] | {},
-	input: checkerExec<input, outputInfo, options>["input"],
-	validate: checkerExec<input, outputInfo, options>["validate"],
-	catch: checkerExec<input, outputInfo, options>["catch"],
-	output: checkerExec<input, outputInfo, options>["output"],
+	handler: CreateCheckerParameters<input, outputInfo, options>["handler"],
+	options: CheckerParameters<input, outputInfo, options>["options"] | {},
+	input: CheckerParameters<input, outputInfo, options>["input"],
+	validate: CheckerParameters<input, outputInfo, options>["validate"],
+	catch: CheckerParameters<input, outputInfo, options>["catch"],
+	output?: CheckerParameters<input, outputInfo, options>["output"],
 	type: string,
 }
 
@@ -48,41 +53,41 @@ export default function makeCheckerSystem(){
 		input extends any,
 		outputInfo extends string,
 		options,
-	>(name: string, checkerObj: checkerObj<input, outputInfo, options>){
-		function checkerExec(checkerExec: checkerExec<input, outputInfo, options>): returnCheckerExec 
-		{
+	>(name: string, createCheckerParameters: CreateCheckerParameters<input, outputInfo, options>){
+		const checker: Checker<input, outputInfo, options> = function(checkerParameters){
 			return {
 				name,
-				handler: checkerObj.handler,
-				options: checkerExec.options || checkerObj.options || {},
-				input: checkerExec.input,
-				validate: checkerExec.validate,
-				catch: checkerExec.catch as returnCheckerExec["catch"],
-				output: checkerExec.output,
+				handler: createCheckerParameters.handler,
+				options: checkerParameters.options || createCheckerParameters.options || {},
+				input: checkerParameters.input,
+				validate: checkerParameters.validate,
+				catch: checkerParameters.catch,
+				output: checkerParameters.output as CheckerExport["output"],
 				type: "checker",
 			};
-		}
-
-		checkerExec.use = function(checkerExec: useCheckerExec<input, outputInfo, options>){
-			let result = checkerObj.handler(
-				checkerExec.input(),
-				(info, data) => ({info, data}),
-				checkerExec.options || checkerObj.options || {} as any
-			) as output<outputInfo>;
-			if(!checkerExec.validate(result.info, result.data))checkerExec.catch(result.info, result.data);
-			checkerExec.output?.(result.data);
 		};
 
-		checkerExec.useAsync = async function(checkerExec: useCheckerExec<input, outputInfo, options>){
-			let result = await checkerObj.handler(
-				checkerExec.input(),
+		checker.use = function(checkerParameters){
+			let result = createCheckerParameters.handler(
+				checkerParameters.input(),
 				(info, data) => ({info, data}),
-				checkerExec.options || checkerObj.options || {} as any
+				checkerParameters.options || createCheckerParameters.options || {} as any
+			) as CheckerOutput<outputInfo>;
+			if(!checkerParameters.validate(result.info, result.data))checkerParameters.catch(result.info, result.data);
+			checkerParameters.output?.(result.data);
+		};
+
+		checker.useAsync = async function(checkerParameters){
+			let result = await createCheckerParameters.handler(
+				checkerParameters.input(),
+				(info, data) => ({info, data}),
+				checkerParameters.options || createCheckerParameters.options || {} as any
 			);
-			if(!checkerExec.validate(result.info, result.data))checkerExec.catch(result.info, result.data);
-			checkerExec.output?.(result.data);
+			if(!checkerParameters.validate(result.info, result.data))checkerParameters.catch(result.info, result.data);
+			checkerParameters.output?.(result.data);
 		};
-		return checkerExec;
+
+		return checker;
 	}
 
 	return {
