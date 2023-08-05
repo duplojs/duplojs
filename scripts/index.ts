@@ -1,14 +1,9 @@
-import anotherback from "./lib/main.ts";
-import type {inputCallback} from "./lib/main.ts";
-import type {Request} from "./lib/request.ts";
-import Token from "./lib/token.ts";
+import Duplo from "./lib/main.ts";
 import {z as zod} from "zod";
 
-export default anotherback;
+export default Duplo;
 
 export {
-	Token,
+	Duplo,
 	zod,
-	Request,
-	inputCallback,
 };

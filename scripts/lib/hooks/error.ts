@@ -1,5 +1,5 @@
-import {Request} from "../request";
-import {Response} from "../response";
+import Request from "../request";
+import Response from "../response";
 
 export function ErrorToText(request: Request, response: Response){
 	if(response?.data instanceof Error){

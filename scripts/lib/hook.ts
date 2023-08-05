@@ -1,59 +1,53 @@
-import {Request} from "./request";
-import {Response} from "./response";
+import Request from "./request";
+import Response from "./response";
 
-type hookFunction<data = any> = (
-	request: Request, 
-	response: Response,
-	data?: data
-) => void | Promise<void>;
+export type HooksLifeCycle = ReturnType<typeof makeHooksLifeCycle>;
 
-export default function makeHooksSystem<event extends string>(eventsName: event[]){
-	const hooks: Record<string, hookFunction[]> = {};
-	const buildedHooks: Record<string, hookFunction> = {};
-	eventsName.forEach(name => hooks[name] = []);
+export interface AddHooksLifeCycle<returnType extends any = any>{
+	addHook(name: "onConstructRequest", functionHook: ReturnType<HooksLifeCycle["onConstructRequest"]["build"]>): returnType;
+	addHook(name: "onConstructResponse", functionHook: ReturnType<HooksLifeCycle["onConstructResponse"]["build"]>): returnType;
+	addHook(name: "beforeParsingBody", functionHook: ReturnType<HooksLifeCycle["beforeParsingBody"]["build"]>): returnType;
+	addHook(name: "onError", functionHook: ReturnType<HooksLifeCycle["onError"]["build"]>): returnType;
+	addHook(name: "beforeSend", functionHook: ReturnType<HooksLifeCycle["beforeSend"]["build"]>): returnType;
+	addHook(name: "afterSend", functionHook: ReturnType<HooksLifeCycle["afterSend"]["build"]>): returnType;
+}
+
+type PromiseOrNot<T> = T | Promise<T>;
+
+export default function makeHook<TypeHookFunction extends((...any: any) => any)>(numberArgs: number){
+	const args = Array(numberArgs).fill(undefined).map((value, index) => `arg${index}`).join(", ");
+	let subscribers: TypeHookFunction[] = [];
 
 	return {
-		addHook(
-			name: event, 
-			hookFunction: hookFunction,
-		){
-			if(!hooks[name]) throw new Error();
-			hooks[name].push(hookFunction);
-		},
-		buildHooks(){
-			Object.entries(hooks).forEach(([key, value]) => {
-				let stringFunction = "";
-				let isAsync = false;
-				value.forEach((fnc, index) => {
-					if(fnc.constructor.name === "AsyncFunction"){ 
-						stringFunction += /* js */`
-							await hooks.${key}[${index}](req, res, data);
-						`;
-						isAsync = true;
-					}
-					else stringFunction += /* js */`
-						hooks.${key}[${index}](req, res, data);
+		subscribers,
+		addSubscriber: (hookFunction: TypeHookFunction) => {subscribers.push(hookFunction);},
+		copySubscriber: (otherSubscribers: TypeHookFunction[]) => {[...otherSubscribers, ...subscribers];},
+		build: (): TypeHookFunction => {
+			let stringFunction = "";
+			let isAsync = false;
+			subscribers.forEach((fnc, index) => {
+				if(fnc.constructor.name === "AsyncFunction"){ 
+					stringFunction += /* js */`
+						if(await this.subscribers[${index}](${args}) === true) return;
 					`;
-				});
-				
-				buildedHooks[key] = eval((isAsync ? "async" : "") + /* js */`(req, res, data) => {${stringFunction}}`);
+					isAsync = true;
+				}
+				else stringFunction += /* js */`
+					if(this.subscribers[${index}](${args}) === true) return;
+				`;
 			});
+			return eval(/* js */`(${(isAsync ? "async" : "")} function(${args}){${stringFunction}})`).bind({subscribers});
 		},
-		launchHooks(
-			name: event,
-			request: Request, 
-			response: Response,
-			data?: any,
-		){
-			if(!buildedHooks[name]) throw new Error();
-			return buildedHooks[name](request, response, data);
-		},
-		copyHook(otherHooks: typeof this.hooks, from: string, to: event){
-			hooks[to] = [...hooks[to], ...otherHooks[from]];
-		},
-		hooks,
-		buildedHooks,
 	};
 }
 
-export type HookSystem = ReturnType<typeof makeHooksSystem>;
+export function makeHooksLifeCycle(){
+	return {
+		onConstructRequest: makeHook<((request: Request) => PromiseOrNot<false | void>)>(1),
+		onConstructResponse: makeHook<((response: Response) => PromiseOrNot<false | void>)>(1),
+		beforeParsingBody: makeHook<((request: Request, response: Response) => PromiseOrNot<false | void>)>(2),
+		onError: makeHook<((request: Request, response: Response, error: Error) => PromiseOrNot<false | void>)>(3),
+		beforeSend: makeHook<((request: Request, response: Response) => PromiseOrNot<false | void>)>(2),
+		afterSend: makeHook<((request: Request, response: Response) => PromiseOrNot<false | void>)>(2),
+	};
+}
