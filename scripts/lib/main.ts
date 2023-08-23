@@ -50,10 +50,6 @@ export default function Duplo(config: duploConfig){
 		hooksLifeCyle[name].addSubscriber(hookFunction as any);
 	};
 
-	const input = () => {
-
-	};
-
 	return {
 		server,
 		config,
@@ -69,7 +65,6 @@ export default function Duplo(config: duploConfig){
 			);
 		},
 		addHook,
-		input,
 		declareRoute,
 		createChecker,
 		setNotfoundHandler,

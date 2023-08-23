@@ -1,21 +1,28 @@
 import {ZodError, ZodType} from "zod";
-import {ExtractObj, condition, mapped, spread} from "./route";
+import {condition, mapped, spread} from "./route";
 import {CheckerExport} from "./checker";
 import {AddHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import makeFloor from "./floor";
 import Request from "./request";
 import Response from "./response";
 
-export type ErrorExtractProcessFunction = (response: Response, type: keyof ExtractObj, index: string, err: ZodError, exitProcess: () => never) => void
+export type ErrorExtractProcessFunction = (response: Response, type: keyof ProcessExtractObj, index: string, err: ZodError, exitProcess: () => never) => void
 
 export type ProcessHandlerFunction = (floor: ReturnType<typeof makeFloor>, response: Response, exitProcess: () => never) => void;
 
 export type RouteShort = (floor: ReturnType<typeof makeFloor>, response: Response, exitProcess: () => never) => void | Promise<void>;
 
-export type BuildProcessParameters<values extends string, input extends {}, options extends {}> = {
+export interface ProcessExtractObj{
+	body?: Record<string, ZodType> | ZodType,
+	params?: Record<string, ZodType> | ZodType,
+	query?: Record<string, ZodType> | ZodType,
+	headers?: Record<string, ZodType> | ZodType,
+}
+
+export type BuildProcessParameters<drop extends string, input extends any, options extends any> = {
 	options?: options,
-	drop?: values[],
-	input?(pickup: ReturnType<typeof makeFloor>["pickup"]): input,
+	drop?: drop[],
+	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
 	allowExitProcess?: boolean,
 }
 
@@ -25,37 +32,37 @@ export type ProcessParameters<values extends string, input extends {}, options e
 	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
 }
 
-export interface BuilderPatternProcess {
+export interface ProcessCheckerParams<checkerExport extends CheckerExport>{
+	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
+	validate(info: checkerExport["outputInfo"][number], data?: any): boolean;
+	catch(response: Response, info: checkerExport["outputInfo"][number], data: any, exitProcess: () => never): void;
+	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
+	readonly options?: checkerExport["options"];
+}
+
+export interface ProcessProcessParams<processExport extends ProcessExport>{
+	options?: processExport["options"];
+	pickup?: processExport["drop"];
+	input?: processExport["input"];
+}
+
+export interface BuilderPatternProcess{
 	hook: AddHooksLifeCycle<BuilderPatternProcess>["addHook"];
-	extract(extractObj: ExtractObj, error?: ErrorExtractProcessFunction): Omit<BuilderPatternProcess, "hook" | "extract">;
-	check(checker: CheckerExport): Omit<BuilderPatternProcess, "hook" | "extract">; 
-	process(processExport: ProcessExport): Omit<BuilderPatternProcess, "hook" | "extract">;
+	extract(extractObj: ProcessExtractObj, error?: ErrorExtractProcessFunction): Omit<BuilderPatternProcess, "hook" | "extract">;
+	check<checkerExport extends CheckerExport>(checker: checkerExport, params: ProcessCheckerParams<checkerExport>): Omit<BuilderPatternProcess, "hook" | "extract">; 
+	process<processExport extends ProcessExport>(process: processExport, params?: ProcessProcessParams<processExport>): Omit<BuilderPatternProcess, "hook" | "extract">;
 	cut(short: RouteShort): Omit<BuilderPatternProcess, "hook" | "extract">;
 	handler(handlerFunction: ProcessHandlerFunction): Omit<BuilderPatternProcess, "hook" | "extract" | "check" | "process" | "handler" | "cut">;
-	build: ReturnType<ReturnType<typeof makeProcessSystem>["createProcess"]>["build"];
+	build<drop extends string, input extends any, options extends any>(buildProcessParameters?: BuildProcessParameters<drop, input, options>): ProcessExport<drop, input, options>;
 }
 
-export interface Process<values extends string, input extends {}, options extends {}>{
-	(processParameter?: ProcessParameters<values, input, options>): ProcessExport;
-	use(
-		request: Request, 
-		response: Response, 
-		processParameter?: {
-			options?: options,
-			pickup?: values[],
-			input?: () => input,
-		}
-	): ReturnType<ProcessFunction>;
-}
-
-export type ProcessExport = {
+export type ProcessExport<drop = string, input = any, options = any> = {
 	name: string,
-	options?: any,
+	options?: options,
 	processFunction: ProcessFunction,
-	pickup?: string[],
+	drop?: drop[],
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>,
-	type: string,
-	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => any,
+	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
 }
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
@@ -63,7 +70,7 @@ export type ProcessFunction = (request: Request, response: Response, options: an
 export const __exitProcess__ = Symbol("exitProcess");
 
 export default function makeProcessSystem(){
-	const extracted: ExtractObj = {};
+	const extracted: ProcessExtractObj = {};
 		
 	function createProcess(name: string){
 		const hooksLifeCyle = makeHooksLifeCycle();
@@ -87,7 +94,7 @@ export default function makeProcessSystem(){
 		};
 		const extract: BuilderPatternProcess["extract"] = (extractObj, error?) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
-				extracted[index as keyof ExtractObj] = value;
+				extracted[index as keyof ProcessExtractObj] = value;
 			});
 			errorExtract = error || errorExtract;
 
@@ -100,9 +107,16 @@ export default function makeProcessSystem(){
 			};
 		};
 
-		const steps: (CheckerExport | RouteShort | ProcessExport)[] = [];
-		const process: BuilderPatternProcess["process"] = (processExport) => {
-			steps.push(processExport);
+		const steps: any[] = [];
+		const process: BuilderPatternProcess["process"] = (processExport, params) => {
+			steps.push({
+				type: "process",
+				name: processExport.name,
+				options: params?.options || processExport?.options,
+				input: params?.input || processExport?.input,
+				processFunction: processExport.processFunction,
+				pickup: params?.pickup,
+			});
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
 			hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
@@ -121,8 +135,18 @@ export default function makeProcessSystem(){
 			};
 		};
 
-		const check: BuilderPatternProcess["check"] = (checker) => {
-			steps.push(checker);
+		const check: BuilderPatternProcess["check"] = (checker, params) => {
+			steps.push({
+				type: "checker",
+				name: checker.name,
+				handler: checker.handler,
+				options: params.options || checker.options || {},
+				input: params.input,
+				validate: params.validate,
+				catch: params.catch,
+				output: params.output,
+			});
+
 			return {
 				check,
 				handler,
@@ -153,13 +177,7 @@ export default function makeProcessSystem(){
 			};
 		};
 
-		function build<
-			values extends string,
-			input extends {},
-			options extends {} 
-		>(buildProcessParameters?: BuildProcessParameters<values, input, options>){
-
-
+		const build: BuilderPatternProcess["build"] = (buildProcessParameters) => {
 			const stringFunction = processFunctionString(
 				!!buildProcessParameters?.input,
 				!!buildProcessParameters?.options,
@@ -168,7 +186,7 @@ export default function makeProcessSystem(){
 					spread(
 						condition(
 							Object.keys(extracted).length !== 0,
-							extractedTry(
+							() => extractedTry(
 								mapped(
 									Object.entries(extracted),
 									([type, value]) => value instanceof ZodType ?
@@ -182,7 +200,7 @@ export default function makeProcessSystem(){
 						),
 						condition(
 							steps.length !== 0,
-							startStep(
+							() => startStep(
 								mapped(
 									steps,
 									(step, index) => typeof step === "function" ?
@@ -191,14 +209,14 @@ export default function makeProcessSystem(){
 											checkerStep(
 												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
 												index,
-												!!(step as CheckerExport).output
+												!!step.output
 											) :
 											processStep(
 												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
 												index,
 												!!step.input,
 												mapped(
-													(step as ProcessExport).pickup,
+													step?.pickup || [],
 													(value) => processDrop(value)
 												)
 											)
@@ -207,7 +225,7 @@ export default function makeProcessSystem(){
 						),
 						condition(
 							!!grapHandlerFunction,
-							handlerFunction(
+							() => handlerFunction(
 								grapHandlerFunction.constructor.name === "AsyncFunction"
 							)
 						)
@@ -229,29 +247,15 @@ export default function makeProcessSystem(){
 					() => {throw new Error("ExitProcess function is call in Process who has not 'allowExitProcess' define on true");}
 			});
 
-			const process: Process<values, input, options> = function(processParameter){
-				return {
-					name,
-					options: processParameter?.options || buildProcessParameters?.options,
-					input: processParameter?.input || buildProcessParameters?.input,
-					processFunction,
-					pickup: processParameter?.pickup,
-					hooksLifeCyle,
-					type: "process",
-				};
+			return {
+				name,
+				options: buildProcessParameters?.options,
+				input: buildProcessParameters?.input,
+				drop: buildProcessParameters?.drop,
+				processFunction,
+				hooksLifeCyle,
 			};
-
-			process.use = function(request, response, processParameter){
-				return processFunction(
-					request, 
-					response, 
-					processParameter?.options || buildProcessParameters?.options,
-					processParameter?.input?.(),
-				);
-			};
-
-			return process;
-		}
+		};
 
 		return {
 			hook,
@@ -271,7 +275,7 @@ export default function makeProcessSystem(){
 
 const processFunctionString = (hasInput: boolean, hasOptions: boolean, block: string, returnArray: string[]) => /* js */`
 (
-	${(/await/.test(block) ? "async" : "")} function(request, response, input, options){
+	${(/await/.test(block) ? "async" : "")} function(request, response, options, input){
 		const floor = this.makeFloor();
 
 		${hasInput ? /* js */`floor.drop("input", ${"input"});` : ""}
@@ -281,7 +285,7 @@ const processFunctionString = (hasInput: boolean, hasOptions: boolean, block: st
 
 	${condition(
 		returnArray.length !== 0,
-		/* js */`
+		() => /* js */`
 		return {
 			${mapped(returnArray, (key) => /* js */`"${key}": floor.pickup("${key}"),`)}
 		}
@@ -315,7 +319,7 @@ catch(error) {
 		response, 
 		currentExtractedType, 
 		currentExtractedIndex, 
-		err,
+		error,
 		this.exitProcess,
 	);
 	else throw error;

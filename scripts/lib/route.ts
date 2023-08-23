@@ -3,20 +3,19 @@ import makeFloor from "./floor";
 import Response, {__exec__} from "./response";
 import correctPath from "./correctPath";
 import {ZodError, ZodType} from "zod";
-import {Checker, CheckerExport} from "./checker";
+import {CheckerExport} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {duploConfig} from "./main";
 import {ProcessExport} from "./process";
-import {IncomingMessage, ServerResponse} from "http";
 import makeContentTypeParserSystem from "./contentTypeParser";
 
-export type ExtractObj = {
+export interface RouteExtractObj{
 	body?: Record<string, ZodType> | ZodType,
 	params?: Record<string, ZodType> | ZodType,
 	query?: Record<string, ZodType> | ZodType,
 	headers?: Record<string, ZodType> | ZodType,
 }
-export type ErrorExtractFunction = (response: Response, type: keyof ExtractObj, index: string, err: ZodError) => void
+export type ErrorExtractFunction = (response: Response, type: keyof RouteExtractObj, index: string, err: ZodError) => void
 
 export type RouteFunction = (request: Request, response: Response) => Promise<void> | void;
 
@@ -30,14 +29,30 @@ export type RoutehandlerFunction = (floor: ReturnType<typeof makeFloor>, respons
 export type RouteNotfoundHandlerFunction = (request: Request, response: Response) => void | Promise<void>;
 export type RouteErrorHandlerFunction = (request: Request, response: Response, error: Error) => void | Promise<void>;
 
+export type RouteShortAccess = (floor: ReturnType<typeof makeFloor>, request: Request, response: Response) => void | Promise<void>;
 export type RouteShort = (floor: ReturnType<typeof makeFloor>, response: Response) => void | Promise<void>;
+
+export interface RouteCheckerParams<checkerExport extends CheckerExport>{
+	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
+	validate(info: checkerExport["outputInfo"][number], data?: any): boolean;
+	catch(response: Response, info: checkerExport["outputInfo"][number], data?: any): void;
+	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
+	readonly options?: checkerExport["options"];
+}
+
+export interface RouteProcessParams<processExport extends ProcessExport>{
+	options?: processExport["options"],
+	pickup?: processExport["drop"],
+	input?: processExport["input"],
+}
 
 export interface BuilderPatternRoute{
 	hook: AddHooksLifeCycle<BuilderPatternRoute>["addHook"];
-	extract(extractObj: ExtractObj, error?: ErrorExtractFunction): Omit<BuilderPatternRoute, "hook" | "extract">;
-	check(checker: CheckerExport): Omit<BuilderPatternRoute, "hook" | "extract">;
-	process(processExport: ProcessExport): Omit<BuilderPatternRoute, "hook" | "extract">;
-	cut(short: RouteShort): Omit<BuilderPatternRoute, "hook" | "extract">;
+	access<processExport extends ProcessExport>(process: processExport | RouteShortAccess, params?: RouteProcessParams<processExport>): Omit<BuilderPatternRoute, "hook" | "access">;
+	extract(extractObj: RouteExtractObj, error?: ErrorExtractFunction): Omit<BuilderPatternRoute, "hook" | "extract" | "access">;
+	check<checkerExport extends CheckerExport>(checker: checkerExport, params: RouteCheckerParams<checkerExport>): Omit<BuilderPatternRoute, "hook" | "extract" | "access">;
+	process<processExport extends ProcessExport>(process: processExport, params?: RouteProcessParams<processExport>): Omit<BuilderPatternRoute, "hook" | "extract" | "access">;
+	cut(short: RouteShort): Omit<BuilderPatternRoute, "hook" | "extract" | "access">;
 	handler(handlerFunction: RoutehandlerFunction): void;
 }
 
@@ -126,16 +141,48 @@ export default function makeRoutesSystem(
 				check,
 				process,
 				cut,
+				access,
+			};
+		};
+		
+		let grapAccess: any;
+		const access: BuilderPatternRoute["access"] = (processExport, params) => {
+			if(typeof processExport === "function"){
+				grapAccess = processExport;
+			}
+			else {
+				hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
+				hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
+				hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
+				hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
+				hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
+				hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
+
+				grapAccess = {
+					name: processExport.name,
+					options: params?.options || processExport?.options,
+					input: params?.input || processExport?.input,
+					processFunction: processExport.processFunction,
+					pickup: params?.pickup,
+				};
+			}
+
+			return {
+				extract,
+				handler,
+				check,
+				process,
+				cut,
 			};
 		};
 
-		const extracted: ExtractObj = {};
+		const extracted: RouteExtractObj = {};
 		let errorExtract: ErrorExtractFunction = (response, type, index, err) => {
 			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
 		};
 		const extract: BuilderPatternRoute["extract"] = (extractObj, error?) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
-				extracted[index as keyof ExtractObj] = value;
+				extracted[index as keyof RouteExtractObj] = value;
 			});
 			errorExtract = error || errorExtract;
 
@@ -147,9 +194,16 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const steps: (CheckerExport | RouteShort | ProcessExport)[] = [];
-		const process: BuilderPatternRoute["process"] = (processExport) => {
-			steps.push(processExport);
+		const steps: any[] = [];
+		const process: BuilderPatternRoute["process"] = (processExport, params) => {
+			steps.push({
+				type: "process",
+				name: processExport.name,
+				options: params?.options || processExport?.options,
+				input: params?.input || processExport?.input,
+				processFunction: processExport.processFunction,
+				pickup: params?.pickup,
+			});
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
 			hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
@@ -166,8 +220,17 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const check: BuilderPatternRoute["check"] = (checker) => {
-			steps.push(checker);
+		const check: BuilderPatternRoute["check"] = (checker, params) => {
+			steps.push({
+				type: "checker",
+				name: checker.name,
+				handler: checker.handler,
+				options: params.options || checker.options || {},
+				input: params.input,
+				validate: params.validate,
+				catch: params.catch,
+				output: params.output,
+			});
 
 			return {
 				check,
@@ -202,8 +265,21 @@ export default function makeRoutesSystem(
 						handlerFunction.constructor.name === "AsyncFunction",
 						spread(
 							condition(
+								!!grapAccess,
+								() => typeof grapAccess === "function" ?
+									accessFunctionString(grapAccess.constructor.name === "AsyncFunction") :
+									accessProcessString(
+										(grapAccess as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+										!!grapAccess.input,
+										mapped(
+											grapAccess?.pickup || [],
+											(value) => processDrop(value)
+										)
+									)
+							),
+							condition(
 								Object.keys(extracted).length !== 0,
-								extractedTry(
+								() => extractedTry(
 									mapped(
 										Object.entries(extracted),
 										([type, value]) => value instanceof ZodType ?
@@ -217,7 +293,7 @@ export default function makeRoutesSystem(
 							),
 							condition(
 								steps.length !== 0,
-								startStep(
+								() => startStep(
 									mapped(
 										steps,
 										(step, index) => typeof step === "function" ?
@@ -226,14 +302,14 @@ export default function makeRoutesSystem(
 												checkerStep(
 													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
 													index,
-													!!(step as CheckerExport).output
+													!!step.output
 												) :
 												processStep(
 													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
 													index,
 													!!step.input,
 													mapped(
-														(step as ProcessExport).pickup,
+														step?.pickup || [],
 														(value) => processDrop(value)
 													)
 												)
@@ -268,6 +344,8 @@ export default function makeRoutesSystem(
 					launchOnConstructResponse,
 					launchOnError,
 				},
+				grapAccess,
+
 			});
 
 			(path as string[]).forEach(p => routes[method][p] = routeFunction);
@@ -278,7 +356,8 @@ export default function makeRoutesSystem(
 			check,
 			handler,
 			hook,
-			process
+			process,
+			access,
 		};
 	}
 
@@ -369,6 +448,7 @@ catch(response){
 const errorTry = (async: boolean, block: string) => /* js */`
 try{
 	const floor = this.makeFloor();
+	let result;
 
 	${block}
 
@@ -383,6 +463,22 @@ catch(error){
 	}
 	else throw error;
 }
+`;
+
+const accessFunctionString = (async: boolean) => /* js */`
+${async ? "await " : ""}this.grapAccess(floor, request, response);
+`;
+
+const accessProcessString = (async: boolean, hasInput: boolean, drop: string) => 
+/* js */`
+result = ${async ? "await " : ""}this.grapAccess.processFunction(
+	request, 
+	response, 
+	this.grapAccess.options,
+	${hasInput ? /* js */"this.grapAccess.input(floor.pickup)" : ""}
+);
+
+${drop}
 `;
 
 const extractedTry = (block: string) => /* js */`
@@ -422,17 +518,18 @@ floor.drop(
 `;
 
 const startStep = (block: string) =>/* js */`
-let currentChecker;
-let result;
+let currentStep;
 
 ${block}
 `;
 
 const cutStep = (async: boolean, index: number) => /* js */`
+currentStep = ${index};
 ${async ? "await " : ""}this.steps[${index}](floor, response);
 `;
 
 const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
+currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].handler(
 	this.steps[${index}].input(floor.pickup),
 	(info, data) => ({info, data}),
@@ -449,7 +546,7 @@ ${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, resu
 `;
 
 const processStep = (async: boolean, index: number, hasInput: boolean, drop: string) => /* js */`
-currentChecker = this.steps[${index}].name;
+currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 	request, 
 	response, 
@@ -466,4 +563,4 @@ floor.drop("${key}", result["${key}"]);
 
 export const mapped = <T extends any[]>(arr: T = [] as any, callback: (value: T[0], index: number) => string) => arr.map(callback).join("\n");
 export const spread = (...args: string[]) => args.filter(v => !!v).join("\n");
-export const condition = (bool: boolean, block: string) => bool ? block : "";
+export const condition = (bool: boolean, block: () => string) => bool ? block() : "";
