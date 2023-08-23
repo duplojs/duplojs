@@ -23,4 +23,6 @@ duplo.addContentTypeParsers(/json/, (request) => new Promise(
 	}
 ));
 
+duplo.addHook("onConstructRequest", () => console.log("global hook"));
+
 import("./route").then(() => duplo.launch());

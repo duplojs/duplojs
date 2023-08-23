@@ -21,7 +21,7 @@ export default function makeHook<TypeHookFunction extends((...any: any) => any)>
 	return {
 		subscribers,
 		addSubscriber: (hookFunction: TypeHookFunction) => {subscribers.push(hookFunction);},
-		copySubscriber: (otherSubscribers: TypeHookFunction[]) => {[...otherSubscribers, ...subscribers];},
+		copySubscriber: (...spreadOtherSubscribers: Array<TypeHookFunction[]>) => subscribers.push(...spreadOtherSubscribers.flat()),
 		build: (): TypeHookFunction => {
 			let stringFunction = "";
 			let isAsync = false;
