@@ -30,7 +30,14 @@ export default function Duplo(config: duploConfig){
 	const {addContentTypeParsers, buildContentTypeBody, parseContentTypeBody} = makeContentTypeParserSystem();
 	const {createChecker} = makeCheckerSystem();
 	const {createProcess} = makeProcessSystem();
-	const {declareRoute, buildRoute, findRoute, setNotfoundHandler, setErrorHandler} = makeRoutesSystem(config, hooksLifeCyle, parseContentTypeBody);
+	const {
+		declareRoute, 
+		buildRoute, 
+		findRoute, 
+		setNotfoundHandler, 
+		setErrorHandler, 
+		declareAbstractRoute
+	} = makeRoutesSystem(config, hooksLifeCyle, parseContentTypeBody);
 
 	const server = http.createServer( 
 		async(serverRequest, serverResponse) => {
@@ -70,6 +77,7 @@ export default function Duplo(config: duploConfig){
 		setNotfoundHandler,
 		setErrorHandler,
 		createProcess,
-		addContentTypeParsers
+		addContentTypeParsers,
+		declareAbstractRoute
 	}; 
 }

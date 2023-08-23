@@ -2,8 +2,11 @@ import {zod} from "../scripts";
 import {duplo} from ".";
 import {userExist} from "./checker";
 import {getUser} from "./process";
+import "./abstractRoute";
+import {RequestTest} from "./abstractRoute";
 
 duplo.declareRoute("GET", "/user/{userId}")
+.hook("onConstructRequest", () => console.log("local hook"))
 .access(
 	getUser,
 	{
@@ -34,7 +37,8 @@ duplo.declareRoute("GET", "/user/{userId}")
 	});
 });
 
-duplo.declareRoute("POST", "/user")
+duplo.declareRoute<RequestTest>("POST", "/user")
+.access((floor, request) => {request.cookies;})
 .extract({
 	body: {
 		firstname: zod.string().min(5).max(50),
@@ -49,6 +53,7 @@ duplo.declareRoute("POST", "/user")
 		input: (pickup) => pickup("firstname"),
 		validate: (info) => info === "user.notexist",
 		catch: (response, info) => response.code(403).info(info).send(),
+		output: () => console.log("output"),
 		options: {type: "firstname"}
 	}
 )

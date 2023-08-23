@@ -8,13 +8,12 @@
 - [x] définir des hook spécifique a une route
 - [x] définir des hook spécifique a un process
 - [x] content type parser avec une possibiliter de personalisation
-- [x] ajout des access 
-- [ ] ajout des route abstraite
-- [ ] définir des hook spécifique a une route abstraite
+- [x] ajout des access sur les route
+- [x] ajout des route abstraite
+- [x] définir des hook spécifique a une route abstraite
 - [ ] hook sur le cycle de vie de duplojs
+- [ ] ajout d'une fonction input pour faciliter le devlopement de plugins
 - [ ] unit testing mode sur les checker
 - [ ] unit testing mode sur les process
 - [ ] unit testing mode sur les routes
 - [ ] unit testing mode sur les route abstraite
-- [ ] traker de request
-- [ ] ajout d'une fonction input pour faciliter le devlopement de plugins

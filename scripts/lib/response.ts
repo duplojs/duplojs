@@ -94,7 +94,6 @@ export default class Response{
 
 	[__exec__](){
 		if(this.#info) this.#headers.info = this.#info;
-		this.rawResponse.writeHead(this.#status, this.#headers);
 		if(this.data !== undefined){
 			const contentType = this.getHeader("content-type");
 			const hasContentType = contentType !== undefined;
@@ -105,14 +104,17 @@ export default class Response{
 				if(hasContentType === false) this.setHeader("content-type", "application/json; charset=utf-8");
 				this.data = JSON.stringify(this.data);
 			}
-
+			this.rawResponse.writeHead(this.#status, this.#headers);
 			this.rawResponse.write(this.data);
+			this.rawResponse.end();
 		}
 		else if(this.#file){
+			this.rawResponse.writeHead(this.#status, this.#headers);
 			createReadStream(this.#file).pipe(this.rawResponse);
-			return;
 		}
-		this.rawResponse.end();
-			
+		else {
+			this.rawResponse.writeHead(this.#status, this.#headers);
+			this.rawResponse.end();
+		}
 	}
 }
