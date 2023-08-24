@@ -1,7 +1,7 @@
 import {zod} from "../scripts";
 import {duplo} from ".";
 import {userExist} from "./checker";
-import {getUser} from "./process";
+import {ResponseTest, getUser} from "./process";
 import "./abstractRoute";
 import {RequestTest} from "./abstractRoute";
 
@@ -37,7 +37,7 @@ duplo.declareRoute("GET", "/user/{userId}")
 	});
 });
 
-duplo.declareRoute<RequestTest>("POST", "/user")
+duplo.declareRoute<RequestTest, ResponseTest>("POST", "/user")
 .access((floor, request) => {request.cookies;})
 .extract({
 	body: {

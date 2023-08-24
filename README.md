@@ -11,7 +11,7 @@
 - [x] ajout des access sur les route
 - [x] ajout des route abstraite
 - [x] définir des hook spécifique a une route abstraite
-- [ ] hook sur le cycle de vie de duplojs
+- [x] hook sur le cycle de vie de duplojs
 - [ ] ajout d'une fonction input pour faciliter le devlopement de plugins
 - [ ] unit testing mode sur les checker
 - [ ] unit testing mode sur les process

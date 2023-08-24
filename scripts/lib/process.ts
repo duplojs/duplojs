@@ -1,7 +1,7 @@
 import {ZodError, ZodType} from "zod";
 import {condition, mapped, spread} from "./route";
 import {CheckerExport} from "./checker";
-import {AddHooksLifeCycle, makeHooksLifeCycle} from "./hook";
+import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import makeFloor from "./floor";
 import Request from "./request";
 import Response from "./response";
@@ -11,6 +11,23 @@ export type ErrorExtractProcessFunction<response extends Response> = (response: 
 export type ProcessHandlerFunction<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void;
 
 export type ProcessShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void | Promise<void>;
+
+export interface ProcessSubscribers{
+	name: string;
+	options: unknown;
+	drop?: string[];
+	hooksLifeCyle: HooksLifeCycle;
+	extracted: ProcessExtractObj;
+	steps: Array<
+		ProcessShort<Response> | {
+			type: "checker" | "process",
+			name: string,
+			options: unknown,
+			pickup?: string[]
+		}
+	>
+	handlerFunction?: ProcessHandlerFunction<any>;
+}
 
 export type CreateProcess<
 	request extends Request = Request, 
@@ -57,7 +74,7 @@ export interface BuilderPatternProcess<
 	response extends Response = Response,
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
 >{
-	hook: AddHooksLifeCycle<BuilderPatternProcess<request, response, extractObj>>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternProcess<request, response, extractObj>, request, response>["addHook"];
 
 	extract(
 		extractObj: extractObj, 
@@ -94,7 +111,7 @@ export type ProcessFunction = (request: Request, response: Response, options: an
 
 export const __exitProcess__ = Symbol("exitProcess");
 
-export default function makeProcessSystem(){
+export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
 	const extracted: ProcessExtractObj = {};
 		
 	const createProcess: CreateProcess = (name: string) => {
@@ -270,6 +287,16 @@ export default function makeProcessSystem(){
 				exitProcess: buildProcessParameters?.allowExitProcess ?
 					() => {throw __exitProcess__;} :
 					() => {throw new Error("ExitProcess function is call in Process who has not 'allowExitProcess' define on true");}
+			});
+
+			serverHooksLifeCycle.onCreateProcess.launchSubscriber({
+				name,
+				options: buildProcessParameters?.options,
+				drop: buildProcessParameters?.drop,
+				hooksLifeCyle,
+				extracted,
+				handlerFunction: grapHandlerFunction,
+				steps: steps as any,
 			});
 
 			return {

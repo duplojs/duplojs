@@ -1,4 +1,5 @@
 import makeFloor from "./floor";
+import {ServerHooksLifeCycle} from "./hook";
 import Response from "./response";
 
 export type CheckerOutput<outputInfo> = {
@@ -30,19 +31,23 @@ export type CheckerExport<input = any, outputInfo = string, options = any> = {
 	outputInfo: outputInfo[],
 }
 
-export default function makeCheckerSystem(){
+export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
 	function createChecker<
 		input extends any,
 		outputInfo extends string,
 		options,
 	>(name: string, createCheckerParameters: CreateCheckerParameters<input, outputInfo, options>): CheckerExport<input, outputInfo, options>
 	{
-		return {
+		const checker = {
 			name,
 			handler: createCheckerParameters.handler,
 			options: createCheckerParameters.options,
 			outputInfo: createCheckerParameters.outputInfo,
 		};
+
+		serverHooksLifeCycle.onCreateChecker.launchSubscriber(checker);
+
+		return checker;
 	}
 
 	return {
