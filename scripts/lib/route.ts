@@ -4,11 +4,11 @@ import Response, {__exec__} from "./response";
 import correctPath from "./correctPath";
 import {ZodError, ZodType} from "zod";
 import {CheckerExport} from "./checker";
-import {AddHooksLifeCycle, HooksLifeCycle, makeHooksLifeCycle} from "./hook";
+import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {duploConfig} from "./main";
 import {ProcessExport} from "./process";
 import makeContentTypeParserSystem from "./contentTypeParser";
-import makeAbstractRoutesSystem, {AbstractRoute} from "./abstractRoute";
+import makeAbstractRoutesSystem, {AbstractRoute, AbstractRouteSubscribers} from "./abstractRoute";
 
 
 export type DeclareRoute<
@@ -16,6 +16,28 @@ export type DeclareRoute<
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
 > = (method: Request["method"], path: string | string[], abstractRoute?: AbstractRoute) => BuilderPatternRoute<request, response, extractObj>;
+
+export interface RouteSubscribers{
+	path: string[];
+	method: string;
+	abstractRoute?: AbstractRouteSubscribers;
+	hooksLifeCyle: HooksLifeCycle;
+	access: RouteShortAccess<any, any> | {
+		type: "process",
+		name: string,
+		options: unknown,
+		pickup?: string[]
+	};
+	extracted: RouteExtractObj;
+	steps: Array<
+		RouteShort<Response> | {
+			type: "checker" | "process",
+			name: string,
+			options: unknown,
+			pickup?: string[]
+		}
+	>;
+}
 
 export interface RouteExtractObj{
 	body?: Record<string, ZodType> | ZodType,
@@ -60,7 +82,7 @@ export interface BuilderPatternRoute<
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
 >{
-	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response>>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response>, request, response>["addHook"];
 
 	access<processExport extends ProcessExport>(
 		process: processExport | RouteShortAccess<request, response>, 
@@ -90,6 +112,7 @@ export interface BuilderPatternRoute<
 export default function makeRoutesSystem(
 	config: duploConfig, 
 	mainHooksLifeCyle: HooksLifeCycle, 
+	serverHooksLifeCycle: ServerHooksLifeCycle,
 	parseContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["parseContentTypeBody"]
 ){
 	const routes: RoutesObject = {
@@ -404,6 +427,16 @@ export default function makeRoutesSystem(
 			});
 
 			(path as string[]).forEach(p => routes[method][p] = routeFunction);
+
+			serverHooksLifeCycle.onDeclareRoute.launchSubscriber({
+				path: path as string[],
+				method,
+				abstractRoute: abstractRoute?.abstractRouteSubscribers,
+				hooksLifeCyle,
+				access: grapAccess,
+				extracted,
+				steps: steps,
+			});
 		};
 
 		return {
@@ -417,7 +450,7 @@ export default function makeRoutesSystem(
 		};
 	};
 
-	const {declareAbstractRoute} = makeAbstractRoutesSystem(declareRoute);
+	const {declareAbstractRoute} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
 
 	return {
 		declareRoute<

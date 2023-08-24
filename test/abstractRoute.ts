@@ -20,7 +20,7 @@ interface textEx extends RouteExtractObj{
 }
 
 const mustBeConnected = duplo.declareAbstractRoute<RequestTest, Response, textEx>("mustBeConnected")
-.hook("onConstructRequest", () => console.log("abstract hook"))
+.hook("onConstructRequest", (request) => console.log("abstract hook"))
 .access((floor, request, response) => {request.cookies;})
 .cut((floor, response) => {
 	floor.drop("test", floor.pickup("options"));

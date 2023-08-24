@@ -1,5 +1,5 @@
 import http from "http";
-import {AddHooksLifeCycle, makeHooksLifeCycle} from "./hook.ts";
+import {AddHooksLifeCycle, AddServerHooksLifeCycle, makeHooksLifeCycle, makeServerHooksLifeCycle} from "./hook.ts";
 import Request from "./request.ts";
 import Response, {__exec__} from "./response.ts";
 import makeRoutesSystem from "./route.ts";
@@ -17,7 +17,8 @@ declare module "http"{
 export interface duploConfig{
 	port: number,
 	host: string,
-	callback?: () => void;
+	onLaunch?: () => void;
+	onClose?: () => void;
 	prefix?: string;
 }
 
@@ -26,10 +27,12 @@ export default function Duplo(config: duploConfig){
 	if(config.prefix === "/")config.prefix = "";
 
 	const hooksLifeCyle = makeHooksLifeCycle();
+	const serverHooksLifeCycle = makeServerHooksLifeCycle();
+	let onServerError: ReturnType<typeof serverHooksLifeCycle.onServerError.build>;
 
 	const {addContentTypeParsers, buildContentTypeBody, parseContentTypeBody} = makeContentTypeParserSystem();
-	const {createChecker} = makeCheckerSystem();
-	const {createProcess} = makeProcessSystem();
+	const {createChecker} = makeCheckerSystem(serverHooksLifeCycle);
+	const {createProcess} = makeProcessSystem(serverHooksLifeCycle);
 	const {
 		declareRoute, 
 		buildRoute, 
@@ -37,7 +40,7 @@ export default function Duplo(config: duploConfig){
 		setNotfoundHandler, 
 		setErrorHandler, 
 		declareAbstractRoute
-	} = makeRoutesSystem(config, hooksLifeCyle, parseContentTypeBody);
+	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
 
 	const server = http.createServer( 
 		async(serverRequest, serverResponse) => {
@@ -48,28 +51,38 @@ export default function Duplo(config: duploConfig){
 				await routeFunction(new Request(serverRequest, config), new Response(serverResponse, config));
 			}
 			catch (error){
-				console.error(error);
+				onServerError(error as Error);
 			}
 		}
 	);
 
-	const addHook: AddHooksLifeCycle["addHook"] = (name, hookFunction) => {
-		hooksLifeCyle[name].addSubscriber(hookFunction as any);
+	const addHook: AddHooksLifeCycle["addHook"] & AddServerHooksLifeCycle["addHook"] = (name, hookFunction) => {
+		if(hooksLifeCyle[name as keyof typeof hooksLifeCyle])hooksLifeCyle[name as keyof typeof hooksLifeCyle].addSubscriber(hookFunction as any);
+		else if(serverHooksLifeCycle[name as keyof typeof serverHooksLifeCycle])serverHooksLifeCycle[name as keyof typeof serverHooksLifeCycle].addSubscriber(hookFunction as any);
 	};
 
 	return {
 		server,
 		config,
-		launch(callback = () => console.log("Ready !")){
+		launch(onLaunch = () => console.log("Ready !")){
 			buildRoute();
 			buildContentTypeBody();
 
-			return server.listen(
-				config.port, 
-				config.host,
-				0,
-				config.callback || callback,
-			);
+			serverHooksLifeCycle.onServerError.addSubscriber((error) => console.error(error));
+			onServerError = serverHooksLifeCycle.onServerError.build();
+			server.on("error", onServerError);
+
+			const onReady = serverHooksLifeCycle.onReady.build();
+			server.on("listening", onReady);
+			server.on("listening", onLaunch);
+			if(config.onLaunch)server.on("listening", config.onLaunch);
+
+			const onClose = serverHooksLifeCycle.onClose.build();
+			server.on("close", onClose);
+			if(config.onClose)server.on("close", config.onClose);
+
+			server.listen(config.port, config.host);
+			return server;
 		},
 		addHook,
 		declareRoute,
