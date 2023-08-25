@@ -5,7 +5,7 @@ import correctPath from "./correctPath";
 import {ZodError, ZodType} from "zod";
 import {CheckerExport} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
-import {duploConfig} from "./main";
+import {DuploConfig} from "./main";
 import {ProcessExport} from "./process";
 import makeContentTypeParserSystem from "./contentTypeParser";
 import makeAbstractRoutesSystem, {AbstractRoute, AbstractRouteSubscribers} from "./abstractRoute";
@@ -110,7 +110,7 @@ export interface BuilderPatternRoute<
 }
 
 export default function makeRoutesSystem(
-	config: duploConfig, 
+	config: DuploConfig, 
 	mainHooksLifeCyle: HooksLifeCycle, 
 	serverHooksLifeCycle: ServerHooksLifeCycle,
 	parseContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["parseContentTypeBody"]
