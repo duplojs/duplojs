@@ -14,7 +14,7 @@ declare module "http"{
 	}
 }
 
-export interface duploConfig{
+export interface DuploConfig{
 	port: number,
 	host: string,
 	onLaunch?: () => void;
@@ -22,13 +22,21 @@ export interface duploConfig{
 	prefix?: string;
 }
 
-export default function Duplo(config: duploConfig){
+export type DuploInputFunction<
+	options extends Record<string, any> = Record<never, never>,
+	returnType extends any = void
+> = (
+	instance: ReturnType<typeof Duplo>, 
+	config: DuploConfig, 
+	options: options | undefined,
+) => returnType;
+
+export default function Duplo(config: DuploConfig){
 	config.prefix = correctPath(config.prefix || "");
 	if(config.prefix === "/")config.prefix = "";
 
 	const hooksLifeCyle = makeHooksLifeCycle();
 	const serverHooksLifeCycle = makeServerHooksLifeCycle();
-	let onServerError: ReturnType<typeof serverHooksLifeCycle.onServerError.build>;
 
 	const {addContentTypeParsers, buildContentTypeBody, parseContentTypeBody} = makeContentTypeParserSystem();
 	const {createChecker} = makeCheckerSystem(serverHooksLifeCycle);
@@ -51,7 +59,7 @@ export default function Duplo(config: duploConfig){
 				await routeFunction(new Request(serverRequest, config), new Response(serverResponse, config));
 			}
 			catch (error){
-				onServerError(error as Error);
+				serverHooksLifeCycle.onServerError.launchSubscriber(error as Error);
 			}
 		}
 	);
@@ -69,8 +77,7 @@ export default function Duplo(config: duploConfig){
 			buildContentTypeBody();
 
 			serverHooksLifeCycle.onServerError.addSubscriber((error) => console.error(error));
-			onServerError = serverHooksLifeCycle.onServerError.build();
-			server.on("error", onServerError);
+			server.on("error", serverHooksLifeCycle.onServerError.launchSubscriber);
 
 			const onReady = serverHooksLifeCycle.onReady.build();
 			server.on("listening", onReady);
@@ -91,6 +98,11 @@ export default function Duplo(config: duploConfig){
 		setErrorHandler,
 		createProcess,
 		addContentTypeParsers,
-		declareAbstractRoute
+		declareAbstractRoute,
+		use<
+			options extends Record<string, any> = Record<never, never>
+		>(input: DuploInputFunction<options>, options?: options){
+			input(this, config, options);
+		}
 	}; 
 }
