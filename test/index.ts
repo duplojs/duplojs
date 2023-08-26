@@ -30,8 +30,8 @@ duplo.addHook("onDeclareRoute", route => {
 	if(route.abstractRoute)console.log(route);
 });
 
-const useTest: DuploInputFunction<{test: number}> = (instance, con) => {instance;};
+const useTest: DuploInputFunction<{test: number}> = (instance, con) => (1);
 
-duplo.use(useTest);
+let a = duplo.use(useTest);
 
 import("./route").then(() => duplo.launch());

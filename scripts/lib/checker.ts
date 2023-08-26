@@ -2,19 +2,26 @@ import makeFloor from "./floor";
 import {ServerHooksLifeCycle} from "./hook";
 import Response from "./response";
 
+type anyFunction = (...args: any) => any;
+
 export type CheckerOutput<outputInfo> = {
 	info: outputInfo,
 	data?: any,
 };
 
-export interface CreateCheckerParameters<input, outputInfo, options> {
+export interface CreateCheckerParameters<
+	input extends any, 
+	outputInfo extends string, 
+	options extends any, 
+	context extends Record<string, anyFunction>,
+> {
 	handler(
 		input: input, 
 		output: (info: outputInfo, data?: any) => CheckerOutput<outputInfo>, 
 		options: options
 	): CheckerOutput<outputInfo> | Promise<CheckerOutput<outputInfo>>;
-	readonly outputInfo: outputInfo[];
-	readonly options?: options;
+	outputInfo: outputInfo[];
+	options?: options;
 }
 export interface CheckerParameters<input, outputInfo, options> {
 	input(pickup: ReturnType<typeof makeFloor>["pickup"]): input;
@@ -24,19 +31,25 @@ export interface CheckerParameters<input, outputInfo, options> {
 	readonly options?: options;
 }
 
-export type CheckerExport<input = any, outputInfo = string, options = any> = {
+export type CheckerExport<
+	input extends any, 
+	outputInfo extends string, 
+	options extends any, 
+	context extends {}
+> = {
 	name: string,
-	handler: CreateCheckerParameters<input, outputInfo, options>["handler"],
+	handler: CreateCheckerParameters<input, outputInfo, options, context>["handler"],
 	options: CheckerParameters<input, outputInfo, options>["options"] | {},
 	outputInfo: outputInfo[],
 }
 
 export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
 	function createChecker<
-		input extends any,
-		outputInfo extends string,
-		options,
-	>(name: string, createCheckerParameters: CreateCheckerParameters<input, outputInfo, options>): CheckerExport<input, outputInfo, options>
+		input extends any, 
+		outputInfo extends string, 
+		options extends any, 
+		context extends {},
+	>(name: string, createCheckerParameters: CreateCheckerParameters<input, outputInfo, options, context>): CheckerExport<input, outputInfo, options, context>
 	{
 		const checker = {
 			name,

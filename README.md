@@ -13,7 +13,7 @@
 - [x] définir des hook spécifique a une route abstraite
 - [x] hook sur le cycle de vie de duplojs
 - [x] ajout d'une fonction input pour faciliter le devlopement de plugins
-- [ ] ajout de crétation de method
+- [ ] ajout de function "OR" et "AND" pour combiner des checker 
 - [ ] unit testing mode sur les checker
 - [ ] unit testing mode sur les process
 - [ ] unit testing mode sur les routes
