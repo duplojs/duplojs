@@ -12,7 +12,7 @@ export const userExist = duplo.createChecker(
 			else return output("user.notexist");
 		},
 		outputInfo: ["user.exist", "user.notexist"],
-		options: {type: "id" as "id" | "firstname"}
+		options: {type: "id" as "id" | "firstname"},
 	}
 );
 

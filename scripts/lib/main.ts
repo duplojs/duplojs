@@ -70,6 +70,8 @@ export default function Duplo(config: DuploConfig){
 	};
 
 	return {
+		Request,
+		Response,
 		server,
 		config,
 		launch(onLaunch = () => console.log("Ready !")){
@@ -100,9 +102,10 @@ export default function Duplo(config: DuploConfig){
 		addContentTypeParsers,
 		declareAbstractRoute,
 		use<
-			options extends Record<string, any> = Record<never, never>
-		>(input: DuploInputFunction<options>, options?: options){
-			input(this, config, options);
+			options extends Record<string, any> = Record<never, never>,
+			returnType extends any = any,
+		>(input: DuploInputFunction<options, returnType>, options?: options){
+			return input(this, config, options);
 		}
 	}; 
 }
