@@ -32,10 +32,10 @@ export interface CheckerParameters<input, outputInfo, options> {
 }
 
 export type CheckerExport<
-	input extends any, 
-	outputInfo extends string, 
-	options extends any, 
-	context extends {}
+	input extends any = any, 
+	outputInfo extends string = string, 
+	options extends any = any, 
+	context extends Record<string, anyFunction> = Record<string, anyFunction>
 > = {
 	name: string,
 	handler: CreateCheckerParameters<input, outputInfo, options, context>["handler"],
