@@ -6,11 +6,11 @@ export default defineConfig([
 		input: "scripts/index.ts",
 		output: [
 			{
-				file: "dist/anotherback.mjs",
+				file: "dist/duplo.mjs",
 				format: "esm"
 			},
 			{
-				file: "dist/anotherback.cjs",
+				file: "dist/duplo.cjs",
 				format: "cjs",
 			}
 		],

@@ -1,86 +1,37 @@
-import anotherback, {zod} from "../scripts/index";
+import Duplo, {zod} from "../scripts/index";
+import {DuploInputFunction} from "../scripts/lib/main";
 
-const aob = anotherback({port: 1506, host: "0.0.0.0"});
+export const duplo = Duplo({port: 1506, host: "0.0.0.0"});
 
-aob.input((addHook) => {
-	
-});	
+duplo.setNotfoundHandler((request, response) => {
+	response.code(200).send("notfound");
+});
 
-const monSuperChecker = aob.createChecker(
-	"test",
-	{
-		handler(input: number, output){
-			return output("user.exist");
-		},
-		outputInfo: ["user.exist", "user.notexist"],
-		options: {test: "ok"}
+duplo.setErrorHandler((request, response, error) => {
+	response.code(500).info("error").send(error.stack);
+});
+
+duplo.addContentTypeParsers(/json/, (request) => new Promise(
+	(resolve, reject) => {
+		let stringBody = "";
+		request.rawRequest.on("error", reject);
+		request.rawRequest.on("data", chunck => stringBody += chunck);
+		request.rawRequest.on("end", () => {
+			request.body = JSON.parse(stringBody);
+			console.log("myParser");
+			resolve();
+		});
 	}
-);
+));
 
-const testProcess2 = aob.createProcess("test2")
-.extract({
-	body: zod.string()
-})
-.check(
-	monSuperChecker({
-		input: () => 1,
-		validate: () => false,
-		catch: (response, info, data, existProcess) => existProcess()
-	})
-)
-.handler(({drop, pickup}, response, existProcess) => {
-	drop("test", 1);
-	// console.log(pickup("input"));
-	// response.code(204).info("good").send();
-})
-.build({
-	drop: ["test"], 
-	options: {ok: 44}, 
-	input: () => 222, 
-	allowExitProcess: true
+duplo.addHook("onConstructRequest", (request) => console.log("global hook"));
+
+duplo.addHook("onDeclareRoute", route => {
+	if(route.abstractRoute)console.log(route);
 });
 
-const testProcess = aob.createProcess("test")
-.check((floor, response, existProcess) => {})
-.process(
-	testProcess2(
-		{
-			pickup: ["test"], 
-			options: {ok: 55}, 
-			input: () => 22,
-		}
-	)
-)
-.handler((floor, response) => {
-	// console.log(floor.pickup("test"));
-})
-.build({drop: ["test"]});
+const useTest: DuploInputFunction<{test: number}, number> = (instance, con) => (1);
 
-aob.declareRoute("POST", "/")
-// .hook("afterSent", () => console.log("test"))
-// .extract(
-// 	{
-// 		// params: {
-// 		// 	id: zod.coerce.number(),
-// 		// },
-// 		body: zod.string(),
-// 	}
-// )
-.process(testProcess({pickup: ["test"]}))
-// .check(
-// 	monSuperChecker({
-// 		input: (pickup) => pickup("id"),
-// 		validate: (info) => true,
-// 		catch: (response) => response.code(403).info("nooo").send(),
-// 		output: (drop, data) => {}
-// 	})
-// )
-.handler((floor, response) => {
-	console.log(floor.pickup("test"));
-	response.code(204).info("good").send();
-	
-});
+let a = duplo.use(useTest, {test: 1});
 
-aob.declareRoute("GET", "/").handler((floor, response) => response.sendFile("./test/index.ts"));
-
-aob.launch();
+import("./route").then(() => duplo.launch());

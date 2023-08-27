@@ -1,0 +1,20 @@
+# Road Map
+- [x] systéme de route
+- [x] class pour resquest et response
+- [x] ajout des checkers
+- [x] déclaration des route
+- [x] ajout des process 
+- [x] hook sur le cycle de vie d'une request
+- [x] définir des hook spécifique a une route
+- [x] définir des hook spécifique a un process
+- [x] content type parser avec une possibiliter de personalisation
+- [x] ajout des access sur les route
+- [x] ajout des route abstraite
+- [x] définir des hook spécifique a une route abstraite
+- [x] hook sur le cycle de vie de duplojs
+- [x] ajout d'une fonction input pour faciliter le devlopement de plugins
+- [ ] ajout de function "OR" et "AND" pour combiner des checker 
+- [ ] unit testing mode sur les checker
+- [ ] unit testing mode sur les process
+- [ ] unit testing mode sur les routes
+- [ ] unit testing mode sur les route abstraite

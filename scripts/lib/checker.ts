@@ -1,88 +1,66 @@
 import makeFloor from "./floor";
-import {Response} from "./response";
+import {ServerHooksLifeCycle} from "./hook";
+import Response from "./response";
 
-type output<outputInfo> = {
+type anyFunction = (...args: any) => any;
+
+export type CheckerOutput<outputInfo> = {
 	info: outputInfo,
 	data?: any,
 };
 
-type outputChecker<outputInfo> = (info: outputInfo, data?: any) => output<outputInfo>;
-
-export interface checkerObj<input, outputInfo, options> {
-	handler(input: input, output: outputChecker<outputInfo>, options: options): output<outputInfo> | Promise<output<outputInfo>>;
-	readonly outputInfo: outputInfo[];
-	readonly options?: options;
+export interface CreateCheckerParameters<
+	input extends any, 
+	outputInfo extends string, 
+	options extends any, 
+	context extends Record<string, anyFunction>,
+> {
+	handler(
+		input: input, 
+		output: (info: outputInfo, data?: any) => CheckerOutput<outputInfo>, 
+		options: options
+	): CheckerOutput<outputInfo> | Promise<CheckerOutput<outputInfo>>;
+	outputInfo: outputInfo[];
+	options?: options;
 }
-
-export interface checkerExec<input, outputInfo, options> {
+export interface CheckerParameters<input, outputInfo, options> {
 	input(pickup: ReturnType<typeof makeFloor>["pickup"]): input;
 	validate(info: outputInfo, data?: any): boolean;
 	catch(response: Response, info: outputInfo, data: any, existProcess: () => never): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], data?: any) => void;
+	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: outputInfo, data?: any) => void;
 	readonly options?: options;
 }
 
-export interface useCheckerExec<input, outputInfo, options> {
-	input(): input;
-	validate(info: outputInfo, data?: any): boolean;
-	catch: (info: outputInfo, data?: any) => void;
-	output?: (data?: any) => void;
-	readonly options?: options;
-}
-
-export type shortChecker = (floor: {pickup: ReturnType<typeof makeFloor>["pickup"], drop: ReturnType<typeof makeFloor>["drop"]}, response: Response, existProcess: () => never) => void
-
-export type returnCheckerExec<input = any, outputInfo = string, options = any> = {
+export type CheckerExport<
+	input extends any = any, 
+	outputInfo extends string = string, 
+	options extends any = any, 
+	context extends Record<string, anyFunction> = Record<string, anyFunction>
+> = {
 	name: string,
-	handler: checkerObj<input, outputInfo, options>["handler"],
-	options: checkerObj<input, outputInfo, options>["options"] | {},
-	input: checkerExec<input, outputInfo, options>["input"],
-	validate: checkerExec<input, outputInfo, options>["validate"],
-	catch: checkerExec<input, outputInfo, options>["catch"],
-	output: checkerExec<input, outputInfo, options>["output"],
-	type: string,
+	handler: CreateCheckerParameters<input, outputInfo, options, context>["handler"],
+	options: CheckerParameters<input, outputInfo, options>["options"] | {},
+	outputInfo: outputInfo[],
 }
 
-export default function makeCheckerSystem(){
+export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
 	function createChecker<
-		input extends any,
-		outputInfo extends string,
-		options,
-	>(name: string, checkerObj: checkerObj<input, outputInfo, options>){
-		function checkerExec(checkerExec: checkerExec<input, outputInfo, options>): returnCheckerExec 
-		{
-			return {
-				name,
-				handler: checkerObj.handler,
-				options: checkerExec.options || checkerObj.options || {},
-				input: checkerExec.input,
-				validate: checkerExec.validate,
-				catch: checkerExec.catch as returnCheckerExec["catch"],
-				output: checkerExec.output,
-				type: "checker",
-			};
-		}
-
-		checkerExec.use = function(checkerExec: useCheckerExec<input, outputInfo, options>){
-			let result = checkerObj.handler(
-				checkerExec.input(),
-				(info, data) => ({info, data}),
-				checkerExec.options || checkerObj.options || {} as any
-			) as output<outputInfo>;
-			if(!checkerExec.validate(result.info, result.data))checkerExec.catch(result.info, result.data);
-			checkerExec.output?.(result.data);
+		input extends any, 
+		outputInfo extends string, 
+		options extends any, 
+		context extends {},
+	>(name: string, createCheckerParameters: CreateCheckerParameters<input, outputInfo, options, context>): CheckerExport<input, outputInfo, options, context>
+	{
+		const checker = {
+			name,
+			handler: createCheckerParameters.handler,
+			options: createCheckerParameters.options,
+			outputInfo: createCheckerParameters.outputInfo,
 		};
 
-		checkerExec.useAsync = async function(checkerExec: useCheckerExec<input, outputInfo, options>){
-			let result = await checkerObj.handler(
-				checkerExec.input(),
-				(info, data) => ({info, data}),
-				checkerExec.options || checkerObj.options || {} as any
-			);
-			if(!checkerExec.validate(result.info, result.data))checkerExec.catch(result.info, result.data);
-			checkerExec.output?.(result.data);
-		};
-		return checkerExec;
+		serverHooksLifeCycle.onCreateChecker.launchSubscriber(checker);
+
+		return checker;
 	}
 
 	return {

@@ -1,39 +1,121 @@
-import {Request} from "./request";
+import Request from "./request";
 import makeFloor from "./floor";
-import {Response, ResponseInstance, __exec__} from "./response";
-import extractPathAndQueryFromUrl from "./extractPathAndQueryFromUrl";
-import zod, {ZodError, ZodType} from "zod";
-import {returnCheckerExec, shortChecker} from "./checker";
-import makeHooksSystem, {HookSystem} from "./hook";
-import {anotherbackConfig} from "./main";
-import {returnProcessExec} from "./process";
+import Response, {__exec__} from "./response";
+import correctPath from "./correctPath";
+import {ZodError, ZodType} from "zod";
+import {CheckerExport} from "./checker";
+import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
+import {DuploConfig} from "./main";
+import {ProcessExport} from "./process";
+import makeContentTypeParserSystem from "./contentTypeParser";
+import makeAbstractRoutesSystem, {AbstractRoute, AbstractRouteSubscribers} from "./abstractRoute";
 
-export type extractObj = {
+
+export type DeclareRoute<
+	request extends Request = Request, 
+	response extends Response = Response,
+	extractObj extends RouteExtractObj = RouteExtractObj,
+> = (method: Request["method"], path: string | string[], abstractRoute?: AbstractRoute) => BuilderPatternRoute<request, response, extractObj>;
+
+export interface RouteSubscribers{
+	path: string[];
+	method: string;
+	abstractRoute?: AbstractRouteSubscribers;
+	hooksLifeCyle: HooksLifeCycle;
+	access: RouteShortAccess<any, any> | {
+		type: "process",
+		name: string,
+		options: unknown,
+		pickup?: string[]
+	};
+	extracted: RouteExtractObj;
+	steps: Array<
+		RouteShort<Response> | {
+			type: "checker" | "process",
+			name: string,
+			options: unknown,
+			pickup?: string[]
+		}
+	>;
+}
+
+export interface RouteExtractObj{
 	body?: Record<string, ZodType> | ZodType,
 	params?: Record<string, ZodType> | ZodType,
 	query?: Record<string, ZodType> | ZodType,
-	cookies?: Record<string, ZodType> | ZodType,
 	headers?: Record<string, ZodType> | ZodType,
 }
-export type errorExtract = (response: Response, type: keyof extractObj, index: string, err: ZodError) => void
 
-export type routesObject = Record<
+export type ErrorExtractFunction<response extends Response> = (response: response, type: keyof RouteExtractObj, index: string, err: ZodError) => void
+
+export type RouteFunction = (request: Request, response: Response) => Promise<void> | void;
+
+export type RoutesObject = Record<
 	Request["method"], 
-	Record<string, (request: Request, response: Response) => Promise<void> | void>
+	Record<string, RouteFunction>
 >;
 
-export type handlerFunction = (floor: {pickup: ReturnType<typeof makeFloor>["pickup"], drop: ReturnType<typeof makeFloor>["drop"]}, response: Response) => void;
+export type RoutehandlerFunction<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response) => void;
 
-export type notfoundHandlerFunction = (request: Request, response: Response) => void;
+export type RouteNotfoundHandlerFunction = (request: Request, response: Response) => void | Promise<void>;
+export type RouteErrorHandlerFunction = (request: Request, response: Response, error: Error) => void | Promise<void>;
 
-export type hook<addHook extends (...args: any) => any> = (name: Parameters<addHook>[0], hookFunction: Parameters<addHook>[1]) => {hook: hook<addHook>, extract: extract, handler: handler, check: check, process: process};
-export type extract = (extractObj: extractObj, error?: errorExtract) => {handler: handler, check: check, process: process}
-export type check = (checker: returnCheckerExec | shortChecker) => {handler: handler, check: check, process: process};
-export type process = (returnProcessExec: returnProcessExec) => {handler: handler, check: check, process: process};
-export type handler = (handlerFunction: handlerFunction) => void;
+export type RouteShortAccess<request extends Request, response extends Response> = (floor: ReturnType<typeof makeFloor>, request: request, response: response) => void | Promise<void>;
+export type RouteShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response) => void | Promise<void>;
 
-export default function makeRoutesSystem(config: anotherbackConfig, mainHooks: HookSystem["hooks"]){
-	const routes: routesObject = {
+export interface RouteCheckerParams<checkerExport extends CheckerExport, response extends Response>{
+	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
+	validate(info: checkerExport["outputInfo"][number], data?: any): boolean;
+	catch(response: response, info: checkerExport["outputInfo"][number], data?: any): void;
+	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
+	readonly options?: checkerExport["options"];
+}
+
+export interface RouteProcessParams<processExport extends ProcessExport>{
+	options?: processExport["options"],
+	pickup?: processExport["drop"],
+	input?: processExport["input"],
+}
+
+export interface BuilderPatternRoute<
+	request extends Request = Request, 
+	response extends Response = Response,
+	extractObj extends RouteExtractObj = RouteExtractObj,
+>{
+	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response>, request, response>["addHook"];
+
+	access<processExport extends ProcessExport>(
+		process: processExport | RouteShortAccess<request, response>, 
+		params?: RouteProcessParams<processExport>
+	): Omit<BuilderPatternRoute<request, response>, "hook" | "access">;
+
+	extract(
+		extractObj: extractObj, 
+		error?: ErrorExtractFunction<response>
+	): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+
+	check<checkerExport extends CheckerExport>(
+		checker: checkerExport, 
+		params: RouteCheckerParams<checkerExport, response>
+	): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+
+	process<processExport extends ProcessExport>(
+		process: processExport, 
+		params?: RouteProcessParams<processExport>
+	): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+
+	cut(short: RouteShort<response>): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+
+	handler(handlerFunction: RoutehandlerFunction<response>): void;
+}
+
+export default function makeRoutesSystem(
+	config: DuploConfig, 
+	mainHooksLifeCyle: HooksLifeCycle, 
+	serverHooksLifeCycle: ServerHooksLifeCycle,
+	parseContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["parseContentTypeBody"]
+){
+	const routes: RoutesObject = {
 		GET: {},
 		POST: {},
 		PUT: {}, 
@@ -43,271 +125,351 @@ export default function makeRoutesSystem(config: anotherbackConfig, mainHooks: H
 		HEAD: {}, 
 	};
 
-	const buildedRoutes: Record<string, (path: string) => {path: string, params: Record<string, string>}> = {};
-	let notfoundHandlerFunction: notfoundHandlerFunction = (request: Request, response: Response) => {
-		return response.code(404).info("NOTFOUND").send(`${request.method}:${request.path} not found`);
+	const buildedRoutes: Record<string, (path: string) => {routeFunction: RouteFunction, params: Record<string, string>}> = {};
+
+	let notfoundHandlerFunction: RouteNotfoundHandlerFunction;
+
+	//function to set notfound handler with hooklifecycle
+	function setNotfoundHandler(notFoundFunction: RouteNotfoundHandlerFunction){
+		const launchOnConstructRequest = mainHooksLifeCyle.onConstructRequest.build();
+		const launchOnConstructResponse = mainHooksLifeCyle.onConstructResponse.build();
+		const launchOnError = mainHooksLifeCyle.onError.build();
+		const launchBeforeSend = mainHooksLifeCyle.beforeSend.build();
+		const launchAfterSend = mainHooksLifeCyle.afterSend.build();
+
+		notfoundHandlerFunction = async(request: Request, response: Response) => {
+			await launchOnConstructRequest(request);
+			await launchOnConstructResponse(response);
+			
+			try {
+				try {
+					await notFoundFunction(request, response);
+				
+					response.code(503).info("NO_RESPONSE_SENT").send();
+				}
+				catch (error){
+					if(error instanceof Error){
+						launchOnError(request, response, error);
+						errorHandlerFunction(request, response, error);
+					}
+					else throw error;
+				}
+			} 
+			catch (response){
+				if(response instanceof Response){
+					await launchBeforeSend(request, response);
+					response[__exec__]();
+					await launchAfterSend(request, response);
+				}
+				else throw response;
+			}
+		};
+	}
+
+	//set default notfound function
+	setNotfoundHandler((request, response) => response.code(404).info("NOTFOUND").send(`${request.method}:${request.path} not found`));
+
+	let errorHandlerFunction: RouteErrorHandlerFunction = (request, response, error) => {
+		response.code(500).info("INTERNAL_SERVER_ERROR").send(error.stack);
 	};
 
-	return {
-		declareRoute(method: Request["method"], path: string){
-			path = config.prefix + extractPathAndQueryFromUrl(path).path;
+	const declareRoute: DeclareRoute = (method, path, abstractRoute) => {
+		if(path instanceof Array)path = path.map((p) => config.prefix + (abstractRoute?.prefix || "") + correctPath(p));
+		else path = [config.prefix + (abstractRoute?.prefix || "") + correctPath(path)];
 
-			const {addHook, buildHooks, launchHooks, copyHook} = makeHooksSystem(["error", "beforeSent", "afterSent"]);
-			let hasHook = false;
-			const hook: hook<typeof addHook> = (name, hookFunction) => {
-				if(hasHook === false){
-					hasHook = true;
-					copyHook(mainHooks, "error", "error");
-					copyHook(mainHooks, "beforeSent", "beforeSent");
-					copyHook(mainHooks, "afterSent", "afterSent");
-				}
-				addHook(name, hookFunction);
-				return {
-					hook,
-					extract,
-					handler,
-					check,
-					process,
+		const hooksLifeCyle = makeHooksLifeCycle();
+		
+		//copy global hook and abstract hook
+		hooksLifeCyle.onConstructRequest.copySubscriber(
+			mainHooksLifeCyle.onConstructRequest.subscribers, 
+			abstractRoute?.hooksLifeCyle.onConstructRequest.subscribers || []
+		);
+		hooksLifeCyle.onConstructResponse.copySubscriber(
+			mainHooksLifeCyle.onConstructResponse.subscribers,
+			abstractRoute?.hooksLifeCyle.onConstructResponse.subscribers || []
+		);
+		hooksLifeCyle.beforeParsingBody.copySubscriber(
+			mainHooksLifeCyle.beforeParsingBody.subscribers,
+			abstractRoute?.hooksLifeCyle.beforeParsingBody.subscribers || []
+		);
+		hooksLifeCyle.onError.copySubscriber(
+			mainHooksLifeCyle.onError.subscribers,
+			abstractRoute?.hooksLifeCyle.onError.subscribers || []
+		);
+		hooksLifeCyle.beforeSend.copySubscriber(
+			mainHooksLifeCyle.beforeSend.subscribers,
+			abstractRoute?.hooksLifeCyle.beforeSend.subscribers || []
+		);
+		hooksLifeCyle.afterSend.copySubscriber(
+			mainHooksLifeCyle.afterSend.subscribers,
+			abstractRoute?.hooksLifeCyle.afterSend.subscribers || []
+		);
+
+		const hook: BuilderPatternRoute["hook"] = (name, hookFunction) => {
+			hooksLifeCyle[name].addSubscriber(hookFunction as any);
+
+			return {
+				hook,
+				extract,
+				handler,
+				check,
+				process,
+				cut,
+				access,
+			};
+		};
+		
+		let grapAccess: any;
+		const access: BuilderPatternRoute["access"] = (processExport, params) => {
+			if(typeof processExport === "function"){
+				grapAccess = processExport;
+			}
+			else {
+				hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
+				hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
+				hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
+				hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
+				hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
+				hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
+
+				grapAccess = {
+					name: processExport.name,
+					options: params?.options || processExport?.options,
+					input: params?.input || processExport?.input,
+					processFunction: processExport.processFunction,
+					pickup: params?.pickup,
 				};
-			};
-
-			const extracted: extractObj = {};
-			let errorExtract: errorExtract = (response, type, index, err) => {
-				response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send(err.issues);
-			};
-			const extract: extract = (extractObj, error?) => {
-				Object.entries(extractObj).forEach(([index, value]) => {
-					extracted[index as keyof extractObj] = value;
-				});
-				errorExtract = error || errorExtract;
-
-				return {
-					check,
-					handler,
-					process,
-				};
-			};
-
-			const checkers: (returnCheckerExec | shortChecker | returnProcessExec)[] = [];
-			const process: process = (returnProcessExec) => {
-				checkers.push(returnProcessExec);
-				if(hasHook === false){
-					hasHook = true;
-					copyHook(mainHooks, "error", "error");
-					copyHook(mainHooks, "beforeSent", "beforeSent");
-					copyHook(mainHooks, "afterSent", "afterSent");
-				}
-
-				if(Object.values(returnProcessExec.hooks).flat(1).length !== 0){
-					copyHook(returnProcessExec.hooks, "error", "error");
-					copyHook(returnProcessExec.hooks, "beforeSent", "beforeSent");
-					copyHook(returnProcessExec.hooks, "afterSent", "afterSent");
-				}
-				
-				return {
-					check,
-					process,
-					handler,
-				};
-			};
-
-			const check: check = (checker) => {
-				checkers.push(checker);
-				return {
-					check,
-					handler,
-					process,
-				};
-			};
-
-			const handler: handler = (handlerFunction) => {
-				buildHooks();
-
-				// force import zone
-				const ZE = ZodError;
-				const mf = makeFloor;
-				const lh = launchHooks;
-				const RI = ResponseInstance;
-				const _e_ = __exec__;
-				if(!!ZE && !!mf && !!lh && !!RI && !!_e_ && false){console.log();}
-
-				let stringFunction = /* js */`
-					const {pickup, drop} = mf();
-				`;
-				let isAsync = false;
-
-				if(hasHook === true)stringFunction += `
-					try {
-				`;
-
-				if(Object.keys(extracted).length !== 0){
-					stringFunction += `
-						let currentExtractedType;
-						let currentExtractedIndex;
-						try {
-					`;
-					Object.entries(extracted).forEach(([type, content]) => {
-						if(content instanceof zod.ZodType){
-							stringFunction += /* js */`
-								currentExtractedType = "${type}";
-								currentExtractedIndex = "";
-								drop(
-									"${type}",
-									extracted.${type}.parse(request.${type})
-								);
-							`;
-						}
-						else {
-							Object.keys(content).forEach((index) => {
-								stringFunction += /* js */`
-									currentExtractedType = "${type}";
-									currentExtractedIndex = "${index}";
-									drop(
-										"${index}",
-										extracted.${type}.${index}.parse(request.${type}.${index})
-									);
-								`;
-							});
-						}
-					});
-					stringFunction += /* js */`
-						} catch(err) {
-							if(err instanceof ZE)errorExtract(response, currentExtractedType, currentExtractedIndex, err);
-							else throw err;
-						}
-					`;
-				}
-
-				if(checkers.length !== 0){
-					stringFunction += /* js */`
-						let currentChecker;
-						let result;
-					`;
-
-					checkers.forEach((value, index) => {
-						if(typeof value === "function"){
-							if(value.constructor.name === "AsyncFunction"){
-								stringFunction += /* js */`
-									await checkers[${index}]({pickup, drop}, response, () => {});
-								`;
-								isAsync = true;
-							}
-							else stringFunction += /* js */`
-								checkers[${index}]({pickup, drop}, response, () => {});
-							`;
-						}
-						else if(value.type === "checker"){
-							value = value as returnCheckerExec;
-							stringFunction += /* js */`
-								currentChecker = checkers[${index}].name;
-							`;
-							if(value.handler.constructor.name === "AsyncFunction"){
-								stringFunction += /* js */`
-									result = await checkers[${index}].handler(
-										checkers[${index}].input(pickup),
-										(info, data) => ({info, data}),
-										checkers[${index}].options
-									);
-								`;
-								isAsync = true;
-							}
-							else stringFunction += /* js */`
-								result = checkers[${index}].handler(
-									checkers[${index}].input(pickup),
-									(info, data) => ({info, data}),
-									checkers[${index}].options
-								);
-							`;
-							stringFunction += /* js */`
-								if(!checkers[${index}].validate(result.info, result.data))checkers[${index}].catch(response, result.info, result.data, () => {});
-							`;
-							if(value.output)stringFunction += /* js */`
-								checkers[${index}].output(drop, result.data);
-							`;
-						}
-						else if(value.type === "process"){
-							value = value as returnProcessExec;
-							stringFunction += /* js */`
-								currentChecker = checkers[${index}].name;
-							`;
-							if(value.processFunction.constructor.name === "AsyncFunction"){
-								stringFunction += /* js */`
-									result = await checkers[${index}].processFunction(
-										request, 
-										response, 
-										checkers[${index}].options,
-										${value.input ? /* js */`checkers[${index}].input(pickup)` : ""}
-									);
-								`;
-								isAsync = true;
-							}
-							else stringFunction += /* js */`
-								result = checkers[${index}].processFunction(
-									request, 
-									response, 
-									checkers[${index}].options,
-									${value.input ? /* js */`checkers[${index}].input(pickup)` : ""}
-								);
-							`;
-							if(value.pickup){
-								value.pickup.forEach(index => {
-									stringFunction += /* js */`
-										drop("${index}", result["${index}"]);
-									`;
-								});
-							}
-						}
-					});
-				}
-
-				if(handlerFunction.constructor.name === "AsyncFunction"){
-					stringFunction += /* js */`
-						await handlerFunction({pickup, drop}, response);
-					`;
-					isAsync = true;
-				}
-				else stringFunction += /* js */`
-					handlerFunction({pickup, drop}, response);
-				`;
-
-				if(hasHook === true)stringFunction += /* js */`
-					} catch(result) {
-						if(result instanceof Error){
-							response.code(500);
-							response.data = result;
-							result = response;
-							await lh("error", request, response, result);
-						}
-
-						if(result?.[Symbol.hasInstance]?.(RI)){
-							await lh("beforeSent", request, response);
-							result[_e_]();
-							await lh("afterSent", request, response);
-						}
-						else throw result;
-					}
-				`;				
-				
-				routes[method][path] = eval((isAsync || hasHook ? "async" : "") + /* js */`(request, response) => {${stringFunction}}`);
-			};
+			}
 
 			return {
 				extract,
+				handler,
+				check,
+				process,
+				cut,
+			};
+		};
+
+		const extracted: RouteExtractObj = {};
+		let errorExtract: ErrorExtractFunction<Response> = (response, type, index, err) => {
+			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
+		};
+		const extract: BuilderPatternRoute["extract"] = (extractObj, error?) => {
+			Object.entries(extractObj).forEach(([index, value]) => {
+				extracted[index as keyof RouteExtractObj] = value;
+			});
+			errorExtract = error || errorExtract;
+
+			return {
 				check,
 				handler,
-				hook,
-				process
+				process,
+				cut,
 			};
+		};
+
+		const steps: any[] = [];
+		const process: BuilderPatternRoute["process"] = (processExport, params) => {
+			steps.push({
+				type: "process",
+				name: processExport.name,
+				options: params?.options || processExport?.options,
+				input: params?.input || processExport?.input,
+				processFunction: processExport.processFunction,
+				pickup: params?.pickup,
+			});
+			
+			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
+			hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
+			hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
+			hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
+			hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
+			hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
+			
+			return {
+				check,
+				process,
+				handler,
+				cut,
+			};
+		};
+
+		const check: BuilderPatternRoute["check"] = (checker, params) => {
+			steps.push({
+				type: "checker",
+				name: checker.name,
+				handler: checker.handler,
+				options: params.options || checker.options || {},
+				input: params.input,
+				validate: params.validate,
+				catch: params.catch,
+				output: params.output,
+			});
+
+			return {
+				check,
+				handler,
+				process,
+				cut,
+			};
+		};
+
+		const cut: BuilderPatternRoute["cut"] = (short) => {
+			steps.push(short);
+
+			return {
+				check,
+				handler,
+				process,
+				cut,
+			};
+		};
+
+		const handler: BuilderPatternRoute["handler"] = (handlerFunction) => {
+			const launchOnConstructRequest = hooksLifeCyle.onConstructRequest.build();
+			const launchOnConstructResponse = hooksLifeCyle.onConstructResponse.build();
+			const launchBeforeParsingBody = hooksLifeCyle.beforeParsingBody.build();
+			const launchOnError = hooksLifeCyle.onError.build();
+			const launchBeforeSend = hooksLifeCyle.beforeSend.build();
+			const launchAfterSend = hooksLifeCyle.afterSend.build();
+
+			const stringFunction = routeFunctionString(
+				handlerFunction.constructor.name === "AsyncFunction",
+				spread(
+					condition(
+						!!abstractRoute,
+						() => abstractRouteString(
+							abstractRoute?.abstractRouteFunction.constructor.name === "AsyncFunction",
+							mapped(
+								abstractRoute?.pickup || [],
+								(value) => processDrop(value)
+							)
+						)
+					),
+					condition(
+						!!grapAccess,
+						() => typeof grapAccess === "function" ?
+							accessFunctionString(grapAccess.constructor.name === "AsyncFunction") :
+							accessProcessString(
+								(grapAccess as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+								!!grapAccess.input,
+								mapped(
+									grapAccess?.pickup || [],
+									(value) => processDrop(value)
+								)
+							)
+					),
+					condition(
+						Object.keys(extracted).length !== 0,
+						() => extractedTry(
+							mapped(
+								Object.entries(extracted),
+								([type, value]) => value instanceof ZodType ?
+									extractedType(type) :
+									mapped(
+										Object.keys(value),
+										(key) => extractedTypeKey(type, key)
+									)
+							)
+						)
+					),
+					condition(
+						steps.length !== 0,
+						() => startStep(
+							mapped(
+								steps,
+								(step, index) => typeof step === "function" ?
+									cutStep(step.constructor.name === "AsyncFunction", index) :
+									step.type === "checker" ?
+										checkerStep(
+											(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+											index,
+											!!step.output
+										) :
+										processStep(
+											(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+											index,
+											!!step.input,
+											mapped(
+												step?.pickup || [],
+												(value) => processDrop(value)
+											)
+										)
+							)
+						)
+					),
+				)
+			);						
+					
+			const routeFunction = eval(stringFunction).bind({
+				steps, 
+				extracted, 
+				ZodError, 
+				makeFloor,
+				errorExtract,
+				Response,
+				Request,
+				__exec__,
+				handlerFunction,
+				errorHandlerFunction,
+				config,
+				parseContentTypeBody,
+				hooks: {
+					launchAfterSend,
+					launchBeforeParsingBody,
+					launchBeforeSend,
+					launchOnConstructRequest,
+					launchOnConstructResponse,
+					launchOnError,
+				},
+				grapAccess,
+				abstractRoute,
+			});
+
+			(path as string[]).forEach(p => routes[method][p] = routeFunction);
+
+			serverHooksLifeCycle.onDeclareRoute.launchSubscriber({
+				path: path as string[],
+				method,
+				abstractRoute: abstractRoute?.abstractRouteSubscribers,
+				hooksLifeCyle,
+				access: grapAccess,
+				extracted,
+				steps: steps,
+			});
+		};
+
+		return {
+			hook,
+			access,
+			extract,
+			check,
+			process,
+			cut,
+			handler,
+		};
+	};
+
+	const {declareAbstractRoute} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
+
+	return {
+		declareRoute<
+			request extends Request = Request, 
+			response extends Response = Response,
+			extractObj extends RouteExtractObj = RouteExtractObj,
+		>(method: Request["method"], path: string | string[]){
+			return declareRoute(method, path) as BuilderPatternRoute<request, response, extractObj>;
 		},
-		setNotfoundHandler(notFoundFunction: notfoundHandlerFunction){
-			notfoundHandlerFunction = notFoundFunction;
+		setNotfoundHandler,
+		setErrorHandler(errorFunction: RouteErrorHandlerFunction){
+			errorHandlerFunction = errorFunction;
 		},
 		buildRoute(){
-			Object.entries(routes).forEach(([index, value]) => {
+			Object.entries(routes).forEach(([method, value]) => {
 				let stringFunction = "let result;\n";
 
-				Object.keys(value).forEach(path => {
-					let regex = `/^${path.replace(/\//g, "\\/")}$/`.replace(
+				Object.keys(value).forEach((path) => {
+					let regex = `/^${(path as string).replace(/\//g, "\\/")}\\/?(?:\\?[^]*)?$/`.replace(
 						/\{([a-zA-Z0-9_\-]+)\}/g,
 						(match, group1) => `(?<${group1}>[a-zA-Z0-9_\-]+)`
 					);
@@ -315,31 +477,190 @@ export default function makeRoutesSystem(config: anotherbackConfig, mainHooks: H
 					stringFunction += /* js */`
 						result = ${regex}.exec(path);
 						if(result !== null) return {
-							path: "${path}",
-							params: result.groups || {}
+							routeFunction: this.routes["${path}"],
+							params: result.groups || {},
 						};
 					`;
+
 				});
+
+				stringFunction += /* js */` 
+					return {
+						routeFunction: this.notfoundHandlerFunction,
+						params: {},
+					};
+				`;
 				
-				buildedRoutes[index] = eval(/* js */`path => {${stringFunction}}`);
+				buildedRoutes[method] = eval(/* js */`(function(path){${stringFunction}})`).bind({
+					routes: routes[method as Request["method"]],
+					get notfoundHandlerFunction(){
+						return notfoundHandlerFunction;
+					}, 
+				});
 			});
 		},
 		findRoute(method: Request["method"], path: string){
 			if(!buildedRoutes[method]) return {
-				notfoundFunction: notfoundHandlerFunction
+				routeFunction: notfoundHandlerFunction,
+				params: {},
 			};
 			
-			let result = buildedRoutes[method](path);
-			
-			if(!result) return {
-				notfoundFunction: notfoundHandlerFunction,
-			};
-			else return {
-				routeFunction: routes[method][result.path],
-				params: result.params
-			};
+			return buildedRoutes[method](path);
 		},
+		declareAbstractRoute,
 		routes,
 		buildedRoutes,
 	};
 }
+
+const routeFunctionString = (async: boolean, block: string) => /* js */`
+(
+	async function(request, response){
+		await this.hooks.launchOnConstructRequest(request);
+		await this.hooks.launchOnConstructResponse(response);
+
+		if(/^(?:POST|PUT|PATCH)$/.test(request.method)){
+			await this.hooks.launchBeforeParsingBody(request, response);
+			if(request.body === undefined)await this.parseContentTypeBody(request);
+		}
+
+		try {
+			try{
+				const floor = this.makeFloor();
+				let result;
+
+				${block}
+
+				${async ? "await " : ""}this.handlerFunction(floor, response);
+
+				response.code(503).info("NO_RESPONSE_SENT").send();
+			}
+			catch(error){
+				if(error instanceof Error){
+					this.hooks.launchOnError(request, response, error);
+					this.errorHandlerFunction(request, response, error);
+				}
+				else throw error;
+			}
+		}
+		catch(response){
+			if(response instanceof this.Response){
+				await this.hooks.launchBeforeSend(request, response);
+				response[this.__exec__]();
+				await this.hooks.launchAfterSend(request, response);
+			}
+			else throw response;
+		}
+	}
+)
+`;
+
+const abstractRouteString = (async: boolean, drop: string) => /* js */`
+result = ${async ? "await " : ""}this.abstractRoute.abstractRouteFunction(
+	request, 
+	response, 
+	this.abstractRoute.options,
+);
+
+${drop}
+`;
+
+const accessFunctionString = (async: boolean) => /* js */`
+${async ? "await " : ""}this.grapAccess(floor, request, response);
+`;
+
+const accessProcessString = (async: boolean, hasInput: boolean, drop: string) => 
+/* js */`
+result = ${async ? "await " : ""}this.grapAccess.processFunction(
+	request, 
+	response, 
+	this.grapAccess.options,
+	${hasInput ? /* js */"this.grapAccess.input(floor.pickup)" : ""}
+);
+
+${drop}
+`;
+
+const extractedTry = (block: string) => /* js */`
+let currentExtractedType;
+let currentExtractedIndex;
+
+try{
+	${block}
+}
+catch(error) {
+	if(error instanceof this.ZodError)this.errorExtract(
+		response, 
+		currentExtractedType, 
+		currentExtractedIndex, 
+		error,
+	);
+	else throw error;
+}
+`;
+
+const extractedType = (type: string) => /* js */`
+currentExtractedType = "${type}";
+currentExtractedIndex = "";
+floor.drop(
+	"${type}",
+	this.extracted.${type}.parse(request.${type})
+);
+`;
+
+const extractedTypeKey = (type: string, key: string) => /* js */`
+currentExtractedType = "${type}";
+currentExtractedIndex = "${key}";
+floor.drop(
+	"${key}",
+	this.extracted.${type}.${key}.parse(request.${type}?.${key})
+);
+`;
+
+const startStep = (block: string) =>/* js */`
+let currentStep;
+
+${block}
+`;
+
+const cutStep = (async: boolean, index: number) => /* js */`
+currentStep = ${index};
+${async ? "await " : ""}this.steps[${index}](floor, response);
+`;
+
+const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
+currentStep = ${index};
+result = ${async ? "await " : ""}this.steps[${index}].handler(
+	this.steps[${index}].input(floor.pickup),
+	(info, data) => ({info, data}),
+	this.steps[${index}].options,
+);
+
+if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}].catch(
+	response, 
+	result.info, 
+	result.data,
+);
+
+${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, result.data);` : ""}
+`;
+
+const processStep = (async: boolean, index: number, hasInput: boolean, drop: string) => /* js */`
+currentStep = ${index};
+result = ${async ? "await " : ""}this.steps[${index}].processFunction(
+	request, 
+	response, 
+	this.steps[${index}].options,
+	${hasInput ? /* js */`this.steps[${index}].input(floor.pickup)` : ""}
+);
+
+${drop}
+`;
+
+const processDrop = (key: string) => /* js */`
+floor.drop("${key}", result["${key}"]);
+`;
+
+export const mapped = <T extends any[]>(arr: T = [] as any, callback: (value: T[0], index: number) => string) => arr.map(callback).join("\n");
+export const spread = (...args: string[]) => args.filter(v => !!v).join("\n");
+export const condition = (bool: boolean, block: () => string) => bool ? block() : "";
