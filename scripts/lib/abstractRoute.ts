@@ -5,8 +5,8 @@ import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCy
 import {ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
 import {DeclareRoute, RouteExtractObj, RouteProcessParams, condition, mapped, spread} from "./route";
 import correctPath from "./correctPath";
-import Response from "./response";
-import Request from "./request";
+import {Response} from "./response";
+import {Request} from "./request";
 
 export interface AbstractRoute{
 	prefix: string;

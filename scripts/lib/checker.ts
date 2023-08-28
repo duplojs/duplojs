@@ -1,6 +1,6 @@
 import makeFloor from "./floor";
 import {ServerHooksLifeCycle} from "./hook";
-import Response from "./response";
+import {Response} from "./response";
 
 type anyFunction = (...args: any) => any;
 
