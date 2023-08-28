@@ -1,6 +1,6 @@
 import {duplo} from ".";
-import Request from "../scripts/lib/request";
-import Response from "../scripts/lib/response";
+import {Request} from "../scripts/lib/request";
+import {Response} from "../scripts/lib/response";
 import {RouteExtractObj} from "../scripts/lib/route";
 
 export interface RequestTest extends Request{

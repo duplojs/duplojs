@@ -1,8 +1,8 @@
 import {AbstractRouteSubscribers} from "./abstractRoute";
 import {CheckerExport} from "./checker";
 import {ProcessSubscribers} from "./process";
-import Request from "./request";
-import Response from "./response";
+import {Request} from "./request";
+import {Response} from "./response";
 import {RouteSubscribers} from "./route";
 
 export type HooksLifeCycle<

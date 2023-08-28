@@ -1,8 +1,8 @@
 import {duplo} from ".";
 import {zod} from "../scripts";
 import {ProcessExtractObj} from "../scripts/lib/process";
-import Request from "../scripts/lib/request";
-import Response from "../scripts/lib/response";
+import {Request} from "../scripts/lib/request";
+import {Response} from "../scripts/lib/response";
 
 export interface ResponseTest extends Response{
 	cookies: string;
