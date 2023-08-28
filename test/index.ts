@@ -1,4 +1,4 @@
-import Duplo, {zod} from "../scripts/index";
+import Duplo, {zod, Request} from "../scripts/index";
 import {DuploInputFunction} from "../scripts/lib/main";
 
 export const duplo = Duplo({port: 1506, host: "0.0.0.0"});

@@ -1,7 +1,7 @@
 import http from "http";
 import {AddHooksLifeCycle, AddServerHooksLifeCycle, makeHooksLifeCycle, makeServerHooksLifeCycle} from "./hook.ts";
-import Request from "./request.ts";
-import Response, {__exec__} from "./response.ts";
+import {Request} from "./request.ts";
+import {__exec__, Response} from "./response.ts";
 import makeRoutesSystem from "./route.ts";
 import makeCheckerSystem from "./checker.ts";
 import correctPath from "./correctPath.ts";

@@ -3,8 +3,8 @@ import {condition, mapped, spread} from "./route";
 import {CheckerExport} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import makeFloor from "./floor";
-import Request from "./request";
-import Response from "./response";
+import {Request} from "./request";
+import {Response} from "./response";
 
 export type ErrorExtractProcessFunction<response extends Response> = (response: response, type: keyof ProcessExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
 
