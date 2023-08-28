@@ -6,7 +6,7 @@ import {basename} from "path";
 
 export const __exec__ = Symbol("exec");
 
-export default class Response{
+export class Response{
 	constructor(response: InstanceType<typeof ServerResponse>, config: DuploConfig){
 		this.rawResponse = response;
 	}

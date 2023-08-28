@@ -2,7 +2,7 @@ import {IncomingMessage} from "http";
 import {DuploConfig} from "./main";
 import fastQueryString from "fast-querystring";
 
-export default class Request{
+export class Request{
 	constructor(request: InstanceType<typeof IncomingMessage>, config: DuploConfig){
 		const [path, query] = (request.url ?? "").split("?");
 		this.rawRequest = request;
