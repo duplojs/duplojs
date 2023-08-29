@@ -50,7 +50,7 @@ duplo.declareRoute<RequestTest, ResponseTest>("POST", "/user")
 .check(
 	userExist,
 	{
-		input: (pickup) => pickup("firstname"),
+		input: (pickup) => pickup<string>("firstname"),
 		validate: (info) => info === "user.notexist",
 		catch: (response, info) => response.code(403).info(info).send(),
 		output: () => console.log("output"),

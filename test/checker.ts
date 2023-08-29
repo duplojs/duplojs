@@ -3,7 +3,7 @@ import {duplo} from ".";
 export const userExist = duplo.createChecker(
 	"userExist",
 	{
-		async handler(value: number, output, options){
+		async handler(value: number | string, output, options){
 			if(options.type === "id"){
 				if(value !== 1) return output("user.notexist");
 				else return output("user.exist", {name: "math", id: value});
