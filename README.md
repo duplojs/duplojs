@@ -1,5 +1,5 @@
 # DuploJS
-DuploJS est un framework TypeScript/JavaScript back-end orienter fonctionnel avec un fonctionnement simple qui pourrait même être compris pars des développeur front-end ;).
+DuploJS est un framework TypeScript/JavaScript back-end orienter fonctionnel simple d'utilisation qui pourrait même être compris pars des développeurs front-end ;).
 
 Pour faire simple vos routes sont une succession de test unitaire avec au bout une action : 
 ```
