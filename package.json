@@ -1,6 +1,9 @@
 {
   "name": "@duplojs/duplojs",
   "version": "0.0.0",
+  "author": "mathcovax",
+  "license": "ISC",
+  "repository": "https://github.com/duplojs/duplojs",
   "files": [
     "dist",
     "types"
