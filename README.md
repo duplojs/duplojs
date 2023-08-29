@@ -34,7 +34,7 @@ Cela ressemble au chemin d'une request lambda que vous auriez pu faire simplemen
 
 ## Premier pas
 
-#### Initialiser le serveur: 
+### Initialiser le serveur: 
 ```ts
 import Duplo, {zod} from "@duplojs/duplojs"; // Duplojs intègre zod directement
 
@@ -45,32 +45,32 @@ const duplo = Duplo({port: 1506, host: "0.0.0.0"});
 duplo.launch();
 ```
 
-#### Déclarer une route:
+### Déclarer une route:
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
 .handler((floor, response) => {
-	response.code(200).info("quoicoubeh").send();
-})
+    response.code(200).info("quoicoubeh").send();
+});
 ```
 
 Comme vous pouvez le voir vous n'avez pas accès directement à la request et **TANT MIEUX** car tel que je vous connais (bande de sagouin) vous auriez fait ça n'importe comment.
 
-#### Comment accéder aux valeurs de la request:
+### Comment accéder aux valeurs de la request:
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
 .extract({
-	params: {
-		id: zod.coerce.number()
-	},
-	headers: {
-		role: zod.string().min(2).max(15)
-	}
+    params: {
+        id: zod.coerce.number()
+    },
+    headers: {
+        role: zod.string().min(2).max(15)
+    }
 })
 .handler((floor, response) => {
-	response.code(200).info("quoicoubeh").send();
-})
+    response.code(200).info("quoicoubeh").send();
+});
 ```
 
 Grâce à la fonction extracte vous pouvez à l'aide de zod extraire ce que vous souhaitez de la request et garantir le type des variables:
@@ -82,19 +82,19 @@ Grâce à la fonction extracte vous pouvez à l'aide de zod extraire ce que vous
 duplo
 .declareRoute("GET", "/user/{id}")
 .extract({
-	params: {
-		id: zod.coerce.number()
-	},
-	headers: {
-		role: zod.string().min(2).max(15)
-	}
+    params: {
+        id: zod.coerce.number()
+    },
+    headers: {
+        role: zod.string().min(2).max(15)
+    }
 })
 .handler((floor, response) => {
-	response.code(200).info("quoicoubeh").send({
-		id: floor.pickup("id"),
-		role: floor.pickup("role")
-	});
-})
+    response.code(200).info("quoicoubeh").send({
+        id: floor.pickup("id"),
+        role: floor.pickup("role")
+    });
+});
 ```
 
 L'objet "floor" qui représente le sol de votre chambre. Tout comme les gros nerd que nous sommes, quand on a besoin de ranger quelque chose on le jette par terre: ``floor.drop("caleçons", "sale")``, puis tu les ramasse plus tard : ``floor.pickup("caleçons")`` (c'est juste un Map qui se balade à travers toutes les fonctions d'une route). Toutes les valeurs vérifiées dans l'extract sont automatiquement "drop" sur votre sol.
@@ -105,21 +105,21 @@ Vous êtes peut-être tenté de faire toutes les vérifications dans le handler 
 **Mais comment faire alors ?** Simplement grâce au **checker**:
 ```ts
 const userExist = duplo.createChecker(
-	"userExist", // le nom du checker
-	{
-		async handler(value: number | string, output, options){
-			let search: {index: string, value: number | string} = {
-				index: options.type, 
-				value
-			};
-			
-			const user = await MySuperDataBase(search);
-			if(!user) return output("user.notexist");
-			else return output("user.exist", user);
-		},
-		outputInfo: ["user.exist", "user.notexist"], // différentes informations de sortie possible
-		options: {type: "id" as "id" | "firstname"}, // valeur par défaut des options
-	}
+    "userExist", // le nom du checker
+    {
+        async handler(value: number | string, output, options){
+            let search: {index: string, value: number | string} = {
+                index: options.type, 
+                value
+            };
+            
+            const user = await MySuperDataBase(search);
+            if(!user) return output("user.notexist");
+            else return output("user.exist", user);
+        },
+        outputInfo: ["user.exist", "user.notexist"], // différentes informations de sortie possible
+        options: {type: "id" as "id" | "firstname"}, // valeur par défaut des options
+    }
 );
 ```
 
@@ -130,29 +130,62 @@ Un checker est un test unitaire, il prend en entrée une valeur et doit toujours
 duplo
 .declareRoute("GET", "/user/{id}")
 .extract({
-	params: {
-		id: zod.coerce.number()
-	},
-	headers: {
-		role: zod.string().min(2).max(15)
-	}
+    params: {
+        id: zod.coerce.number()
+    },
+    headers: {
+        role: zod.string().min(2).max(15)
+    }
 })
 .check(
-	userExist,
-	{
-		input: (pickup) => pickup("id"), // valeur d'entrée
-		validate: (info) => info === "user.exist", // conditions de poursuite de la request
-		catch: (response, info) => response.code(404).info(info).send(), //action lorsque la condition renvoie false
-		output: (drop, info, data) => drop("user", data), // fonction appelée après la validation si l'exécution n'a pas été stoppé par une réponse ou autre
-		options: {type: "id"} // option utiliser
-	}
+    userExist,
+    {
+        input: (pickup) => pickup("id"), // valeur d'entrée
+        validate: (info) => info === "user.exist", // conditions de poursuite de la request
+        catch: (response, info) => response.code(404).info(info).send(), //action lorsque la condition renvoie false
+        output: (drop, info, data) => drop("user", data), // fonction appelée après la validation si l'exécution n'a pas été stoppé par une réponse ou autre
+        options: {type: "id"} // option utiliser
+    }
 )
 .handler((floor, response) => {
-	response.code(200).info("quoicoubeh").send(floor.pickup("user"));
-})
+    response.code(200).info("quoicoubeh").send(floor.pickup("user"));
+});
 ```
 
 Ici le checker prend comme valeur d'entrée l'id qui a été précédemment jeté au sol lors de l'extraction, puis il vérifie si la valeur de sortie est égal à "user.exist", si true il continue l'exécution et lance la fonction output puis le handler, si false il lance la fonction catch qui va renvoyer une erreur 404.
+
+### Utiliser un cut:
+```ts
+duplo
+.declareRoute("GET", "/user/{id}")
+.extract({
+    params: {
+        id: zod.coerce.number()
+    },
+    headers: {
+        role: zod.string().min(2).max(15)
+    }
+})
+.cut((floor, response) => {
+	if(floor.pickup("role") !== "admin")response.code(403).info("forbidden").send()
+})
+.check(
+    userExist,
+    {
+        input: (pickup) => pickup("id"),
+        validate: (info) => info === "user.exist",
+        catch: (response, info) => response.code(404).info(info).send(),
+        output: (drop, info, data) => drop("user", data),
+        options: {type: "id"}
+    }
+)
+.handler((floor, response) => {
+    response.code(200).info("quoicoubeh").send(floor.pickup("user"));
+});
+```
+Les shakers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique qui ne se retrouvera nulle part, c'est pour ça que les cuts ont été créés.
+
+**/!\ Attention à ne pas abuser des cut sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable /!\\**
 
 ## Road Map
 - [x] systéme de route
