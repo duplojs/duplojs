@@ -28,4 +28,4 @@ jobs:
         run: npm ci
       
       - name: run eslint
-        run: npx eslint .
+        run: npx eslint "**/*.ts"
