@@ -10,21 +10,21 @@ ___________________________
 |    et plein d'argent    |<-------\
 |_________________________|        |
     /|\      |                     |
-	 |  	 | request http        |
-	 |  	 | GET /user/{id}      |
-	 |  	 |                     | negative response 
-	 |  	\|/                    |
-	 |    Duplojs                  |
-	 |  	 |                     |
-	 |  	 |_____________________| 403 
-	 |  	 | has autorization    |
-	 |  	 |                     |
-	 |  	 |_____________________| 400
-	 |  	 | params id is number |
-	 |  	 |                     |
-	 |  	 |_____________________| 404
-	 |  	 | user exist
-	 |  	 |
+     |       | request http        |
+     |       | GET /user/{id}      |
+     |       |                     | negative response 
+     |      \|/                    |
+     |    Duplojs                  |
+     |       |                     |
+     |       |_____________________| 403 
+     |       | has autorization    |
+     |       |                     |
+     |       |_____________________| 400
+     |       | params id is number |
+     |       |                     |
+     |       |_____________________| 404
+     |       | user exist
+     |       |
  200 |_______|
       response 
     containing user 
