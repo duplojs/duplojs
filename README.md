@@ -80,7 +80,7 @@ duplo
 
 Grâce à la fonction extracte vous pouvez à l'aide de zod extraire ce que vous souhaitez de la request et garantir le type des variables:
 - le paramètre id n'acceptera qu'un nombre ou une chaîne de caractère contenant un nombre
-- le champ rele du headers n'acceptera qu'une string ayant entre 2 et 15 caractères
+- le champ role du headers n'acceptera qu'une string ayant entre 2 et 15 caractères
 
 ### Comment accéder au valeurs:
 ```ts
@@ -128,7 +128,7 @@ const userExist = duplo.createChecker(
 );
 ```
 
-Un checker est un test unitaire, il prend en entrée une valeur et doit toujours ressortir une information et peut renvoyer une donnés. Leur but est d'être le plus flexible, plus vos checker feront des actions précises plus vos déclarations de route seront simples et rapides. Dans l'exemple ci-dessus, le shaker indique prend l'entrée un nombre ou une string, autorise comme informations de sortie: "user.exist", "user.notexist" et propose une option "type" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. 
+Un checker est un test unitaire, il prend en entrée une valeur et doit toujours ressortir une information et peut renvoyer une donnés. Leur but est d'être le plus flexible, plus vos checker feront des actions précises plus vos déclarations de route seront simples et rapides. Dans l'exemple ci-dessus, le checker indique prendre en entrée un nombre ou une string, il autorise comme informations de sortie: "user.exist", "user.notexist" et propose une option "type" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. 
 
 ### Implémenter un checker:
 ```ts
@@ -157,7 +157,7 @@ duplo
 });
 ```
 
-Ici le checker prend comme valeur d'entrée l'id qui a été précédemment jeté au sol lors de l'extraction, puis il vérifie si la valeur de sortie est égal à "user.exist", si true il continue l'exécution et lance la fonction output puis le handler, si false il lance la fonction catch qui va renvoyer une erreur 404.
+Ici le checker prend comme valeur d'entrée l'id qui a été précédemment drop au sol lors de l'extraction, puis il vérifie si la valeur de sortie est égal à "user.exist", si true il continue l'exécution et lance la fonction output puis le handler, si false il lance la fonction catch qui va renvoyer une erreur 404.
 
 ### Utiliser un cut:
 ```ts
@@ -188,7 +188,7 @@ duplo
     response.code(200).info("quoicoubeh").send(floor.pickup("user"));
 });
 ```
-Les shakers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique qui ne se retrouvera nulle part, c'est pour ça que les cuts ont été créés.
+Les checkers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique qui ne se retrouvera que a un endroit, c'est pour ça que les cuts ont été créés.
 
 **/!\ Attention à ne pas abuser des cut sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable /!\\**
 
