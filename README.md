@@ -2,7 +2,6 @@
 DuploJS est un framework TypeScript/JavaScript back-end orienter fonctionnel avec un fonctionnement simple qui pourrait même être compris pars des développeur front-end ;).
 
 Pour faire simple vos routes sont une succession de test unitaire avec au bout une action : 
-
 ```
 ___________________________
 |                         |
@@ -31,6 +30,12 @@ ___________________________
 ```
 
 Cela ressemble au chemin d'une request lambda que vous auriez pu faire simplement avec express ou fastify mais **DuploJS** se différencie pars ça définition des routes et son organisation a suivre.
+
+## Instalation
+
+```
+npm i @duplojs/duplojs
+```
 
 ## Premier pas
 
