@@ -82,29 +82,29 @@ export interface BuilderPatternRoute<
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
 >{
-	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response>, request, response>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj>, request, response>["addHook"];
 
 	access<processExport extends ProcessExport>(
 		process: processExport | RouteShortAccess<request, response>, 
 		params?: RouteProcessParams<processExport>
-	): Omit<BuilderPatternRoute<request, response>, "hook" | "access">;
+	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "access">;
 
 	extract(
 		extractObj: extractObj, 
 		error?: ErrorExtractFunction<response>
-	): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
 
 	check<checkerExport extends CheckerExport>(
 		checker: checkerExport, 
 		params: RouteCheckerParams<checkerExport, response>
-	): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
 
 	process<processExport extends ProcessExport>(
 		process: processExport, 
 		params?: RouteProcessParams<processExport>
-	): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
 
-	cut(short: RouteShort<response>): Omit<BuilderPatternRoute<request, response>, "hook" | "extract" | "access">;
+	cut(short: RouteShort<response>): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
 
 	handler(handlerFunction: RoutehandlerFunction<response>): void;
 }
@@ -277,6 +277,7 @@ export default function makeRoutesSystem(
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
+				extracted: processExport.extracted,
 			});
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
@@ -360,7 +361,7 @@ export default function makeRoutesSystem(
 							)
 					),
 					condition(
-						!!extracted.body,
+						!!extracted.body || !!steps.find(value => value?.type === "process" && value.extracted.body),
 						() => hookBody()
 					),
 					condition(
@@ -581,8 +582,10 @@ ${drop}
 `;
 
 const hookBody = () => /* js */`
-await this.hooks.launchBeforeParsingBody(request, response);
-if(request.body === undefined)await this.parseContentTypeBody(request);
+if(request.body === undefined){
+	await this.hooks.launchBeforeParsingBody(request, response);
+	if(request.body === undefined)await this.parseContentTypeBody(request);
+}
 `;
 
 const extractedTry = (block: string) => /* js */`

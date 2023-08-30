@@ -125,7 +125,7 @@ export interface BuilderPatternAbstractRoute<
 	): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "access">;
 
 	extract(
-		extractObj: extractObj,
+		extractObj: Omit<extractObj, "body">,
 		error?: ErrorExtractAbstractRouteFunction<response>
 	): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "extract" | "access">;
 
@@ -143,7 +143,7 @@ export interface BuilderPatternAbstractRoute<
 
 	handler(handlerFunction: AbstractRouteHandlerFunction<response>): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "extract" | "access" | "check" | "process" | "cut" | "handler">;
 	
-	build<drop extends string, options extends any>(buildAbstractRouteParameters?: BuildAbstractRouteParameters<drop, options>): UseAbstractRoute<drop, options, request, response>;
+	build<drop extends string, options extends any>(buildAbstractRouteParameters?: BuildAbstractRouteParameters<drop, options>): UseAbstractRoute<drop, options, request, response, extractObj>;
 }
 
 export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, serverHooksLifeCycle: ServerHooksLifeCycle){
