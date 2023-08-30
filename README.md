@@ -208,7 +208,7 @@ duplo
     .then(() => response.code(200).info("j'effectue le dab").send());
 
     // ✔ fonctionne correctement (y comprend vite mais y faut lui expliquer longtemps)
-	// l'exécution est en linéaire donc cela ne posera aucun problème
+    // l'exécution est en linéaire donc cela ne posera aucun problème
     await new Promise(resolve => setTimeout(resolve, 1000));
     response.code(200).info("il est mort pioupiou").send();
 });
@@ -222,16 +222,16 @@ duplo
 .declareRoute("GET", "/user/{id}")
 // hook, access, extract, process, checker, cut...
 .handler((floor, response) => {
-	try{
-		response.code(200).info("bien se passé").send();
+    try{
+        response.code(200).info("bien se passé").send();
 
-		throw "bebou";
-	}
-	catch(error){
-		// error === response;
-		
-		if(error instanceof Response) throw error;
-	}
+        throw "bebou";
+    }
+    catch(error){
+        // error === response;
+
+        if(error instanceof Response) throw error;
+    }
 });
 ```
 
@@ -305,3 +305,4 @@ Si un hook return true, l'exécution des hooks se finira à celui-ci.
 - [ ] unit testing mode sur les process
 - [ ] unit testing mode sur les routes
 - [ ] unit testing mode sur les route abstraite
+    
