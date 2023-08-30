@@ -190,7 +190,7 @@ duplo
 ```
 Les checkers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique qui ne se retrouvera que a un endroit, c'est pour ça que les cuts ont été créés.
 
-**/!\ Attention à ne pas abuser des cut sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable /!\\**
+**/!\ Attention à ne pas abuser des cut sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable. /!\\**
 
 ### Respecter l'exécution linéaire
 
@@ -239,7 +239,7 @@ duplo
 
 Il faut savoir que la déclaration d'une route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité après l'écriture des routes. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
 
-```js
+```ts
 duplo.declareRoute("GET", "/")
 .hook(/* ... */) // vous pouvez ajouter autant de Hook que vous souhaitez.
 .access(/* ... */) // vous ne pouvez avoir qu'un seul access
@@ -252,7 +252,7 @@ duplo.declareRoute("GET", "/")
 
 Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour check, process et cut qui n'empêche pas de se rappeler entre eux):
 
-```js
+```ts
 duplo.declareRoute("GET", "/")
 
 .hook(/* ... */) // vous pouvez ajouter autant de Hook que vous 
@@ -281,7 +281,76 @@ Les hook sont des fonctions qui sont exécutées à des moments précis du cycle
 - **beforeSend**
 - **afterSend**
 
-**/!\ Les hooks ne sont pas fait pour répondre à une request. Si vous le faites cela provoquera une erreur.**
+**/!\ Les hooks ne sont pas fait pour répondre à une request. Si vous le faites cela provoquera une erreur. /!\\**
+
+```ts
+duplo
+.declareRoute("GET", "/")
+.hook("onConstructRequest", (request) => {/* ... */})
+.hook("onConstructResponse", (response) => {/* ... */})
+.hook("beforeSend", (request, response) => {/* ... */})
+.hook("onConstructResponse", (response) => {/* ... */})
+.handler((floor, response) => {
+    response.code(200).info("feur").send();
+});
+```
+
+### .access(function | process, {}?)
+
+Un access accepte soit une fonction soit un process, l'acces est la pour organiser la déclaration des routes et vérifier en avant le parsing du body si la request est autorisé à être traité.
+
+```ts
+duplo
+.declareRoute("POST", "/user")
+.access(
+    mustBeAdmin,
+    {
+        pickup: ["user"] // récupère la valeur user
+    }
+)
+.handler((floor, response) => {
+    response.code(200).info("pépite de chocolat").send();
+});
+
+duplo
+.declareRoute("POST", "/user")
+.access((floor, request, response) => {
+    if(request.header.role !== "admin") response.code(403).info("for biden").send()
+})
+.handler((floor, response) => {
+    response.code(200).info("Ancilla Domini").send();
+});
+```
+
+### .extract({}, function?)
+Cette fonction permet d'extraire et de vérifier des valeurs qu'on souhaite utiliser pour le traitement de la request, 4 type sont disponibles: 
+- params
+- body
+- query
+- body
+
+```ts
+duplo
+.declareRoute("GET", "/user/{id}")
+.access(
+    mustBeAdmin,
+    {
+        pickup: ["user"] // récupère la valeur user
+    }
+)
+.extract(
+	{
+		params: {
+			id: zod.coerce.number()
+		}
+	},
+	(response, type, index, err) => response.code(400).info("you shall not pass").send()
+),
+.handler((floor, response) => {
+    response.code(200).info("(╯°□°）╯︵ ┻━┻").send();
+});
+```
+
 
 ## Road Map
 - [x] systéme de route

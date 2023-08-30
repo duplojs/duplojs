@@ -70,23 +70,23 @@ export function makeHooksLifeCycle<
 	response extends Response = Response,
 >(){
 	return {
-		onConstructRequest: makeHook<((request: request) => PromiseOrNot<false | void>)>(1),
-		onConstructResponse: makeHook<((response: response) => PromiseOrNot<false | void>)>(1),
-		beforeParsingBody: makeHook<((request: request, response: response) => PromiseOrNot<false | void>)>(2),
-		onError: makeHook<((request: request, response: response, error: Error) => PromiseOrNot<false | void>)>(3),
-		beforeSend: makeHook<((request: request, response: response) => PromiseOrNot<false | void>)>(2),
-		afterSend: makeHook<((request: request, response: response) => PromiseOrNot<false | void>)>(2),
+		onConstructRequest: makeHook<((request: request) => PromiseOrNot<true | void>)>(1),
+		onConstructResponse: makeHook<((response: response) => PromiseOrNot<true | void>)>(1),
+		beforeParsingBody: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
+		onError: makeHook<((request: request, response: response, error: Error) => PromiseOrNot<true | void>)>(3),
+		beforeSend: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
+		afterSend: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
 	};
 }
 
 export function makeServerHooksLifeCycle(){
 	return {
-		onDeclareRoute: makeHook<((route: RouteSubscribers) => PromiseOrNot<false | void>)>(1),
-		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRouteSubscribers) => PromiseOrNot<false | void>)>(1),
-		onCreateChecker: makeHook<((checker: CheckerExport) => PromiseOrNot<false | void>)>(1),
-		onCreateProcess: makeHook<((process: ProcessSubscribers) => PromiseOrNot<false | void>)>(1),
-		onReady: makeHook<(() => PromiseOrNot<false | void>)>(0),
-		onClose: makeHook<(() => PromiseOrNot<false | void>)>(0),
-		onServerError: makeHook<((error: Error) => PromiseOrNot<false | void>)>(1),
+		onDeclareRoute: makeHook<((route: RouteSubscribers) => PromiseOrNot<true | void>)>(1),
+		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRouteSubscribers) => PromiseOrNot<true | void>)>(1),
+		onCreateChecker: makeHook<((checker: CheckerExport) => PromiseOrNot<true | void>)>(1),
+		onCreateProcess: makeHook<((process: ProcessSubscribers) => PromiseOrNot<true | void>)>(1),
+		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),
+		onClose: makeHook<(() => PromiseOrNot<true | void>)>(0),
+		onServerError: makeHook<((error: Error) => PromiseOrNot<true | void>)>(1),
 	};
 }
