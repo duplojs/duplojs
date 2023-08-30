@@ -360,6 +360,10 @@ export default function makeRoutesSystem(
 							)
 					),
 					condition(
+						!!extracted.body,
+						() => hookBody()
+					),
+					condition(
 						Object.keys(extracted).length !== 0,
 						() => extractedTry(
 							mapped(
@@ -519,11 +523,6 @@ const routeFunctionString = (async: boolean, block: string) => /* js */`
 		await this.hooks.launchOnConstructRequest(request);
 		await this.hooks.launchOnConstructResponse(response);
 
-		if(/^(?:POST|PUT|PATCH)$/.test(request.method)){
-			await this.hooks.launchBeforeParsingBody(request, response);
-			if(request.body === undefined)await this.parseContentTypeBody(request);
-		}
-
 		try {
 			try{
 				const floor = this.makeFloor();
@@ -579,6 +578,11 @@ result = ${async ? "await " : ""}this.grapAccess.processFunction(
 );
 
 ${drop}
+`;
+
+const hookBody = () => /* js */`
+await this.hooks.launchBeforeParsingBody(request, response);
+if(request.body === undefined)await this.parseContentTypeBody(request);
 `;
 
 const extractedTry = (block: string) => /* js */`
