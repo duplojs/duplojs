@@ -215,7 +215,7 @@ duplo
 ```
 
 ### Répondre est une erreur
-Quand les function send, sendFile et download sont appelés il crée une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
+Quand les function send, sendFile et download sont appelés elles crée une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
 
 ```ts
 duplo
@@ -273,17 +273,15 @@ l'ordre des process, check et cut que vous définirez sera l'ordre d'exécution 
 
 ### .hook(name, function)
 
-Les hook sont des fonctions qui sont exécutées à des moments précis du cycle de vie d'une request ou du serveur. les hooks disponibles ici sont les suivants :
-- **onConstructRequest** : la fonction se lance au moment de la construction de la request
-- **onConstructResponse** : la fonction se lance au moment de la construction de la response
-- **beforeParsingBody** : la fonction se lance avant que je pense que le body soit parser
-- **onError** : la fonction se lance lorsqu'une erreur na pas étais catch pendant l'exécution de la request
-- **beforeSend** : la fonction s'exécute avant l'envoi d'une réponse
-- **afterSend** : la fonction s'exécute après l'envoi d'une réponse
+Les hook sont des fonctions qui sont exécutées à des moments précis du cycle de vie d'une request ou du serveur. Si les hook sont déclarés au sein d'une route il affecteront que celle-ci. Les hooks disponibles ici sont les suivants :
+- **onConstructRequest**
+- **onConstructResponse**
+- **beforeParsingBody**
+- **onError**
+- **beforeSend**
+- **afterSend**
 
-Si un hook return true, l'exécution des hooks se finira à celui-ci.
-
-**/!\ Les hooks ne sont pas fait pour répondre à une request. si vous le faites cela provoquera une erreur**
+**/!\ Les hooks ne sont pas fait pour répondre à une request. Si vous le faites cela provoquera une erreur.**
 
 ## Road Map
 - [x] systéme de route
