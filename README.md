@@ -39,7 +39,7 @@ npm i @duplojs/duplojs
 
 ## Premier pas
 
-### Initialiser le serveur: 
+### Initialiser le serveur
 ```ts
 import Duplo, {zod} from "@duplojs/duplojs"; // Duplojs intègre zod directement
 
@@ -50,7 +50,7 @@ const duplo = Duplo({port: 1506, host: "0.0.0.0"});
 duplo.launch();
 ```
 
-### Déclarer une route:
+### Déclarer une route
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
@@ -61,7 +61,7 @@ duplo
 
 Comme vous pouvez le voir vous n'avez pas accès directement à la request et **TANT MIEUX** car tel que je vous connais (bande de sagouin) vous auriez fait ça n'importe comment.
 
-### Comment accéder aux valeurs de la request:
+### Comment accéder aux valeurs de la request
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
@@ -82,7 +82,7 @@ Grâce à la fonction extracte vous pouvez à l'aide de zod extraire ce que vous
 - le paramètre id n'acceptera qu'un nombre ou une chaîne de caractère contenant un nombre
 - le champ role du headers n'acceptera qu'une string ayant entre 2 et 15 caractères
 
-### Comment accéder au valeurs:
+### Comment accéder au valeurs
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
@@ -104,7 +104,7 @@ duplo
 
 L'objet "floor" qui représente le sol de votre chambre. Tout comme les gros nerd que nous sommes, quand on a besoin de ranger quelque chose on le jette par terre: ``floor.drop("caleçons", "sale")``, puis tu les ramasse plus tard : ``floor.pickup("caleçons")`` (c'est juste un Map qui se balade à travers toutes les fonctions d'une route). Toutes les valeurs vérifiées dans l'extract sont automatiquement "drop" sur votre sol.
 
-### Comment faire plus de vérification:
+### Comment faire plus de vérification
 Vous êtes peut-être tenté de faire toutes les vérifications dans le handler mais il faut que vous gardiez une chose en tête ! Le handler correspond à l'action finale, une fois arrivé ici en théorie il n'y a plus aucune vérification à faire. 
 
 **Mais comment faire alors ?** Simplement grâce au **checker**:
@@ -130,7 +130,7 @@ const userExist = duplo.createChecker(
 
 Un checker est un test unitaire, il prend en entrée une valeur et doit toujours ressortir une information et peut renvoyer une donnés. Leur but est d'être le plus flexible, plus vos checker feront des actions précises plus vos déclarations de route seront simples et rapides. Dans l'exemple ci-dessus, le checker indique prendre en entrée un nombre ou une string, il autorise comme informations de sortie: "user.exist", "user.notexist" et propose une option "type" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. 
 
-### Implémenter un checker:
+### Implémenter un checker
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
@@ -159,7 +159,7 @@ duplo
 
 Ici le checker prend comme valeur d'entrée l'id qui a été précédemment drop au sol lors de l'extraction, puis il vérifie si la valeur de sortie est égal à "user.exist", si true il continue l'exécution et lance la fonction output puis le handler, si false il lance la fonction catch qui va renvoyer une erreur 404.
 
-### Utiliser un cut:
+### Utiliser un cut
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
@@ -172,7 +172,7 @@ duplo
     }
 })
 .cut((floor, response) => {
-	if(floor.pickup("role") !== "admin")response.code(403).info("forbidden").send()
+    if(floor.pickup("role") !== "admin")response.code(403).info("forbidden").send()
 })
 .check(
     userExist,
@@ -191,6 +191,99 @@ duplo
 Les checkers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique qui ne se retrouvera que a un endroit, c'est pour ça que les cuts ont été créés.
 
 **/!\ Attention à ne pas abuser des cut sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable /!\\**
+
+### Respecter l'exécution linéaire
+
+Pour que Duplojs puisse fonctionner correctement, il faut respecter son exécution, une request a un chemin synchronisé et des étapes à franchir. si vous souhaitez utiliser une réponse après une promesse, il vous faudra toujours `await` cette promesse pour que l'exécution se fasse de manière linéaire.
+
+```ts
+duplo
+.declareRoute("GET", "/user/{id}")
+// hook, access, extract, process, checker, cut...
+.handler(async (floor, response) => {
+
+    // ✖ ne fonctionne pas (ti é con ou koi ?)
+    // cela provoquera une erreur qui indiquera que rien n'a été envoyé
+    new Promise(resolve => setTimeout(resolve, 1000))
+    .then(() => response.code(200).info("j'effectue le dab").send());
+
+    // ✔ fonctionne correctement (y comprend vite mais y faut lui expliquer longtemps)
+	// l'exécution est en linéaire donc cela ne posera aucun problème
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    response.code(200).info("il est mort pioupiou").send();
+});
+```
+
+### Répondre est une erreur
+Quand les function send, sendFile et download sont appelés il crée une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
+
+```ts
+duplo
+.declareRoute("GET", "/user/{id}")
+// hook, access, extract, process, checker, cut...
+.handler((floor, response) => {
+	try{
+		response.code(200).info("bien se passé").send();
+
+		throw "bebou";
+	}
+	catch(error){
+		// error === response;
+		
+		if(error instanceof Response) throw error;
+	}
+});
+```
+
+## Construction d'une route
+
+Il faut savoir que la déclaration d'une route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité après l'écriture des routes. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
+
+```js
+duplo.declareRoute("GET", "/")
+.hook(/* ... */) // vous pouvez ajouter autant de Hook que vous souhaitez.
+.access(/* ... */) // vous ne pouvez avoir qu'un seul access
+.extract(/* ... */) // vous ne pouvez avoir qu'un seul extract
+.process(/* ... */) // vous pouvez avoir autant de process que vous souhaitez
+.check(/* ... */) // vous pouvez avoir autant de check que vous souhaitez
+.cut(/* ... */) // vous pouvez avoir autant de cut que vous souhaitez
+.handler(/* ... */)
+```
+
+Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour check, process et cut qui n'empêche pas de se rappeler entre eux):
+
+```js
+duplo.declareRoute("GET", "/")
+
+.hook(/* ... */) // vous pouvez ajouter autant de Hook que vous 
+.access(/* ... */) // vous ne pouvez avoir qu'un seul access
+// hook et access ne sont plus disponibles
+.extract(/* ... */) // vous ne pouvez avoir qu'un seul extract
+// hook, access et extract ne sont plus disponibles
+
+.check(/* ... */) 
+.process(/* ... */)
+.process(/* ... */) // vous pouvez avoir autant de process, check et cut que vous voulez et dans l'ordre que vous voulez.
+.cut(/* ... */) 
+.check(/* ... */)
+
+.handler(/* ... */)
+```
+l'ordre des process, check et cut que vous définirez sera l'ordre d'exécution des la request.
+
+### .hook(name, function)
+
+Les hook sont des fonctions qui sont exécutées à des moments précis du cycle de vie d'une request ou du serveur. les hooks disponibles ici sont les suivants :
+- **onConstructRequest** : la fonction se lance au moment de la construction de la request
+- **onConstructResponse** : la fonction se lance au moment de la construction de la response
+- **beforeParsingBody** : la fonction se lance avant que je pense que le body soit parser
+- **onError** : la fonction se lance lorsqu'une erreur na pas étais catch pendant l'exécution de la request
+- **beforeSend** : la fonction s'exécute avant l'envoi d'une réponse
+- **afterSend** : la fonction s'exécute après l'envoi d'une réponse
+
+Si un hook return true, l'exécution des hooks se finira à celui-ci.
+
+**/!\ Les hooks ne sont pas fait pour répondre à une request. si vous le faites cela provoquera une erreur**
 
 ## Road Map
 - [x] systéme de route
