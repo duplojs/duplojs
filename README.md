@@ -339,12 +339,12 @@ duplo
     }
 )
 .extract(
-	{
-		params: {
-			id: zod.coerce.number()
-		}
-	},
-	(response, type, index, err) => response.code(400).info("you shall not pass").send()
+    {
+        params: {
+            id: zod.coerce.number()
+        }
+    },
+    (response, type, index, err) => response.code(400).info("you shall not pass").send()
 ),
 .handler((floor, response) => {
     response.code(200).info("(╯°□°）╯︵ ┻━┻").send();
