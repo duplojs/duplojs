@@ -345,12 +345,36 @@ duplo
         }
     },
     (response, type, index, err) => response.code(400).info("you shall not pass").send()
-),
+)
 .handler((floor, response) => {
     response.code(200).info("(╯°□°）╯︵ ┻━┻").send();
 });
 ```
+### .process(process, {}?)
+Cette fonction permet d'intégrer un process dans une request.
 
+```ts
+duplo
+.declareRoute("GET", "/")
+.extract(
+    {
+        params: {
+            id: zod.coerce.number()
+        }
+    },
+    (response, type, index, err) => response.code(400).info("you shall not pass").send()
+)
+.process(
+    getUser,
+    {
+        pickup: ["user"], // récupère la valeur user
+		input: (pickup) => pickup("id")
+    }
+)
+.handler((floor, response) => {
+    response.code(200).info("(╯°□°）╯︵ ┻━┻").send();
+});
+```
 
 ## Road Map
 - [x] systéme de route
