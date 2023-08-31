@@ -95,16 +95,17 @@ export interface BuilderPatternProcess<
 
 	handler(handlerFunction: ProcessHandlerFunction<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract" | "check" | "process" | "handler" | "cut">;
 	
-	build<drop extends string, input extends any, options extends any>(buildProcessParameters?: BuildProcessParameters<drop, input, options>): ProcessExport<drop, input, options>;
+	build<drop extends string, input extends any, options extends any>(buildProcessParameters?: BuildProcessParameters<drop, input, options>): ProcessExport<drop, input, options, extractObj>;
 }
 
-export interface ProcessExport<drop = string, input = any, options = any>{
+export interface ProcessExport<drop = string, input = any, options = any, extractObj = ProcessExtractObj>{
 	name: string;
 	options?: options;
 	processFunction: ProcessFunction;
 	drop?: drop[];
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
 	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
+	extracted: extractObj
 }
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
@@ -306,6 +307,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				drop: buildProcessParameters?.drop,
 				processFunction,
 				hooksLifeCyle,
+				extracted,
 			};
 		};
 

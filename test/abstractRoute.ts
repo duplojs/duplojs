@@ -22,6 +22,7 @@ interface textEx extends RouteExtractObj{
 const mustBeConnected = duplo.declareAbstractRoute<RequestTest, Response, textEx>("mustBeConnected")
 .hook("onConstructRequest", (request) => console.log("abstract hook"))
 .access((floor, request, response) => {request.cookies;})
+.extract({})
 .cut((floor, response) => {
 	floor.drop("test", floor.pickup("options"));
 })
@@ -38,6 +39,7 @@ const deepAbstractRoute = mustBeConnected({pickup: ["test"], options: {test: fal
 	request.cookies;
 	request.toto;
 })
+.extract({})
 .cut((floor) => floor.drop("deep", "deep ABS"))
 .build({drop: ["test", "deep"], prefix: "deep"});
 
@@ -45,6 +47,7 @@ deepAbstractRoute({pickup: ["test", "deep"], ignorePrefix: true})
 .declareRoute<RequestTest3>("GET", "/api")
 .hook("onConstructRequest", () => console.log("local hook"))
 .access((floor, request, response) => {request.cookies;})
+.extract({})
 .handler((floor, response) => {
 	const options = floor.pickup("test");
 	options.deep = floor.pickup("deep");
