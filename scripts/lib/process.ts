@@ -12,6 +12,8 @@ export type ProcessHandlerFunction<response extends Response> = (floor: ReturnTy
 
 export type ProcessShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void | Promise<void>;
 
+export type ProcessCustom<request extends Request, response extends Response> = (floor: ReturnType<typeof makeFloor>, request: request, response: response, exitProcess: () => never) => void | Promise<void>;
+
 export interface ProcessSubscribers{
 	name: string;
 	options: unknown;
@@ -89,7 +91,9 @@ export interface BuilderPatternProcess<
 
 	cut(short: ProcessShort<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
 
-	handler(handlerFunction: ProcessHandlerFunction<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract" | "check" | "process" | "handler" | "cut">;
+	custom(customFunction: ProcessCustom<request, response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+
+	handler(handlerFunction: ProcessHandlerFunction<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract" | "check" | "process" | "handler" | "cut" | "custom">;
 	
 	build<drop extends string, input extends any, options extends any>(buildProcessParameters?: BuildProcessParameters<drop, input, options>): ProcessExport<drop, input, options, extractObj>;
 }
@@ -124,6 +128,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
 				handler,
 			};
 		};
@@ -143,6 +148,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
 			};
 		};
 
@@ -171,7 +177,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				handler,
 				build,
 				cut,
-
+				custom,
 			};
 		};
 
@@ -194,6 +200,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
 			};
 		};
 
@@ -206,6 +213,23 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
+			};
+		};
+
+		const custom: BuilderPatternProcess["custom"] = (customFunction) => {
+			steps.push({
+				customFunction,
+				type: "custom"
+			});
+
+			return {
+				check,
+				handler,
+				build,
+				process,
+				cut,
+				custom,
 			};
 		};
 
@@ -246,29 +270,34 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 									steps,
 									(step, index) => typeof step === "function" ?
 										cutStep(step.constructor.name === "AsyncFunction", index) :
-										step.type === "checker" ?
-											skipStep(
-												!!step.skip,
-												index,
-												checkerStep(
-													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
-													index,
-													!!step.output
-												)
+										step.type === "custom" ?
+											cutsomStep(
+												(step.customFunction as () => {}).constructor.name === "AsyncFunction",
+												index
 											) :
-											skipStep(
-												!!step.skip,
-												index,
-												processStep(
-													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+											step.type === "checker" ?
+												skipStep(
+													!!step.skip,
 													index,
-													!!step.input,
-													mapped(
-														step?.pickup || [],
-														(value) => processDrop(value)
+													checkerStep(
+														(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+														index,
+														!!step.output
+													)
+												) :
+												skipStep(
+													!!step.skip,
+													index,
+													processStep(
+														(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+														index,
+														!!step.input,
+														mapped(
+															step?.pickup || [],
+															(value) => processDrop(value)
+														)
 													)
 												)
-											)
 								)
 							)
 						),
@@ -324,6 +353,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			handler,
 			process,
 			cut,
+			custom,
 			build,
 		};
 	};
@@ -420,6 +450,10 @@ ${block}
 
 const cutStep = (async: boolean, index: number) => /* js */`
 ${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+`;
+
+const cutsomStep = (async: boolean, index: number) => /* js */`
+${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response, this.exitProcess);
 `;
 
 const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
