@@ -27,7 +27,7 @@ duplo.addContentTypeParsers(/json/, (request) => new Promise(
 duplo.addHook("onConstructRequest", (request) => console.log("global hook"));
 
 duplo.addHook("onDeclareRoute", route => {
-	if(route.abstractRoute)console.log(route);
+	// if(route.abstractRoute)console.log(route);
 });
 
 const useTest: DuploInputFunction<{test: number}, number> = (instance, con) => (1);
