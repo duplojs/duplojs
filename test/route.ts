@@ -3,6 +3,7 @@ import {duplo} from ".";
 import {userExist} from "./checker";
 import {ResponseTest, getUser} from "./process";
 import "./abstractRoute";
+import "./skip";
 import {RequestTest} from "./abstractRoute";
 
 duplo.declareRoute("GET", "/user/{userId}")
@@ -75,4 +76,9 @@ duplo.declareRoute("PATCH", "/article/{articleId}")
 })
 .handler((floor, response) => {
 	response.code(200).send(floor.pickup("body"));
+});
+
+duplo.declareRoute("GET", "/return/number")
+.handler((floor, response) => {
+	response.code(200).send(23);
 });

@@ -2,7 +2,7 @@ import {Request} from "./request";
 import makeFloor from "./floor";
 import {__exec__, Response} from "./response";
 import correctPath from "./correctPath";
-import {ZodError, ZodType} from "zod";
+import {boolean, ZodError, ZodType} from "zod";
 import {CheckerExport} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {DuploConfig} from "./main";
@@ -69,12 +69,20 @@ export interface RouteCheckerParams<checkerExport extends CheckerExport, respons
 	catch(response: response, info: checkerExport["outputInfo"][number], data?: any): void;
 	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
 	readonly options?: checkerExport["options"];
+	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export interface RouteProcessParams<processExport extends ProcessExport>{
-	options?: processExport["options"],
-	pickup?: processExport["drop"],
-	input?: processExport["input"],
+	options?: processExport["options"];
+	pickup?: processExport["drop"];
+	input?: processExport["input"];
+	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
+}
+
+export interface RouteProcessAccessParams<processExport extends ProcessExport>{
+	options?: processExport["options"];
+	pickup?: processExport["drop"];
+	input?: processExport["input"];
 }
 
 export interface BuilderPatternRoute<
@@ -86,7 +94,7 @@ export interface BuilderPatternRoute<
 
 	access<processExport extends ProcessExport>(
 		process: processExport | RouteShortAccess<request, response>, 
-		params?: RouteProcessParams<processExport>
+		params?: RouteProcessAccessParams<processExport>
 	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "access">;
 
 	extract(
@@ -278,6 +286,7 @@ export default function makeRoutesSystem(
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
 				extracted: processExport.extracted,
+				skip: params?.skip,
 			});
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
@@ -305,6 +314,7 @@ export default function makeRoutesSystem(
 				validate: params.validate,
 				catch: params.catch,
 				output: params.output,
+				skip: params.skip,
 			});
 
 			return {
@@ -386,18 +396,26 @@ export default function makeRoutesSystem(
 								(step, index) => typeof step === "function" ?
 									cutStep(step.constructor.name === "AsyncFunction", index) :
 									step.type === "checker" ?
-										checkerStep(
-											(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+										skipStep(
+											!!step.skip,
 											index,
-											!!step.output
+											checkerStep(
+												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+												index,
+												!!step.output
+											)
 										) :
-										processStep(
-											(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+										skipStep(
+											!!step.skip,
 											index,
-											!!step.input,
-											mapped(
-												step?.pickup || [],
-												(value) => processDrop(value)
+											processStep(
+												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+												index,
+												!!step.input,
+												mapped(
+													step?.pickup || [],
+													(value) => processDrop(value)
+												)
 											)
 										)
 							)
@@ -663,6 +681,12 @@ result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 
 ${drop}
 `;
+
+const skipStep = (bool: boolean, index: number, block: string) => bool ? /* js */`
+if(!this.steps[${index}].skip(floor.pickup)){
+	${block}
+}
+` : block;
 
 const processDrop = (key: string) => /* js */`
 floor.drop("${key}", result["${key}"]);

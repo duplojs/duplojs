@@ -43,16 +43,10 @@ export interface ProcessExtractObj{
 }
 
 export interface BuildProcessParameters<drop extends string, input extends any, options extends any>{
-	options?: options,
-	drop?: drop[],
-	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
-	allowExitProcess?: boolean,
-}
-
-export interface ProcessParameters<values extends string, input extends {}, options extends {}>{
-	options?: options,
-	pickup?: values[],
-	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
+	options?: options;
+	drop?: drop[];
+	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
+	allowExitProcess?: boolean;
 }
 
 export interface ProcessCheckerParams<checkerExport extends CheckerExport, response extends Response>{
@@ -61,12 +55,14 @@ export interface ProcessCheckerParams<checkerExport extends CheckerExport, respo
 	catch(response: response, info: checkerExport["outputInfo"][number], data: any, exitProcess: () => never): void;
 	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
 	readonly options?: checkerExport["options"];
+	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export interface ProcessProcessParams<processExport extends ProcessExport>{
 	options?: processExport["options"];
 	pickup?: processExport["drop"];
 	input?: processExport["input"];
+	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export interface BuilderPatternProcess<
@@ -113,9 +109,9 @@ export type ProcessFunction = (request: Request, response: Response, options: an
 export const __exitProcess__ = Symbol("exitProcess");
 
 export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
-	const extracted: ProcessExtractObj = {};
 		
 	const createProcess: CreateProcess = (name: string) => {
+		const extracted: ProcessExtractObj = {};
 		const hooksLifeCyle = makeHooksLifeCycle();
 
 		const hook: BuilderPatternProcess["hook"] = (name, hookFunction) => {
@@ -159,6 +155,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
+				skip: params?.skip,
 			});
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
@@ -188,6 +185,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				validate: params.validate,
 				catch: params.catch,
 				output: params.output,
+				skip: params.skip,
 			});
 
 			return {
@@ -249,18 +247,26 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 									(step, index) => typeof step === "function" ?
 										cutStep(step.constructor.name === "AsyncFunction", index) :
 										step.type === "checker" ?
-											checkerStep(
-												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+											skipStep(
+												!!step.skip,
 												index,
-												!!step.output
+												checkerStep(
+													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+													index,
+													!!step.output
+												)
 											) :
-											processStep(
-												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+											skipStep(
+												!!step.skip,
 												index,
-												!!step.input,
-												mapped(
-													step?.pickup || [],
-													(value) => processDrop(value)
+												processStep(
+													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+													index,
+													!!step.input,
+													mapped(
+														step?.pickup || [],
+														(value) => processDrop(value)
+													)
 												)
 											)
 								)
@@ -444,6 +450,12 @@ result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 
 ${drop}
 `;
+
+const skipStep = (bool: boolean, index: number, block: string) => bool ? /* js */`
+if(!this.steps[${index}].skip(floor.pickup)){
+	${block}
+}
+` : block;
 
 const processDrop = (key: string) => /* js */`
 floor.drop("${key}", result["${key}"]);

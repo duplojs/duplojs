@@ -78,6 +78,7 @@ export interface AbstractRouteCheckerParams<checkerExport extends CheckerExport,
 	catch(response: response, info: checkerExport["outputInfo"][number], data: any, exitProcess: () => never): void;
 	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
 	readonly options?: checkerExport["options"];
+	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export type UseAbstractRoute<
@@ -234,6 +235,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
+				skip: params?.skip,
 			});
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
@@ -262,6 +264,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				validate: params.validate,
 				catch: params.catch,
 				output: params.output,
+				skip: params.skip,
 			});
 
 			return {
@@ -345,18 +348,26 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 									(step, index) => typeof step === "function" ?
 										cutStep(step.constructor.name === "AsyncFunction", index) :
 										step.type === "checker" ?
-											checkerStep(
-												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+											skipStep(
+												!!step.skip,
 												index,
-												!!step.output
+												checkerStep(
+													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+													index,
+													!!step.output
+												)
 											) :
-											processStep(
-												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+											skipStep(
+												!!step.skip,
 												index,
-												!!step.input,
-												mapped(
-													step?.pickup || [],
-													(value) => processDrop(value)
+												processStep(
+													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+													index,
+													!!step.input,
+													mapped(
+														step?.pickup || [],
+														(value) => processDrop(value)
+													)
 												)
 											)
 								)
@@ -385,7 +396,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				__exitProcess__,
 				exitProcess: buildAbstractRouteParameters?.allowExitProcess ?
 					() => {throw __exitProcess__;} :
-					() => {throw new Error("ExitProcess function is call in Process who has not 'allowExitProcess' define on true");}
+					() => {throw new Error("ExitProcess function is call in abstractRoute who has not 'allowExitProcess' define on true");}
 			});
 
 			serverHooksLifeCycle.onDeclareAbstractRoute.launchSubscriber({
@@ -586,6 +597,12 @@ result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 
 ${drop}
 `;
+
+const skipStep = (bool: boolean, index: number, block: string) => bool ? /* js */`
+if(!this.steps[${index}].skip(floor.pickup)){
+	${block}
+}
+` : block;
 
 const processDrop = (key: string) => /* js */`
 floor.drop("${key}", result["${key}"]);
