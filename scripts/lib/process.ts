@@ -12,6 +12,8 @@ export type ProcessHandlerFunction<response extends Response> = (floor: ReturnTy
 
 export type ProcessShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void | Promise<void>;
 
+export type ProcessCustom<request extends Request, response extends Response> = (floor: ReturnType<typeof makeFloor>, request: request, response: response, exitProcess: () => never) => void | Promise<void>;
+
 export interface ProcessSubscribers{
 	name: string;
 	options: unknown;
@@ -43,16 +45,10 @@ export interface ProcessExtractObj{
 }
 
 export interface BuildProcessParameters<drop extends string, input extends any, options extends any>{
-	options?: options,
-	drop?: drop[],
-	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
-	allowExitProcess?: boolean,
-}
-
-export interface ProcessParameters<values extends string, input extends {}, options extends {}>{
-	options?: options,
-	pickup?: values[],
-	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
+	options?: options;
+	drop?: drop[];
+	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
+	allowExitProcess?: boolean;
 }
 
 export interface ProcessCheckerParams<checkerExport extends CheckerExport, response extends Response>{
@@ -61,12 +57,14 @@ export interface ProcessCheckerParams<checkerExport extends CheckerExport, respo
 	catch(response: response, info: checkerExport["outputInfo"][number], data: any, exitProcess: () => never): void;
 	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
 	readonly options?: checkerExport["options"];
+	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export interface ProcessProcessParams<processExport extends ProcessExport>{
 	options?: processExport["options"];
 	pickup?: processExport["drop"];
 	input?: processExport["input"];
+	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export interface BuilderPatternProcess<
@@ -93,7 +91,9 @@ export interface BuilderPatternProcess<
 
 	cut(short: ProcessShort<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
 
-	handler(handlerFunction: ProcessHandlerFunction<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract" | "check" | "process" | "handler" | "cut">;
+	custom(customFunction: ProcessCustom<request, response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+
+	handler(handlerFunction: ProcessHandlerFunction<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract" | "check" | "process" | "handler" | "cut" | "custom">;
 	
 	build<drop extends string, input extends any, options extends any>(buildProcessParameters?: BuildProcessParameters<drop, input, options>): ProcessExport<drop, input, options, extractObj>;
 }
@@ -113,9 +113,9 @@ export type ProcessFunction = (request: Request, response: Response, options: an
 export const __exitProcess__ = Symbol("exitProcess");
 
 export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
-	const extracted: ProcessExtractObj = {};
 		
 	const createProcess: CreateProcess = (name: string) => {
+		const extracted: ProcessExtractObj = {};
 		const hooksLifeCyle = makeHooksLifeCycle();
 
 		const hook: BuilderPatternProcess["hook"] = (name, hookFunction) => {
@@ -128,6 +128,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
 				handler,
 			};
 		};
@@ -147,6 +148,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
 			};
 		};
 
@@ -159,6 +161,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
+				skip: params?.skip,
 			});
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
@@ -174,7 +177,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				handler,
 				build,
 				cut,
-
+				custom,
 			};
 		};
 
@@ -188,6 +191,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				validate: params.validate,
 				catch: params.catch,
 				output: params.output,
+				skip: params.skip,
 			});
 
 			return {
@@ -196,6 +200,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
 			};
 		};
 
@@ -208,6 +213,23 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				build,
 				process,
 				cut,
+				custom,
+			};
+		};
+
+		const custom: BuilderPatternProcess["custom"] = (customFunction) => {
+			steps.push({
+				customFunction,
+				type: "custom"
+			});
+
+			return {
+				check,
+				handler,
+				build,
+				process,
+				cut,
+				custom,
 			};
 		};
 
@@ -248,21 +270,34 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 									steps,
 									(step, index) => typeof step === "function" ?
 										cutStep(step.constructor.name === "AsyncFunction", index) :
-										step.type === "checker" ?
-											checkerStep(
-												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
-												index,
-												!!step.output
+										step.type === "custom" ?
+											cutsomStep(
+												(step.customFunction as () => {}).constructor.name === "AsyncFunction",
+												index
 											) :
-											processStep(
-												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
-												index,
-												!!step.input,
-												mapped(
-													step?.pickup || [],
-													(value) => processDrop(value)
+											step.type === "checker" ?
+												skipStep(
+													!!step.skip,
+													index,
+													checkerStep(
+														(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+														index,
+														!!step.output
+													)
+												) :
+												skipStep(
+													!!step.skip,
+													index,
+													processStep(
+														(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+														index,
+														!!step.input,
+														mapped(
+															step?.pickup || [],
+															(value) => processDrop(value)
+														)
+													)
 												)
-											)
 								)
 							)
 						),
@@ -318,6 +353,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			handler,
 			process,
 			cut,
+			custom,
 			build,
 		};
 	};
@@ -416,6 +452,10 @@ const cutStep = (async: boolean, index: number) => /* js */`
 ${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
 `;
 
+const cutsomStep = (async: boolean, index: number) => /* js */`
+${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response, this.exitProcess);
+`;
+
 const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
 result = ${async ? "await " : ""}this.steps[${index}].handler(
 	this.steps[${index}].input(floor.pickup),
@@ -444,6 +484,12 @@ result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 
 ${drop}
 `;
+
+const skipStep = (bool: boolean, index: number, block: string) => bool ? /* js */`
+if(!this.steps[${index}].skip(floor.pickup)){
+	${block}
+}
+` : block;
 
 const processDrop = (key: string) => /* js */`
 floor.drop("${key}", result["${key}"]);

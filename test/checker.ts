@@ -26,3 +26,5 @@ export const userHasRight = duplo.createChecker(
 		options: {type: "id" as "id" | "firstname"}
 	}
 );
+
+

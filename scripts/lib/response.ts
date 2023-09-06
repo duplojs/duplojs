@@ -98,7 +98,10 @@ export class Response{
 			const contentType = this.getHeader("content-type");
 			const hasContentType = contentType !== undefined;
 			
-			if(hasContentType === false && typeof this.data === "string") this.setHeader("content-type", "text/plain; charset=utf-8");
+			if(hasContentType === false && (typeof this.data === "string" || typeof this.data === "number")){
+				this.setHeader("content-type", "text/plain; charset=utf-8");
+				this.data = this.data.toString();
+			}
 			else if(hasContentType === false && this.data instanceof ArrayBuffer) this.setHeader("content-type", "application/octet-stream");
 			else if((hasContentType === false || /json/.test(contentType)) && typeof this.data === "object"){
 				if(hasContentType === false) this.setHeader("content-type", "application/json; charset=utf-8");

@@ -2,8 +2,10 @@ import {zod} from "../scripts";
 import {duplo} from ".";
 import {userExist} from "./checker";
 import {ResponseTest, getUser} from "./process";
-import "./abstractRoute";
 import {RequestTest} from "./abstractRoute";
+import "./abstractRoute";
+import "./skip";
+import "./custom";
 
 duplo.declareRoute("GET", "/user/{userId}")
 .hook("onConstructRequest", () => console.log("local hook"))
@@ -75,4 +77,9 @@ duplo.declareRoute("PATCH", "/article/{articleId}")
 })
 .handler((floor, response) => {
 	response.code(200).send(floor.pickup("body"));
+});
+
+duplo.declareRoute("GET", "/return/number")
+.handler((floor, response) => {
+	response.code(200).send(23);
 });
