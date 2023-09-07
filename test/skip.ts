@@ -6,7 +6,7 @@ const skipCheker = duplo.createChecker(
 	{
 		async handler(value: any, output, options){
 			console.log("not skip checker");
-			return output("notSkip");
+			return output("notSkip", undefined);
 			
 		},
 		outputInfo: ["notSkip"],

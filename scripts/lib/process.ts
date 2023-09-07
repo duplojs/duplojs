@@ -1,6 +1,6 @@
 import {ZodError, ZodType} from "zod";
 import {condition, mapped, spread} from "./route";
-import {CheckerExport} from "./checker";
+import {CheckerExport, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import makeFloor from "./floor";
 import {Request} from "./request";
@@ -53,15 +53,15 @@ export interface BuildProcessParameters<drop extends string, input extends any, 
 
 export interface ProcessCheckerParams<checkerExport extends CheckerExport, response extends Response>{
 	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	validate(info: checkerExport["outputInfo"][number], data?: any): boolean;
-	catch(response: response, info: checkerExport["outputInfo"][number], data: any, exitProcess: () => never): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
-	readonly options?: checkerExport["options"];
+	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
+	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
+	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	options?: checkerExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => checkerExport["options"]);
 	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export interface ProcessProcessParams<processExport extends ProcessExport>{
-	options?: processExport["options"];
+	options?: processExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => processExport["options"]);
 	pickup?: processExport["drop"];
 	input?: processExport["input"];
 	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
@@ -282,7 +282,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 													checkerStep(
 														(step as CheckerExport).handler.constructor.name === "AsyncFunction",
 														index,
-														!!step.output
+														!!step.output,
+														typeof step.options === "function",
 													)
 												) :
 												skipStep(
@@ -292,6 +293,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 														(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
 														index,
 														!!step.input,
+														typeof step.options === "function",
 														mapped(
 															step?.pickup || [],
 															(value) => processDrop(value)
@@ -456,11 +458,11 @@ const cutsomStep = (async: boolean, index: number) => /* js */`
 ${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response, this.exitProcess);
 `;
 
-const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
+const checkerStep = (async: boolean, index: number, hasOutput: boolean, optionsIsFunction: boolean) => /* js */`
 result = ${async ? "await " : ""}this.steps[${index}].handler(
 	this.steps[${index}].input(floor.pickup),
 	(info, data) => ({info, data}),
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 );
 
 if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}].catch(
@@ -473,12 +475,12 @@ if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}]
 ${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, result.data);` : ""}
 `;
 
-const processStep = (async: boolean, index: number, hasInput: boolean, drop: string) => /* js */`
+const processStep = (async: boolean, index: number, hasInput: boolean, optionsIsFunction: boolean, drop: string) => /* js */`
 currentChecker = this.steps[${index}].name;
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 	request, 
 	response, 
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 	${hasInput ? /* js */`this.steps[${index}].input(floor.pickup)` : ""}
 );
 

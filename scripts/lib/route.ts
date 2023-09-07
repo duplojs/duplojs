@@ -3,7 +3,7 @@ import makeFloor from "./floor";
 import {__exec__, Response} from "./response";
 import correctPath from "./correctPath";
 import {boolean, ZodError, ZodType} from "zod";
-import {CheckerExport} from "./checker";
+import {CheckerExport, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {DuploConfig} from "./main";
 import {ProcessExport} from "./process";
@@ -65,15 +65,15 @@ export type RouteShort<response extends Response> = (floor: ReturnType<typeof ma
 
 export interface RouteCheckerParams<checkerExport extends CheckerExport, response extends Response>{
 	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	validate(info: checkerExport["outputInfo"][number], data?: any): boolean;
-	catch(response: response, info: checkerExport["outputInfo"][number], data?: any): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
-	readonly options?: checkerExport["options"];
+	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
+	catch(response: response, info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): void;
+	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	options?: checkerExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => checkerExport["options"]);
 	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
 }
 
 export interface RouteProcessParams<processExport extends ProcessExport>{
-	options?: processExport["options"];
+	options?: processExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => processExport["options"]);
 	pickup?: processExport["drop"];
 	input?: processExport["input"];
 	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
@@ -402,7 +402,8 @@ export default function makeRoutesSystem(
 											checkerStep(
 												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
 												index,
-												!!step.output
+												!!step.output,
+												typeof step.options === "function",
 											)
 										) :
 										skipStep(
@@ -412,6 +413,7 @@ export default function makeRoutesSystem(
 												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
 												index,
 												!!step.input,
+												typeof step.options === "function",
 												mapped(
 													step?.pickup || [],
 													(value) => processDrop(value)
@@ -653,12 +655,12 @@ currentStep = ${index};
 ${async ? "await " : ""}this.steps[${index}](floor, response);
 `;
 
-const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
+const checkerStep = (async: boolean, index: number, hasOutput: boolean, optionsIsFunction: boolean) => /* js */`
 currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].handler(
 	this.steps[${index}].input(floor.pickup),
 	(info, data) => ({info, data}),
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 );
 
 if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}].catch(
@@ -670,12 +672,12 @@ if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}]
 ${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, result.data);` : ""}
 `;
 
-const processStep = (async: boolean, index: number, hasInput: boolean, drop: string) => /* js */`
+const processStep = (async: boolean, index: number, hasInput: boolean, optionsIsFunction: boolean, drop: string) => /* js */`
 currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 	request, 
 	response, 
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 	${hasInput ? /* js */`this.steps[${index}].input(floor.pickup)` : ""}
 );
 
