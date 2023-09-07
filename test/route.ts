@@ -6,6 +6,7 @@ import {RequestTest} from "./abstractRoute";
 import "./abstractRoute";
 import "./skip";
 import "./custom";
+import "./functionOptions";
 
 duplo.declareRoute("GET", "/user/{userId}")
 .hook("onConstructRequest", () => console.log("local hook"))
@@ -24,8 +25,8 @@ duplo.declareRoute("GET", "/user/{userId}")
 	userExist,
 	{
 		input: (pickup) => pickup("userId"),
-		validate: (info) => info === "user.exist",
-		catch: (response, info) => response.code(404).info(info).send(),
+		validate: (info, data) => info === "user.exist",
+		catch: (response, info, data) => response.code(404).info(info).send(),
 		options: {type: "id"}
 	}
 )
@@ -55,7 +56,7 @@ duplo.declareRoute<RequestTest, ResponseTest>("POST", "/user")
 		input: (pickup) => pickup<string>("firstname"),
 		validate: (info) => info === "user.notexist",
 		catch: (response, info) => response.code(403).info(info).send(),
-		output: () => console.log("output"),
+		output: (drop, info, data) => console.log("output"),
 		options: {type: "firstname"}
 	}
 )
