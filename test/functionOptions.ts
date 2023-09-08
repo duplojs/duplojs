@@ -14,32 +14,41 @@ const funcOptionsCheker = duplo.createChecker(
 	}
 );
 
-const funcOptionsProcess = duplo.createProcess("funcOptionsProcess")
+const funcOptionsProcess = duplo.createProcess("funcOptionsProcess", {options: 1, input: () => ({test: 1})})
+.extract({
+	params: {
+		test: zod.string().optional()
+	}
+})
 .cut(({pickup}) => {
+	pickup("test");
 	console.log("process : " + pickup("options"));
 })
-.build({options: 1});
+.build();
 
 
 duplo.declareRoute("GET", "/func/options/{number}")
 .extract({
 	params: {
 		number: zod.coerce.number()
+	},
+	cookie: {
+
 	}
 })
 .check(
 	funcOptionsCheker,
 	{
-		input: () => {},
-		validate: () => true,
+		input: (pickup) => pickup("number"),
+		validate: (info) => true,
 		catch: (response) => response.code(500).info("wtf").send(),
-		options: 2,
+		options: "111ef",
 	}
 )
 .process(
 	funcOptionsProcess, 
 	{
-		options: 2
+		options: 1,
 	}
 )
 .check(

@@ -4,6 +4,7 @@ import {ProcessSubscribers} from "./process";
 import {Request} from "./request";
 import {Response} from "./response";
 import {RouteSubscribers} from "./route";
+import {PromiseOrNot} from "./utility";
 
 export type HooksLifeCycle<
 	request extends Request = Request, 
@@ -35,8 +36,6 @@ export interface AddServerHooksLifeCycle<returnType extends any = any>{
 	addHook(name: "onServerError", functionHook: ReturnType<ServerHooksLifeCycle["onServerError"]["build"]>): returnType;
 }
 
-type PromiseOrNot<T> = T | Promise<T>;
-
 export default function makeHook<TypeHookFunction extends((...any: any) => any)>(numberArgs: number){
 	const args = Array(numberArgs).fill(undefined).map((value, index) => `arg${index}`).join(", ");
 	let subscribers: TypeHookFunction[] = [];
@@ -45,7 +44,11 @@ export default function makeHook<TypeHookFunction extends((...any: any) => any)>
 		subscribers,
 		addSubscriber: (hookFunction: TypeHookFunction) => {subscribers.push(hookFunction);},
 		copySubscriber: (...spreadOtherSubscribers: Array<TypeHookFunction[]>) => subscribers.push(...spreadOtherSubscribers.flat()),
-		launchSubscriber: ((...agrs) => subscribers.forEach(fnc => fnc(...agrs))) as TypeHookFunction,
+		launchSubscriber: (async(...agrs) => {
+			for(const fnc of subscribers){
+				await fnc(...agrs);
+			}
+		}) as TypeHookFunction,
 		build: (): TypeHookFunction => {
 			let stringFunction = "";
 			let isAsync = false;

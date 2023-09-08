@@ -1,4 +1,4 @@
-import {zod} from "../scripts";
+import {ProcessExport, RouteProcessAccessParams, zod} from "../scripts";
 import {duplo} from ".";
 import {userExist} from "./checker";
 import {ResponseTest, getUser} from "./process";
@@ -13,12 +13,15 @@ duplo.declareRoute("GET", "/user/{userId}")
 .access(
 	getUser,
 	{
-		pickup: ["user"]
+		pickup: ["user"],
 	}
 )
 .extract({
 	params: {
 		userId: zod.coerce.number()
+	},
+	cookies: {
+		test: zod.coerce.number()
 	}
 })
 .check(
@@ -30,7 +33,7 @@ duplo.declareRoute("GET", "/user/{userId}")
 		options: {type: "id"}
 	}
 )
-.cut((floor) => {
+.cut<{"obj": {hello: "world"}}>((floor) => {
 	floor.drop("obj", {hello: "world"});
 })
 .handler((floor, response) => {
@@ -53,7 +56,7 @@ duplo.declareRoute<RequestTest, ResponseTest>("POST", "/user")
 .check(
 	userExist,
 	{
-		input: (pickup) => pickup<string>("firstname"),
+		input: (pickup) => pickup("firstname"),
 		validate: (info) => info === "user.notexist",
 		catch: (response, info) => response.code(403).info(info).send(),
 		output: (drop, info, data) => console.log("output"),

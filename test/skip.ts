@@ -10,19 +10,20 @@ const skipCheker = duplo.createChecker(
 			
 		},
 		outputInfo: ["notSkip"],
+		options: 10
 	}
 );
 
-const skipProcessBis = duplo.createProcess("skipProcess")
-.cut(() => {
+const skipProcessBis = duplo.createProcess("skipProcess", {options: 1})
+.cut<{zoumba: number}>(() => {
 	console.log("not skip process");
 })
-.build();
+.build({drop: ["zoumba"]});
 
 const skipProcess = duplo.createProcess("skipProcess")
 .extract({
 	query: {
-		skip: zod.string().containBool.optional()
+		skip: zod.string().containBool
 	}
 })
 .cut(() => {
@@ -39,8 +40,11 @@ const skipProcess = duplo.createProcess("skipProcess")
 )
 .process(
 	skipProcessBis,
-	{skip: (pickup) => pickup("skip")}
+	{skip: (pickup) => pickup("skip"), options: 10, pickup: ["zoumba"]}
 )
+.cut(({pickup}) => {
+	pickup("zoumba");
+})
 .build();
 
 duplo.declareRoute("GET", "/test/skip/{bool}")

@@ -2,17 +2,28 @@ import {ZodError, ZodType} from "zod";
 import {condition, mapped, spread} from "./route";
 import {CheckerExport, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
-import makeFloor from "./floor";
+import makeFloor, {Floor} from "./floor";
 import {Request} from "./request";
 import {Response} from "./response";
+import {FlatExtract} from "./utility";
 
 export type ErrorExtractProcessFunction<response extends Response> = (response: response, type: keyof ProcessExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
 
-export type ProcessHandlerFunction<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void;
+export type ProcessHandlerFunction<
+	response extends Response,
+	floor extends {},
+> = (floor: Floor<floor>, response: response, exitProcess: () => never) => void;
 
-export type ProcessShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void | Promise<void>;
+export type ProcessShort<
+	response extends Response,
+	floor extends {},
+> = (floor: Floor<floor>, response: response, exitProcess: () => never) => void | Promise<void>;
 
-export type ProcessCustom<request extends Request, response extends Response> = (floor: ReturnType<typeof makeFloor>, request: request, response: response, exitProcess: () => never) => void | Promise<void>;
+export type ProcessCustom<
+	request extends Request, 
+	response extends Response,
+	floor extends {},
+> = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => void | Promise<void>;
 
 export interface ProcessSubscribers{
 	name: string;
@@ -21,21 +32,31 @@ export interface ProcessSubscribers{
 	hooksLifeCyle: HooksLifeCycle;
 	extracted: ProcessExtractObj;
 	steps: Array<
-		ProcessShort<Response> | {
+		ProcessShort<Response, any> | {
 			type: "checker" | "process",
 			name: string,
 			options: unknown,
 			pickup?: string[]
 		}
 	>
-	handlerFunction?: ProcessHandlerFunction<any>;
+	handlerFunction?: ProcessHandlerFunction<any, any>;
 }
 
 export type CreateProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
-> = (name: string) => BuilderPatternProcess<request, response, extractObj>;
+	options extends any = any,
+	input extends any = any,
+> = (
+	name: string, 
+	params?: CreateProcessParams<options, input>,
+) => BuilderPatternProcess<request, response, extractObj, options, input>;
+
+export interface CreateProcessParams<options extends any, input extends any>{
+	options?: options;
+	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input,
+}
 
 export interface ProcessExtractObj{
 	body?: Record<string, ZodType> | ZodType,
@@ -44,61 +65,101 @@ export interface ProcessExtractObj{
 	headers?: Record<string, ZodType> | ZodType,
 }
 
-export interface BuildProcessParameters<drop extends string, input extends any, options extends any>{
-	options?: options;
-	drop?: drop[];
-	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
+export interface BuildProcessParameters<floor extends {}, drop extends string>{
+	drop?: (keyof floor)[] & drop[];
 	allowExitProcess?: boolean;
 }
 
-export interface ProcessCheckerParams<checkerExport extends CheckerExport, response extends Response>{
-	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
+export interface ProcessCheckerParams<
+	checkerExport extends CheckerExport, 
+	response extends Response,
+	floor extends {},
+>{
+	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
 	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
 	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
-	options?: checkerExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => checkerExport["options"]);
-	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
+	output?: (drop: Floor<floor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
+	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
-export interface ProcessProcessParams<processExport extends ProcessExport>{
+export interface ProcessProcessParams<
+	processExport extends ProcessExport,
+	pickup extends string,
+	floor extends {},
+>{
 	options?: processExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => processExport["options"]);
-	pickup?: processExport["drop"];
-	input?: processExport["input"];
-	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
+	pickup?: processExport["drop"] & pickup[];
+	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<processExport["input"], undefined>>;
+	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
+
+export type PickupDropProcess<
+	processExport extends ProcessExport,
+	pickup extends string,
+> = Pick<processExport extends ProcessExport<infer input, infer options, infer extractObj, infer floor>? floor : never, pickup>
 
 export interface BuilderPatternProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
+	options extends any = any,
+	input extends any = any,
+	floor extends {options: options, input: input} = {options: options, input: input},
 >{
-	hook: AddHooksLifeCycle<BuilderPatternProcess<request, response, extractObj>, request, response>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternProcess<request, response, extractObj, options, input, floor>, request, response>["addHook"];
 
-	extract(
-		extractObj: extractObj, 
+	extract<
+		localeExtractObj extends extractObj,
+		localFloor extends FlatExtract<localeExtractObj>,
+	>(
+		extractObj: localeExtractObj, 
 		error?: ErrorExtractProcessFunction<response>
-	): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
-	check<checkerExport extends CheckerExport>(
+	check<
+		localFloor extends {},
+		checkerExport extends CheckerExport,
+	>(
 		checker: checkerExport, 
-		params: ProcessCheckerParams<checkerExport, response>
-	): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">; 
+		params: ProcessCheckerParams<checkerExport, response, floor & localFloor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">; 
 
-	process<processExport extends ProcessExport>(
+	process<
+		localFloor extends {},
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
 		process: processExport, 
-		params?: ProcessProcessParams<processExport>
-	): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+		params?: ProcessProcessParams<processExport, pickup, floor & localFloor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor & PickupDropProcess<processExport, pickup>>, "hook" | "extract">;
 
-	cut(short: ProcessShort<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+	cut<localFloor extends {}>(
+		short: ProcessShort<response, floor & localFloor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
-	custom(customFunction: ProcessCustom<request, response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+	custom<localFloor extends {}>(
+		customFunction: ProcessCustom<request, response, floor & localFloor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
-	handler(handlerFunction: ProcessHandlerFunction<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract" | "check" | "process" | "handler" | "cut" | "custom">;
+	handler<localFloor extends {}>(
+		handlerFunction: ProcessHandlerFunction<response, floor & localFloor>
+	): Pick<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "build">;
 	
-	build<drop extends string, input extends any, options extends any>(buildProcessParameters?: BuildProcessParameters<drop, input, options>): ProcessExport<drop, input, options, extractObj>;
+	build<
+		drop extends string
+	>(
+		buildProcessParameters?: BuildProcessParameters<floor, drop>
+	): ProcessExport<input, options, extractObj, floor, drop>;
 }
 
-export interface ProcessExport<drop = string, input = any, options = any, extractObj = ProcessExtractObj>{
+export interface ProcessExport<
+	input extends any = any, 
+	options extends any = any, 
+	extractObj extends ProcessExtractObj = ProcessExtractObj,
+	floor extends Record<any, any> = Record<any, any>,
+	drop extends string = string,
+>{
 	name: string;
 	options?: options;
 	processFunction: ProcessFunction;
@@ -114,7 +175,7 @@ export const __exitProcess__ = Symbol("exitProcess");
 
 export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
 		
-	const createProcess: CreateProcess = (name: string) => {
+	const createProcess: CreateProcess = (name, createParams) => {
 		const extracted: ProcessExtractObj = {};
 		const hooksLifeCyle = makeHooksLifeCycle();
 
@@ -233,7 +294,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		let grapHandlerFunction: ProcessHandlerFunction<Response>;
+		let grapHandlerFunction: ProcessHandlerFunction<Response, any>;
 		const handler: BuilderPatternProcess["handler"] = (handlerFunction) => {
 			grapHandlerFunction = handlerFunction;
 
@@ -244,8 +305,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 
 		const build: BuilderPatternProcess["build"] = (buildProcessParameters) => {
 			const stringFunction = processFunctionString(
-				!!buildProcessParameters?.input,
-				!!buildProcessParameters?.options,
+				!!createParams?.input,
+				!!createParams?.options,
 				exitProcessTry(
 					!!buildProcessParameters?.allowExitProcess,
 					spread(
@@ -329,7 +390,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 
 			serverHooksLifeCycle.onCreateProcess.launchSubscriber({
 				name,
-				options: buildProcessParameters?.options,
+				options: createParams?.options,
 				drop: buildProcessParameters?.drop,
 				hooksLifeCyle,
 				extracted,
@@ -339,8 +400,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 
 			return {
 				name,
-				options: buildProcessParameters?.options,
-				input: buildProcessParameters?.input,
+				options: createParams?.options,
+				input: createParams?.input,
 				drop: buildProcessParameters?.drop,
 				processFunction,
 				hooksLifeCyle,
@@ -365,8 +426,10 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			request extends Request = Request, 
 			response extends Response = Response,
 			extractObj extends ProcessExtractObj = ProcessExtractObj,
-		>(name: string){
-			return createProcess(name) as BuilderPatternProcess<request, response, extractObj>;
+			options extends any = any,
+			input extends any = any,
+		>(name: string, params?: CreateProcessParams<options, input>){
+			return createProcess(name, params) as BuilderPatternProcess<request, response, extractObj, options, input>;
 		}
 	};
 }
