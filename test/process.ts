@@ -12,7 +12,7 @@ interface textEx extends ProcessExtractObj{
 	key?: string;
 }
 
-export const getUser = duplo.createProcess<Request, ResponseTest, textEx>("getUser")
+export const getUser = duplo.createProcess<Request, ResponseTest, textEx>("getUser", {input: () => 1})
 .extract({
 	params: {
 		userId: zod.coerce.number(),
@@ -20,6 +20,9 @@ export const getUser = duplo.createProcess<Request, ResponseTest, textEx>("getUs
 })
 .cut((floor, response, exitProcess) => {
 	// exitProcess();
-	floor.drop("user", {username: "paul"});
+	const test = floor.pickup("input");
+	return {
+		user: {username: "paul"}
+	};
 })
-.build({allowExitProcess: true, drop: ["user"]});
+.build(["user"]);
