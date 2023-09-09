@@ -1,28 +1,30 @@
 import {Request} from "./request";
-import makeFloor from "./floor";
+import makeFloor, {Floor} from "./floor";
 import {__exec__, Response} from "./response";
 import correctPath from "./correctPath";
-import {boolean, ZodError, ZodType} from "zod";
-import {CheckerExport} from "./checker";
+import {ZodError, ZodType} from "zod";
+import {CheckerExport, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {DuploConfig} from "./main";
-import {ProcessExport} from "./process";
+import {PickupDropProcess, ProcessExport} from "./process";
 import makeContentTypeParserSystem from "./contentTypeParser";
 import makeAbstractRoutesSystem, {AbstractRoute, AbstractRouteSubscribers} from "./abstractRoute";
+import {FlatExtract, PromiseOrNot} from "./utility";
 
 
 export type DeclareRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-> = (method: Request["method"], path: string | string[], abstractRoute?: AbstractRoute) => BuilderPatternRoute<request, response, extractObj>;
+	floor extends {} = {},
+> = (method: Request["method"], path: string | string[], abstractRoute?: AbstractRoute) => BuilderPatternRoute<request, response, extractObj, floor>;
 
 export interface RouteSubscribers{
 	path: string[];
 	method: string;
 	abstractRoute?: AbstractRouteSubscribers;
 	hooksLifeCyle: HooksLifeCycle;
-	access: RouteShortAccess<any, any> | {
+	access: RouteShortAccess<any, any, any, any> | {
 		type: "process",
 		name: string,
 		options: unknown,
@@ -30,7 +32,7 @@ export interface RouteSubscribers{
 	};
 	extracted: RouteExtractObj;
 	steps: Array<
-		RouteShort<Response> | {
+		RouteShort<Response, any, any> | {
 			type: "checker" | "process",
 			name: string,
 			options: unknown,
@@ -55,66 +57,116 @@ export type RoutesObject = Record<
 	Record<string, RouteFunction>
 >;
 
-export type RoutehandlerFunction<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response) => void;
+export type RoutehandlerFunction<
+	response extends Response, 
+	floor extends {},
+> = (floor: Floor<floor>, response: response) => void;
 
-export type RouteNotfoundHandlerFunction = (request: Request, response: Response) => void | Promise<void>;
-export type RouteErrorHandlerFunction = (request: Request, response: Response, error: Error) => void | Promise<void>;
+export type RouteNotfoundHandlerFunction = (request: Request, response: Response) => PromiseOrNot<void>;
+export type RouteErrorHandlerFunction = (request: Request, response: Response, error: Error) => PromiseOrNot<void>;
 
-export type RouteShortAccess<request extends Request, response extends Response> = (floor: ReturnType<typeof makeFloor>, request: request, response: response) => void | Promise<void>;
-export type RouteShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response) => void | Promise<void>;
+export type RouteShortAccess<
+	request extends Request, 
+	response extends Response, 
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, request: request, response: response) => PromiseOrNot<returnFloor | undefined | void>;
 
-export interface RouteCheckerParams<checkerExport extends CheckerExport, response extends Response>{
-	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	validate(info: checkerExport["outputInfo"][number], data?: any): boolean;
-	catch(response: response, info: checkerExport["outputInfo"][number], data?: any): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
-	readonly options?: checkerExport["options"];
-	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
+export type RouteShort<
+	response extends Response,
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, response: response) => PromiseOrNot<returnFloor | undefined | void>;
+
+export interface RouteCheckerParams<
+	checkerExport extends CheckerExport, 
+	response extends Response,
+	floor extends {},
+>{
+	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
+	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
+	catch(response: response, info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): void;
+	output?: (drop: Floor<floor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
+	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
-export interface RouteProcessParams<processExport extends ProcessExport>{
-	options?: processExport["options"];
-	pickup?: processExport["drop"];
-	input?: processExport["input"];
-	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
+export interface RouteProcessParams<
+	processExport extends ProcessExport,
+	pickup extends string,
+	floor extends {},
+>{
+	options?: processExport["options"] | ((pickup: Floor<floor>["pickup"]) => processExport["options"]);
+	pickup?: processExport["drop"] & pickup[];
+	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<processExport["input"], undefined>>;
+	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
-export interface RouteProcessAccessParams<processExport extends ProcessExport>{
+export interface RouteProcessAccessParams<
+	processExport extends ProcessExport, 
+	pickup extends string,
+	floor extends {},
+>{
 	options?: processExport["options"];
-	pickup?: processExport["drop"];
-	input?: processExport["input"];
+	pickup?: processExport["drop"] & pickup[];
+	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<processExport["input"], undefined>>;
 }
 
 export interface BuilderPatternRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
+	floor extends {} = {},
 >{
-	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj>, request, response>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj, floor>, request, response>["addHook"];
 
-	access<processExport extends ProcessExport>(
-		process: processExport | RouteShortAccess<request, response>, 
-		params?: RouteProcessAccessParams<processExport>
-	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "access">;
-
-	extract(
-		extractObj: extractObj, 
-		error?: ErrorExtractFunction<response>
-	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
-
-	check<checkerExport extends CheckerExport>(
-		checker: checkerExport, 
-		params: RouteCheckerParams<checkerExport, response>
-	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
-
-	process<processExport extends ProcessExport>(
+	access<
+		localFloor extends {},
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
 		process: processExport, 
-		params?: RouteProcessParams<processExport>
-	): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
+		params?: RouteProcessAccessParams<processExport, pickup, floor>
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & PickupDropProcess<processExport, pickup>>, "hook" | "access">;
 
-	cut(short: RouteShort<response>): Omit<BuilderPatternRoute<request, response, extractObj>, "hook" | "extract" | "access">;
+	access<
+		localFloor extends {},
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
+		process: RouteShortAccess<request, response, localFloor, floor>, 
+		params?: never
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "access">;
 
-	handler(handlerFunction: RoutehandlerFunction<response>): void;
+	extract<
+		localeExtractObj extends extractObj,
+		localFloor extends FlatExtract<localeExtractObj>
+	>(
+		extractObj: localeExtractObj, 
+		error?: ErrorExtractFunction<response>,
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
+
+	check<
+		localFloor extends {},
+		checkerExport extends CheckerExport,
+	>(
+		checker: checkerExport, 
+		params: RouteCheckerParams<checkerExport, response, floor & localFloor>
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
+
+	process<
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
+		process: processExport, 
+		params?: RouteProcessParams<processExport, pickup, floor>
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & PickupDropProcess<processExport, pickup>>, "hook" | "extract" | "access">;
+
+	cut<localFloor extends {}>(
+		short: RouteShort<response, localFloor, floor>
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
+
+	handler(handlerFunction: RoutehandlerFunction<response, floor>): void;
 }
 
 export default function makeRoutesSystem(
@@ -139,15 +191,9 @@ export default function makeRoutesSystem(
 
 	//function to set notfound handler with hooklifecycle
 	function setNotfoundHandler(notFoundFunction: RouteNotfoundHandlerFunction){
-		const launchOnConstructRequest = mainHooksLifeCyle.onConstructRequest.build();
-		const launchOnConstructResponse = mainHooksLifeCyle.onConstructResponse.build();
-		const launchOnError = mainHooksLifeCyle.onError.build();
-		const launchBeforeSend = mainHooksLifeCyle.beforeSend.build();
-		const launchAfterSend = mainHooksLifeCyle.afterSend.build();
-
 		notfoundHandlerFunction = async(request: Request, response: Response) => {
-			await launchOnConstructRequest(request);
-			await launchOnConstructResponse(response);
+			await mainHooksLifeCyle.onConstructRequest.launchSubscriber(request);
+			await mainHooksLifeCyle.onConstructResponse.launchSubscriber(response);
 			
 			try {
 				try {
@@ -157,7 +203,7 @@ export default function makeRoutesSystem(
 				}
 				catch (error){
 					if(error instanceof Error){
-						launchOnError(request, response, error);
+						mainHooksLifeCyle.onError.launchSubscriber(request, response, error);
 						errorHandlerFunction(request, response, error);
 					}
 					else throw error;
@@ -165,9 +211,9 @@ export default function makeRoutesSystem(
 			} 
 			catch (response){
 				if(response instanceof Response){
-					await launchBeforeSend(request, response);
+					await  mainHooksLifeCyle.beforeSend.launchSubscriber(request, response);
 					response[__exec__]();
-					await launchAfterSend(request, response);
+					await mainHooksLifeCyle.afterSend.launchSubscriber(request, response);
 				}
 				else throw response;
 			}
@@ -325,7 +371,7 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const cut: BuilderPatternRoute["cut"] = (short) => {
+		const cut: BuilderPatternRoute<any, any, any, any>["cut"] = (short) => {
 			steps.push(short);
 
 			return {
@@ -336,7 +382,7 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const handler: BuilderPatternRoute["handler"] = (handlerFunction) => {
+		const handler: BuilderPatternRoute<any, any, any, any>["handler"] = (handlerFunction) => {
 			const launchOnConstructRequest = hooksLifeCyle.onConstructRequest.build();
 			const launchOnConstructResponse = hooksLifeCyle.onConstructResponse.build();
 			const launchBeforeParsingBody = hooksLifeCyle.beforeParsingBody.build();
@@ -402,7 +448,8 @@ export default function makeRoutesSystem(
 											checkerStep(
 												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
 												index,
-												!!step.output
+												!!step.output,
+												typeof step.options === "function",
 											)
 										) :
 										skipStep(
@@ -412,6 +459,7 @@ export default function makeRoutesSystem(
 												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
 												index,
 												!!step.input,
+												typeof step.options === "function",
 												mapped(
 													step?.pickup || [],
 													(value) => processDrop(value)
@@ -650,15 +698,17 @@ ${block}
 
 const cutStep = (async: boolean, index: number) => /* js */`
 currentStep = ${index};
-${async ? "await " : ""}this.steps[${index}](floor, response);
+result = ${async ? "await " : ""}this.steps[${index}](floor, response);
+
+if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
 
-const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
+const checkerStep = (async: boolean, index: number, hasOutput: boolean, optionsIsFunction: boolean) => /* js */`
 currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].handler(
 	this.steps[${index}].input(floor.pickup),
 	(info, data) => ({info, data}),
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 );
 
 if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}].catch(
@@ -670,12 +720,12 @@ if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}]
 ${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, result.data);` : ""}
 `;
 
-const processStep = (async: boolean, index: number, hasInput: boolean, drop: string) => /* js */`
+const processStep = (async: boolean, index: number, hasInput: boolean, optionsIsFunction: boolean, drop: string) => /* js */`
 currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 	request, 
 	response, 
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 	${hasInput ? /* js */`this.steps[${index}].input(floor.pickup)` : ""}
 );
 

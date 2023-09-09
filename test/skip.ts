@@ -6,23 +6,27 @@ const skipCheker = duplo.createChecker(
 	{
 		async handler(value: any, output, options){
 			console.log("not skip checker");
-			return output("notSkip");
+			return output("notSkip", undefined);
 			
 		},
 		outputInfo: ["notSkip"],
+		options: 10
 	}
 );
 
-const skipProcessBis = duplo.createProcess("skipProcess")
+const skipProcessBis = duplo.createProcess("skipProcess", {options: 1})
 .cut(() => {
 	console.log("not skip process");
+	return {
+		zoumba: 2
+	};
 })
-.build();
+.build(["zoumba"]);
 
 const skipProcess = duplo.createProcess("skipProcess")
 .extract({
 	query: {
-		skip: zod.string().containBool.optional()
+		skip: zod.string().containBool
 	}
 })
 .cut(() => {
@@ -39,8 +43,11 @@ const skipProcess = duplo.createProcess("skipProcess")
 )
 .process(
 	skipProcessBis,
-	{skip: (pickup) => pickup("skip")}
+	{skip: (pickup) => pickup("skip"), options: 10, pickup: ["zoumba"]}
 )
+.cut(({pickup}) => {
+	pickup("zoumba");
+})
 .build();
 
 duplo.declareRoute("GET", "/test/skip/{bool}")

@@ -1,9 +1,11 @@
-export interface Floor{
-	pickup<returnType = any>(index: string): returnType;
-	drop(index: string, value: any): void;
+export interface Floor<floor extends {}>{
+	pickup<key extends keyof floor>(index: key): floor[key];
+	// pickup<key extends keyof floor>(index: string): any;
+	drop<key extends keyof floor>(index: key, value: floor[key]): void;
+	// drop(index: string, value: any): void;
 }
 
-export default function makeFloor(): Floor
+export default function makeFloor(): Floor<{}>
 {
 	const floor: Record<string, any> = new Map();
 

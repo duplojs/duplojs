@@ -1,18 +1,31 @@
 import {ZodError, ZodType} from "zod";
 import {condition, mapped, spread} from "./route";
-import {CheckerExport} from "./checker";
+import {CheckerExport, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
-import makeFloor from "./floor";
+import makeFloor, {Floor} from "./floor";
 import {Request} from "./request";
 import {Response} from "./response";
+import {FlatExtract, PromiseOrNot} from "./utility";
 
 export type ErrorExtractProcessFunction<response extends Response> = (response: response, type: keyof ProcessExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
 
-export type ProcessHandlerFunction<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void;
+export type ProcessHandlerFunction<
+	response extends Response,
+	floor extends {},
+> = (floor: Floor<floor>, response: response, exitProcess: () => never) => void;
 
-export type ProcessShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void | Promise<void>;
+export type ProcessShort<
+	response extends Response,
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
 
-export type ProcessCustom<request extends Request, response extends Response> = (floor: ReturnType<typeof makeFloor>, request: request, response: response, exitProcess: () => never) => void | Promise<void>;
+export type ProcessCustom<
+	request extends Request, 
+	response extends Response,
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
 
 export interface ProcessSubscribers{
 	name: string;
@@ -21,21 +34,32 @@ export interface ProcessSubscribers{
 	hooksLifeCyle: HooksLifeCycle;
 	extracted: ProcessExtractObj;
 	steps: Array<
-		ProcessShort<Response> | {
-			type: "checker" | "process",
+		ProcessShort<Response, any, any> | {
+			type: "checker" | "process" | "custom",
 			name: string,
 			options: unknown,
 			pickup?: string[]
 		}
 	>
-	handlerFunction?: ProcessHandlerFunction<any>;
+	handlerFunction?: ProcessHandlerFunction<any, any>;
 }
 
 export type CreateProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
-> = (name: string) => BuilderPatternProcess<request, response, extractObj>;
+	options extends any = any,
+	input extends any = any,
+> = (
+	name: string, 
+	params?: CreateProcessParams<options, input>,
+) => BuilderPatternProcess<request, response, extractObj, options, input>;
+
+export interface CreateProcessParams<options extends any, input extends any>{
+	options?: options;
+	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
+	allowExitProcess?: boolean;
+}
 
 export interface ProcessExtractObj{
 	body?: Record<string, ZodType> | ZodType,
@@ -44,61 +68,93 @@ export interface ProcessExtractObj{
 	headers?: Record<string, ZodType> | ZodType,
 }
 
-export interface BuildProcessParameters<drop extends string, input extends any, options extends any>{
-	options?: options;
-	drop?: drop[];
-	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
-	allowExitProcess?: boolean;
+export interface ProcessCheckerParams<
+	checkerExport extends CheckerExport, 
+	response extends Response,
+	floor extends {},
+>{
+	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
+	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
+	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
+	output?: (drop: Floor<floor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
+	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
-export interface ProcessCheckerParams<checkerExport extends CheckerExport, response extends Response>{
-	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	validate(info: checkerExport["outputInfo"][number], data?: any): boolean;
-	catch(response: response, info: checkerExport["outputInfo"][number], data: any, exitProcess: () => never): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: any) => void;
-	readonly options?: checkerExport["options"];
-	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
+export interface ProcessProcessParams<
+	processExport extends ProcessExport,
+	pickup extends string,
+	floor extends {},
+>{
+	options?: processExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => processExport["options"]);
+	pickup?: processExport["drop"] & pickup[];
+	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<processExport["input"], undefined>>;
+	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
-export interface ProcessProcessParams<processExport extends ProcessExport>{
-	options?: processExport["options"];
-	pickup?: processExport["drop"];
-	input?: processExport["input"];
-	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
-}
+export type PickupDropProcess<
+	processExport extends ProcessExport,
+	pickup extends string,
+> = Pick<processExport extends ProcessExport<infer input, infer options, infer extractObj, infer floor>? floor : never, pickup>
 
 export interface BuilderPatternProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
+	options extends any = any,
+	input extends any = any,
+	floor extends {options: options, input: input} = {options: options, input: input},
 >{
-	hook: AddHooksLifeCycle<BuilderPatternProcess<request, response, extractObj>, request, response>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternProcess<request, response, extractObj, options, input, floor>, request, response>["addHook"];
 
-	extract(
-		extractObj: extractObj, 
+	extract<
+		localeExtractObj extends extractObj,
+		localFloor extends FlatExtract<localeExtractObj>,
+	>(
+		extractObj: localeExtractObj, 
 		error?: ErrorExtractProcessFunction<response>
-	): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
-	check<checkerExport extends CheckerExport>(
+	check<
+		localFloor extends {},
+		checkerExport extends CheckerExport,
+	>(
 		checker: checkerExport, 
-		params: ProcessCheckerParams<checkerExport, response>
-	): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">; 
+		params: ProcessCheckerParams<checkerExport, response, floor & localFloor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">; 
 
-	process<processExport extends ProcessExport>(
+	process<
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
 		process: processExport, 
-		params?: ProcessProcessParams<processExport>
-	): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+		params?: ProcessProcessParams<processExport, pickup, floor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & PickupDropProcess<processExport, pickup>>, "hook" | "extract">;
 
-	cut(short: ProcessShort<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+	cut<localFloor extends {}>(
+		short: ProcessShort<response, localFloor, floor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
-	custom(customFunction: ProcessCustom<request, response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract">;
+	custom<localFloor extends {}>(
+		customFunction: ProcessCustom<request, response, localFloor, floor>
+	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
-	handler(handlerFunction: ProcessHandlerFunction<response>): Omit<BuilderPatternProcess<request, response, extractObj>, "hook" | "extract" | "check" | "process" | "handler" | "cut" | "custom">;
+	handler(
+		handlerFunction: ProcessHandlerFunction<response, floor>
+	): Pick<BuilderPatternProcess<request, response, extractObj, options, input, floor>, "build">;
 	
-	build<drop extends string, input extends any, options extends any>(buildProcessParameters?: BuildProcessParameters<drop, input, options>): ProcessExport<drop, input, options, extractObj>;
+	build<drop extends string>(
+		drop?: (keyof floor)[] & drop[]
+	): ProcessExport<input, options, extractObj, floor, drop>;
 }
 
-export interface ProcessExport<drop = string, input = any, options = any, extractObj = ProcessExtractObj>{
+export interface ProcessExport<
+	input extends any = any, 
+	options extends any = any, 
+	extractObj extends ProcessExtractObj = ProcessExtractObj,
+	floor extends Record<any, any> = Record<any, any>,
+	drop extends string = string,
+>{
 	name: string;
 	options?: options;
 	processFunction: ProcessFunction;
@@ -114,7 +170,7 @@ export const __exitProcess__ = Symbol("exitProcess");
 
 export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
 		
-	const createProcess: CreateProcess = (name: string) => {
+	const createProcess: CreateProcess = (name, createParams) => {
 		const extracted: ProcessExtractObj = {};
 		const hooksLifeCyle = makeHooksLifeCycle();
 
@@ -204,7 +260,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const cut: BuilderPatternProcess["cut"] = (short) => {
+		const cut: BuilderPatternProcess<any, any, any, any, any, any>["cut"] = (short) => {
 			steps.push(short);
 
 			return {
@@ -217,7 +273,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const custom: BuilderPatternProcess["custom"] = (customFunction) => {
+		const custom: BuilderPatternProcess<any, any, any, any, any, any>["custom"] = (customFunction) => {
 			steps.push({
 				customFunction,
 				type: "custom"
@@ -233,8 +289,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		let grapHandlerFunction: ProcessHandlerFunction<Response>;
-		const handler: BuilderPatternProcess["handler"] = (handlerFunction) => {
+		let grapHandlerFunction: ProcessHandlerFunction<Response, any>;
+		const handler: BuilderPatternProcess<any, any, any, any, any, any>["handler"] = (handlerFunction) => {
 			grapHandlerFunction = handlerFunction;
 
 			return {
@@ -242,12 +298,12 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const build: BuilderPatternProcess["build"] = (buildProcessParameters) => {
+		const build: BuilderPatternProcess["build"] = (drop) => {
 			const stringFunction = processFunctionString(
-				!!buildProcessParameters?.input,
-				!!buildProcessParameters?.options,
+				!!createParams?.input,
+				!!createParams?.options,
 				exitProcessTry(
-					!!buildProcessParameters?.allowExitProcess,
+					!!createParams?.allowExitProcess,
 					spread(
 						condition(
 							Object.keys(extracted).length !== 0,
@@ -282,7 +338,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 													checkerStep(
 														(step as CheckerExport).handler.constructor.name === "AsyncFunction",
 														index,
-														!!step.output
+														!!step.output,
+														typeof step.options === "function",
 													)
 												) :
 												skipStep(
@@ -292,6 +349,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 														(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
 														index,
 														!!step.input,
+														typeof step.options === "function",
 														mapped(
 															step?.pickup || [],
 															(value) => processDrop(value)
@@ -309,7 +367,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 						)
 					)
 				),
-				buildProcessParameters?.drop || []
+				drop || []
 			);
 			
 			const processFunction: ProcessFunction = eval(stringFunction).bind({
@@ -320,15 +378,15 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				makeFloor,
 				grapHandlerFunction,
 				__exitProcess__,
-				exitProcess: buildProcessParameters?.allowExitProcess ?
+				exitProcess: createParams?.allowExitProcess ?
 					() => {throw __exitProcess__;} :
 					() => {throw new Error("ExitProcess function is call in Process who has not 'allowExitProcess' define on true");}
 			});
 
 			serverHooksLifeCycle.onCreateProcess.launchSubscriber({
 				name,
-				options: buildProcessParameters?.options,
-				drop: buildProcessParameters?.drop,
+				options: createParams?.options,
+				drop: drop,
 				hooksLifeCyle,
 				extracted,
 				handlerFunction: grapHandlerFunction,
@@ -337,9 +395,9 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 
 			return {
 				name,
-				options: buildProcessParameters?.options,
-				input: buildProcessParameters?.input,
-				drop: buildProcessParameters?.drop,
+				options: createParams?.options,
+				input: createParams?.input,
+				drop: drop,
 				processFunction,
 				hooksLifeCyle,
 				extracted,
@@ -363,8 +421,10 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			request extends Request = Request, 
 			response extends Response = Response,
 			extractObj extends ProcessExtractObj = ProcessExtractObj,
-		>(name: string){
-			return createProcess(name) as BuilderPatternProcess<request, response, extractObj>;
+			options extends any = any,
+			input extends any = any,
+		>(name: string, params?: CreateProcessParams<options, input>){
+			return createProcess(name, params) as BuilderPatternProcess<request, response, extractObj, options, input>;
 		}
 	};
 }
@@ -449,18 +509,22 @@ ${block}
 `;
 
 const cutStep = (async: boolean, index: number) => /* js */`
-${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+result = ${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+
+if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
 
 const cutsomStep = (async: boolean, index: number) => /* js */`
-${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response, this.exitProcess);
+result = ${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response, this.exitProcess);
+
+if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
 
-const checkerStep = (async: boolean, index: number, hasOutput: boolean) => /* js */`
+const checkerStep = (async: boolean, index: number, hasOutput: boolean, optionsIsFunction: boolean) => /* js */`
 result = ${async ? "await " : ""}this.steps[${index}].handler(
 	this.steps[${index}].input(floor.pickup),
 	(info, data) => ({info, data}),
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 );
 
 if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}].catch(
@@ -473,12 +537,12 @@ if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}]
 ${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, result.data);` : ""}
 `;
 
-const processStep = (async: boolean, index: number, hasInput: boolean, drop: string) => /* js */`
+const processStep = (async: boolean, index: number, hasInput: boolean, optionsIsFunction: boolean, drop: string) => /* js */`
 currentChecker = this.steps[${index}].name;
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 	request, 
 	response, 
-	this.steps[${index}].options,
+	${!optionsIsFunction ? /* js */`this.steps[${index}].options` : /* js */`this.steps[${index}].options(floor.pickup)`},
 	${hasInput ? /* js */`this.steps[${index}].input(floor.pickup)` : ""}
 );
 
