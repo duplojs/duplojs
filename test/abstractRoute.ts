@@ -25,16 +25,16 @@ const deepAbstractRoute = mustBeConnected({pickup: ["test"], options: {t: 5}, ig
 })
 .extract({
 	query: {
-		base: zod.string()
+		id: zod.coerce.number()
 	}
 })
-.check<{user: ReturnCheckerType<typeof userExist>}, typeof userExist>(
+.check<{user: ReturnCheckerType<typeof userExist, undefined>}, typeof userExist>(
 	userExist,
 	{
-		input: (pickup) => pickup("base"),
+		input: (pickup) => pickup("id"),
 		validate: (info, data) => info === "user.exist",
 		catch: (response, info, data) => response.code(404).info(info).send(),
-		output: (drop, info, data) => drop("user", data),
+		output: (drop, info, data) => drop("user", data as ReturnCheckerType<typeof userExist, undefined>),
 		options: {type: "id"}
 	}
 )
@@ -47,11 +47,11 @@ deepAbstractRoute({pickup: ["user", "deep", "test"], ignorePrefix: true})
 .access((floor, request, response) => {
 	return {
 		tttt: floor.pickup("test"),
-		user: floor.pickup("user")
+		usser: floor.pickup("user")
 	};
 })
 .extract({})
 .handler((floor, response) => {
-	const options = floor.pickup("user");
+	const options = floor.pickup("usser");
 	response.code(200).info("test").send(options);
 });
