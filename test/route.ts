@@ -1,8 +1,7 @@
-import {ProcessExport, RouteProcessAccessParams, zod} from "../scripts";
+import {zod} from "../scripts";
 import {duplo} from ".";
 import {userExist} from "./checker";
 import {ResponseTest, getUser} from "./process";
-import {RequestTest} from "./abstractRoute";
 import "./abstractRoute";
 import "./skip";
 import "./custom";
@@ -33,8 +32,10 @@ duplo.declareRoute("GET", "/user/{userId}")
 		options: {type: "id"}
 	}
 )
-.cut<{"obj": {hello: "world"}}>((floor) => {
-	floor.drop("obj", {hello: "world"});
+.cut((floor) => {
+	if(!!true) return {
+		obj: {hello: "world"}
+	};
 })
 .handler((floor, response) => {
 	response.code(200).send({
@@ -43,8 +44,12 @@ duplo.declareRoute("GET", "/user/{userId}")
 	});
 });
 
-duplo.declareRoute<RequestTest, ResponseTest>("POST", "/user")
-.access((floor, request) => {request.cookies;})
+duplo.declareRoute("POST", "/user")
+.access((floor, request) => {
+	return {
+		yoyo: 55
+	};
+})
 .extract({
 	body: {
 		firstname: zod.string().min(5).max(50),

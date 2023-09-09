@@ -18,9 +18,11 @@ export const getUser = duplo.createProcess<Request, ResponseTest, textEx>("getUs
 		userId: zod.coerce.number(),
 	},
 })
-.cut<{user: {username: "paul"}}>((floor, response, exitProcess) => {
+.cut((floor, response, exitProcess) => {
 	// exitProcess();
 	const test = floor.pickup("input");
-	floor.drop("user", {username: "paul"});
+	return {
+		user: {username: "paul"}
+	};
 })
-.build({allowExitProcess: true, drop: ["user"]});
+.build(["user"]);

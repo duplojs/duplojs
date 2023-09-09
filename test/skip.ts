@@ -15,10 +15,13 @@ const skipCheker = duplo.createChecker(
 );
 
 const skipProcessBis = duplo.createProcess("skipProcess", {options: 1})
-.cut<{zoumba: number}>(() => {
+.cut(() => {
 	console.log("not skip process");
+	return {
+		zoumba: 2
+	};
 })
-.build({drop: ["zoumba"]});
+.build(["zoumba"]);
 
 const skipProcess = duplo.createProcess("skipProcess")
 .extract({

@@ -1,12 +1,13 @@
 import {ZodType, ZodError} from "zod";
 import {CheckerExport, ReturnCheckerType} from "./checker";
-import makeFloor from "./floor";
+import makeFloor, {Floor} from "./floor";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
-import {ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
+import {PickupDropProcess, ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
 import {DeclareRoute, RouteExtractObj, RouteProcessAccessParams, RouteProcessParams, condition, mapped, spread} from "./route";
 import correctPath from "./correctPath";
 import {Response} from "./response";
 import {Request} from "./request";
+import {FlatExtract, PromiseOrNot} from "./utility";
 
 export interface AbstractRoute{
 	prefix: string;
@@ -22,7 +23,7 @@ export interface AbstractRouteSubscribers{
 	name: string;
 	abstractRoute?: AbstractRouteSubscribers;
 	hooksLifeCyle: HooksLifeCycle;
-	access: AbstractRouteShortAccess<any, any> | {
+	access: AbstractRouteShortAccess<any, any, any, any> | {
 		type: "process",
 		name: string,
 		options: unknown,
@@ -30,14 +31,14 @@ export interface AbstractRouteSubscribers{
 	};
 	extracted: RouteExtractObj;
 	steps: Array<
-		AbstractRouteShort<Response> | {
+		AbstractRouteShort<Response, any, any> | {
 			type: "checker" | "process",
 			name: string,
 			options: unknown,
 			pickup?: string[]
 		}
 	>;
-	handlerFunction?: AbstractRouteHandlerFunction<any>;
+	handlerFunction?: AbstractRouteHandlerFunction<any, any>;
 	options?: any;
 	drop?: string[];
 	pickup?: string[];
@@ -47,108 +48,177 @@ export type ErrorExtractAbstractRouteFunction<response extends Response> = (resp
 
 export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
-export type DeclareAbstractRoute<
+export interface DeclareAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-> = (name: string, abstractRoute?: AbstractRoute) => BuilderPatternAbstractRoute<request, response, extractObj>;
-
-export type AbstractRouteShortAccess<request extends Request, response extends Response> = (floor: ReturnType<typeof makeFloor>, request: request, response: response, exitProcess: () => never) => void | Promise<void>;
-
-export interface BuildAbstractRouteParameters<values extends string, options extends any>{
-	options?: options;
-	prefix?: string;
-	drop?: values[];
-	allowExitProcess?: boolean;
+	options extends any = any,
+	floor extends {} = {},
+>{
+	(
+		name: string, 
+		params?: DeclareAbstractRouteParams<options>, 
+		abstractRoute?: AbstractRoute
+	): BuilderPatternAbstractRoute<request, response, extractObj, options, floor>;
 }
 
-export interface AbstractRouteParams<values extends string, options extends any>{
-	pickup?: values[]; 
+export type AbstractRouteShortAccess<
+	request extends Request, 
+	response extends Response,
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
+
+export interface  DeclareAbstractRouteParams<options extends any>{
+	options?: options;
+	allowExitProcess?: boolean;
+	prefix?: string;
+}
+
+export interface AbstractRouteParams<
+	drop extends string, 
+	pickup extends string, 
+	options extends any,
+>{
+	pickup?: drop[] & pickup[]; 
 	options?: options;
 	ignorePrefix?: boolean;
 }
 
-export type AbstractRouteHandlerFunction<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void;
+export type AbstractRouteHandlerFunction<
+	response extends Response,
+	floor extends {},
+> = (floor: Floor<floor>, response: response, exitProcess: () => never) => void;
 
-export type AbstractRouteShort<response extends Response> = (floor: ReturnType<typeof makeFloor>, response: response, exitProcess: () => never) => void | Promise<void>;
+export type AbstractRouteShort<
+	response extends Response,
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
 
-export interface AbstractRouteCheckerParams<checkerExport extends CheckerExport, response extends Response>{
-	input(pickup: ReturnType<typeof makeFloor>["pickup"]): Parameters<checkerExport["handler"]>[0];
+export interface AbstractRouteCheckerParams<
+	checkerExport extends CheckerExport, 
+	response extends Response,
+	floor extends {},
+>{
+	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
 	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
 	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
-	options?: checkerExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => checkerExport["options"]);
-	skip?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => boolean;
+	output?: (drop: Floor<floor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
+	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
-export type UseAbstractRoute<
-	values extends string, 
-	options extends any,
+export interface UseAbstractRoute<
 	request extends Request,
 	response extends Response,
-	extractObj extends RouteExtractObj = RouteExtractObj
-> = (params?: AbstractRouteParams<values, options>) => {
-	declareRoute<
-		req extends Request = request, 
-		res extends Response = response,
-		extObj extends RouteExtractObj = extractObj,
-	>(method: Request["method"], path: string | string[]): ReturnType<
-		DeclareRoute<
-			request & req, 
-			response & res, 
-			extractObj & extObj
-		>
-	>,
+	extractObj extends RouteExtractObj,
+	options extends any,
+	floor extends Record<any, any>,
+	drop extends string,
+	
+>{
+	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>): {
+		declareRoute<
+			req extends Request = request, 
+			res extends Response = response,
+			extObj extends RouteExtractObj = extractObj,
+			localFloor extends floor = floor,
+		>(method: Request["method"], path: string | string[]): ReturnType<
+			DeclareRoute<
+				request & req, 
+				response & res, 
+				extractObj & extObj,
+				Pick<localFloor, pickup>
+			>
+		>,
 
-	declareAbstractRoute<
-		req extends Request = request, 
-		res extends Response = response,
-		extObj extends RouteExtractObj = extractObj,
-	>(name: string): ReturnType<
-		DeclareAbstractRoute<
-			request & req, 
-			response & res, 
-			extractObj & extObj
-		>
-	>,
-};
+		declareAbstractRoute<
+			req extends Request = request, 
+			res extends Response = response,
+			extObj extends RouteExtractObj = extractObj,
+			options extends {} = {},
+			localFloor extends floor = floor,
+		>(name: string, params?: DeclareAbstractRouteParams<options>): ReturnType<
+			DeclareAbstractRoute<
+				request & req, 
+				response & res, 
+				extractObj & extObj,
+				options,
+				{options: options} & Pick<localFloor, pickup>
+			>
+		>,
+	};
+}
 
 export interface BuilderPatternAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
+	options extends any = any,
+	floor extends {} = {},
 >{
-	hook: AddHooksLifeCycle<BuilderPatternAbstractRoute<request, response, extractObj>, request, response>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, request, response>["addHook"];
 
-	access<processExport extends ProcessExport>(
-		process: processExport | AbstractRouteShortAccess<request, response>, 
-		params?: RouteProcessAccessParams<processExport>
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "access">;
-
-	extract(
-		extractObj: Omit<extractObj, "body">,
-		error?: ErrorExtractAbstractRouteFunction<response>
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "extract" | "access">;
-
-	check<checkerExport extends CheckerExport>(
-		checker: checkerExport, 
-		params: AbstractRouteCheckerParams<checkerExport, response>
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "extract" | "access">;
-
-	process<processExport extends ProcessExport>(
+	access<
+		localFloor extends {},
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
 		process: processExport, 
-		params?: RouteProcessParams<processExport>
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "extract" | "access">;
+		params?: RouteProcessAccessParams<processExport, pickup, floor>
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & PickupDropProcess<processExport, pickup>>, "hook" | "access">;
 
-	cut(short: AbstractRouteShort<response>): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "extract" | "access">;
+	access<
+		localFloor extends {},
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
+		process: AbstractRouteShortAccess<request, response, localFloor, floor>, 
+		params?: never
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "access">;
 
-	handler(handlerFunction: AbstractRouteHandlerFunction<response>): Omit<BuilderPatternAbstractRoute<request, response, extractObj>, "hook" | "extract" | "access" | "check" | "process" | "cut" | "handler">;
+	extract<
+		localeExtractObj extends Omit<extractObj, "body">,
+		localFloor extends FlatExtract<localeExtractObj>
+	>(
+		extractObj: localeExtractObj,
+		error?: ErrorExtractAbstractRouteFunction<response>
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
+
+	check<
+		localFloor extends {},
+		checkerExport extends CheckerExport,
+	>(
+		checker: checkerExport, 
+		params: AbstractRouteCheckerParams<checkerExport, response, floor & localFloor>
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
+
+	process<
+		processExport extends ProcessExport,
+		pickup extends string,
+	>(
+		process: processExport, 
+		params?: RouteProcessParams<processExport, pickup, floor>,
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & PickupDropProcess<processExport, pickup>>, "hook" | "extract" | "access">;
+
+	cut<localFloor extends {}>(
+		short: AbstractRouteShort<response, localFloor, floor>
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
+
+	handler(
+		handlerFunction: AbstractRouteHandlerFunction<response, floor>
+	): Pick<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, "build">;
 	
-	build<drop extends string, options extends any>(buildAbstractRouteParameters?: BuildAbstractRouteParameters<drop, options>): UseAbstractRoute<drop, options, request, response, extractObj>;
+	build<
+		drop extends string,
+	>(
+		drop?: (keyof floor)[] & drop[]
+	): UseAbstractRoute<request, response, extractObj, options, floor, drop>;
 }
 
 export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, serverHooksLifeCycle: ServerHooksLifeCycle){
-	const declareAbstractRoute: DeclareAbstractRoute = (name, abstractRoute) => {
+	const declareAbstractRoute: DeclareAbstractRoute = (name, declareParams, abstractRoute) => {
 		const hooksLifeCyle = makeHooksLifeCycle();
 		if(abstractRoute){
 			//copy abstract hook
@@ -276,7 +346,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		const cut: BuilderPatternAbstractRoute["cut"] = (short) => {
+		const cut: BuilderPatternAbstractRoute<any, any, any, any, any>["cut"] = (short) => {
 			steps.push(short);
 
 			return {
@@ -288,8 +358,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		let grapHandlerFunction: ProcessHandlerFunction<Response>;
-		const handler: BuilderPatternAbstractRoute["handler"] = (handlerFunction) => {
+		let grapHandlerFunction: ProcessHandlerFunction<Response, any>;
+		const handler: BuilderPatternAbstractRoute<any, any, any, any, any>["handler"] = (handlerFunction) => {
 			grapHandlerFunction = handlerFunction;
 
 			return {
@@ -297,11 +367,11 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		const build: BuilderPatternAbstractRoute["build"] = (buildAbstractRouteParameters) => {
+		const build: BuilderPatternAbstractRoute["build"] = (drop) => {
 			const stringFunction = abstractRouteFunctionString(
-				!!buildAbstractRouteParameters?.options,
+				!!declareParams?.options,
 				exitProcessTry(
-					!!buildAbstractRouteParameters?.allowExitProcess,
+					!!declareParams?.allowExitProcess,
 					spread(
 						condition(
 							!!abstractRoute,
@@ -383,7 +453,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 						)
 					)
 				),
-				buildAbstractRouteParameters?.drop || []
+				drop || []
 			);
 
 			const abstractRouteFunction = eval(stringFunction).bind({
@@ -396,7 +466,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				grapAccess,
 				abstractRoute,
 				__exitProcess__,
-				exitProcess: buildAbstractRouteParameters?.allowExitProcess ?
+				exitProcess: declareParams?.allowExitProcess ?
 					() => {throw __exitProcess__;} :
 					() => {throw new Error("ExitProcess function is call in abstractRoute who has not 'allowExitProcess' define on true");}
 			});
@@ -409,8 +479,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				extracted,
 				steps: steps,
 				handlerFunction: grapHandlerFunction,
-				options: buildAbstractRouteParameters?.options,
-				drop: buildAbstractRouteParameters?.drop,
+				options: declareParams?.options,
+				drop: drop,
 			});
 
 			return (params) => {
@@ -418,9 +488,9 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 					abstractRouteFunction,
 					hooksLifeCyle,
 					name,
-					prefix: params?.ignorePrefix ? "" : ((abstractRoute?.prefix || "") + correctPath(buildAbstractRouteParameters?.prefix || "")),
+					prefix: params?.ignorePrefix ? "" : ((abstractRoute?.prefix || "") + correctPath(declareParams?.prefix || "")),
 					pickup: params?.pickup || [],
-					options: params?.options || buildAbstractRouteParameters?.options || {},
+					options: params?.options || declareParams?.options || {},
 					abstractRouteSubscribers: {
 						name,
 						abstractRoute: abstractRoute?.abstractRouteSubscribers,
@@ -429,8 +499,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 						extracted,
 						steps: steps,
 						handlerFunction: grapHandlerFunction,
-						options: params?.options || buildAbstractRouteParameters?.options || {},
-						drop: buildAbstractRouteParameters?.drop,
+						options: params?.options || declareParams?.options || {},
+						drop: drop,
 						pickup: params?.pickup || [],
 					},
 				};
@@ -459,8 +529,10 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			request extends Request = Request, 
 			response extends Response = Response,
 			extractObj extends RouteExtractObj = RouteExtractObj,
-		>(name: string){
-			return declareAbstractRoute(name) as ReturnType<DeclareAbstractRoute<request, response, extractObj>>;
+			options extends any = any,
+			floor extends {options: options} = {options: options},
+		>(name: string, params?: DeclareAbstractRouteParams<options>){
+			return declareAbstractRoute(name, params) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, floor>>;
 		},
 	};
 }
@@ -568,7 +640,9 @@ ${block}
 `;
 
 const cutStep = (async: boolean, index: number) => /* js */`
-${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+result = ${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+
+if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
 
 const checkerStep = (async: boolean, index: number, hasOutput: boolean, optionsIsFunction: boolean) => /* js */`
