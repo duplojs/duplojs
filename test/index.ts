@@ -1,5 +1,4 @@
-import Duplo, {zod, Request} from "../scripts/index";
-import {DuploInputFunction} from "../scripts/lib/main";
+import Duplo, {zod, Request, DuploInstance} from "../scripts/index";
 
 export const duplo = Duplo({port: 1506, host: "0.0.0.0"});
 
@@ -30,8 +29,6 @@ duplo.addHook("onDeclareRoute", route => {
 	// if(route.abstractRoute)console.log(route);
 });
 
-const useTest: DuploInputFunction<{test: number}, number> = (instance, con) => (1);
-
-let a = duplo.use(useTest, {test: 1});
+let a = duplo.use((test, options: {lala: 1}) => options, {lala: 1});
 
 import("./route").then(() => duplo.launch());

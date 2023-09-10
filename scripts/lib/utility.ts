@@ -22,3 +22,5 @@ type ToPaths<T, P extends string = ""> = T extends Record<number, unknown>
 type FromPaths<T extends { path: string; type: unknown }> = {
     [P in T["path"]]: Extract<T, { path: P }>["type"]
 }
+
+export type AnyFunction = (...args: any) => any;
