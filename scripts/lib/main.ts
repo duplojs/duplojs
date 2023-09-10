@@ -7,6 +7,8 @@ import makeCheckerSystem from "./checker.ts";
 import correctPath from "./correctPath.ts";
 import makeProcessSystem from "./process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
+import {AnyFunction} from "./utility.ts";
+import {DeclareAbstractRoute} from "./abstractRoute.ts";
 
 declare module "http"{
 	interface IncomingMessage{
@@ -21,17 +23,26 @@ export interface DuploConfig{
 	onClose?: () => void;
 	prefix?: string;
 }
+export interface DuploInstance<duploConfig extends DuploConfig> {
+	Request: typeof Request;
+	Response: typeof Response;
+	server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
+	config: duploConfig;
+	launch(onReady?: () => void): DuploInstance<duploConfig>["server"];
+	addHook: AddHooksLifeCycle["addHook"] & AddServerHooksLifeCycle["addHook"];
+	declareRoute: ReturnType<typeof makeRoutesSystem>["declareRoute"];
+	createChecker: ReturnType<typeof makeCheckerSystem>["createChecker"];
+	setNotfoundHandler: ReturnType<typeof makeRoutesSystem>["setNotfoundHandler"];
+	setErrorHandler: ReturnType<typeof makeRoutesSystem>["setErrorHandler"];
+	createProcess: ReturnType<typeof makeProcessSystem>["createProcess"];
+	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
+	declareAbstractRoute: ReturnType<typeof makeRoutesSystem>["declareAbstractRoute"];
+	use<
+		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
+	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
+}
 
-export type DuploInputFunction<
-	options extends Record<string, any> = Record<never, never>,
-	returnType extends any = void
-> = (
-	instance: ReturnType<typeof Duplo>, 
-	config: DuploConfig, 
-	options: options | undefined,
-) => returnType;
-
-export default function Duplo(config: DuploConfig){
+export default function Duplo<duploConfig extends DuploConfig>(config: duploConfig): DuploInstance<duploConfig>{
 	config.prefix = correctPath(config.prefix || "");
 	if(config.prefix === "/")config.prefix = "";
 
@@ -69,7 +80,7 @@ export default function Duplo(config: DuploConfig){
 		else if(serverHooksLifeCycle[name as keyof typeof serverHooksLifeCycle])serverHooksLifeCycle[name as keyof typeof serverHooksLifeCycle].addSubscriber(hookFunction as any);
 	};
 
-	return {
+	const duploInstance: DuploInstance<duploConfig> = {
 		Request,
 		Response,
 		server,
@@ -101,11 +112,10 @@ export default function Duplo(config: DuploConfig){
 		createProcess,
 		addContentTypeParsers,
 		declareAbstractRoute,
-		use<
-			options extends Record<string, any> = Record<never, never>,
-			returnType extends any = any,
-		>(input: DuploInputFunction<options, returnType>, options?: options){
-			return input(this, config, options);
+		use(input, options){
+			return input(duploInstance, options);
 		}
-	}; 
+	};
+
+	return duploInstance; 
 }
