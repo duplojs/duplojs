@@ -1,11 +1,9 @@
 import makeFloor from "./floor";
 import {ServerHooksLifeCycle} from "./hook";
 import {Response} from "./response";
-import {PromiseOrNot} from "./utility";
+import {PromiseOrNot, AnyFunction} from "./utility";
 
 export type ReturnCheckerType<checker extends CheckerExport, exclude = never> = Exclude<Awaited<ReturnType<checker["handler"]>>["data"], exclude>;
-
-type anyFunction = (...args: any) => any;
 
 export type CheckerOutput<
 	outputInfo extends string = string, 
@@ -24,7 +22,7 @@ export interface CreateCheckerParameters<
 	outputInfo extends string, 
 	options extends any, 
 	returnOutputType extends CheckerOutput<outputInfo>,
-	context extends Record<string, anyFunction>,
+	context extends Record<string, AnyFunction>,
 > {
 	handler(
 		input: input, 
@@ -47,7 +45,7 @@ export type CheckerExport<
 	outputInfo extends string = string, 
 	options extends any = any, 
 	returnOutputType extends CheckerOutput<outputInfo> = CheckerOutput<outputInfo>,
-	context extends Record<string, anyFunction> = Record<string, anyFunction>
+	context extends Record<string, AnyFunction> = Record<string, AnyFunction>
 > = {
 	name: string,
 	handler: CreateCheckerParameters<input, outputInfo, options, returnOutputType, context>["handler"],
