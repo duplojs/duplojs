@@ -632,7 +632,9 @@ ${drop}
 `;
 
 const accessFunctionString = (async: boolean) => /* js */`
-${async ? "await " : ""}this.grapAccess(floor, request, response);
+result = ${async ? "await " : ""}this.grapAccess(floor, request, response);
+
+if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
 
 const accessProcessString = (async: boolean, hasInput: boolean, drop: string) => 

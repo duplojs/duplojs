@@ -23,7 +23,7 @@ export default function makeContentTypeParserSystem(){
 		addContentTypeParsers,
 		buildContentTypeBody(){
 			addContentTypeParsers(
-				"application/json", 
+				/application\/json/, 
 				(request) => new Promise(
 					(resolve, reject) => {
 						let stringBody = "";
@@ -37,7 +37,7 @@ export default function makeContentTypeParserSystem(){
 				)
 			);
 			addContentTypeParsers(
-				"text/plain", 
+				/text\/plain/, 
 				(request) => new Promise(
 					(resolve, reject) => {
 						let stringBody = "";
