@@ -65,6 +65,18 @@ export class Response{
 		throw this;
 	}
 
+	redirect(path: string){
+		if(this.isSend === true){
+			console.error(new Error("A response has already been sent."));
+			return;
+		}
+		this.isSend = true;
+
+		this.#headers["Location"] = path;
+		this.#status = this.#status === 200 ? 302 : this.#status;
+		throw this;
+	}
+
 	getHeaders(){
 		return this.#headers;
 	}

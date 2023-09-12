@@ -92,3 +92,8 @@ duplo.declareRoute("GET", "/return/number")
 .handler((floor, response) => {
 	response.code(200).send(23);
 });
+
+duplo.declareRoute("GET", "/redirect")
+.handler((floor, response) => {
+	response.redirect("/return/number");
+});
