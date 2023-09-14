@@ -17,7 +17,7 @@ export const userExist = duplo.createChecker(
 	}
 );
 
-type test1 = ReturnCheckerType<typeof userExist>
+type test1 = ReturnCheckerType<typeof userExist, "user.exist">
 
 
 export const userHasRight = duplo.createChecker(

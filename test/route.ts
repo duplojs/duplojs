@@ -1,7 +1,7 @@
 import {zod} from "../scripts";
 import {duplo} from ".";
 import {userExist} from "./checker";
-import {ResponseTest, getUser} from "./process";
+import {getUser} from "./process";
 import "./abstractRoute";
 import "./skip";
 import "./custom";
@@ -32,7 +32,8 @@ duplo.declareRoute("GET", "/user/{userId}")
 		options: {type: "id"}
 	}
 )
-.cut((floor) => {
+.cut(({pickup}) => {
+	
 	if(!!true) return {
 		obj: {hello: "world"}
 	};
