@@ -3,7 +3,18 @@ import {ServerHooksLifeCycle} from "./hook";
 import {Response} from "./response";
 import {PromiseOrNot, AnyFunction} from "./utility";
 
-export type ReturnCheckerType<checker extends CheckerExport, exclude = never> = Exclude<Awaited<ReturnType<checker["handler"]>>["data"], exclude>;
+export type GetReturnCheckerType<checker extends CheckerExport> = Awaited<ReturnType<checker["handler"]>>;
+
+export type MapReturnCheckerType<checker extends CheckerExport> = {
+	[Property in GetReturnCheckerType<checker> as Property["info"]]: Property["data"];
+};
+
+export type ReturnCheckerType<
+	checker extends CheckerExport, 
+	info extends keyof MapReturnCheckerType<checker> = string
+> = info extends keyof MapReturnCheckerType<checker> ? 
+	MapReturnCheckerType<checker>[info] : 
+	GetReturnCheckerType<checker>["data"];
 
 export type CheckerOutput<
 	outputInfo extends string = string, 
@@ -14,7 +25,10 @@ export type CheckerOutput<
 };
 
 interface CheckerOutputFunction<outputInfo extends string>{
-	output<outputData extends any = any>(info: outputInfo, data: outputData): CheckerOutput<outputInfo, outputData>;
+	output<
+		info extends outputInfo,
+		outputData extends any,
+	>(info: outputInfo & info, data: outputData): CheckerOutput<info, outputData>;
 }
 
 export interface CreateCheckerParameters<

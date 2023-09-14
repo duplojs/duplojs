@@ -3,7 +3,7 @@ import makeFloor, {Floor} from "./floor";
 import {__exec__, Response} from "./response";
 import correctPath from "./correctPath";
 import {ZodError, ZodType} from "zod";
-import {CheckerExport, ReturnCheckerType} from "./checker";
+import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {DuploConfig} from "./main";
 import {PickupDropProcess, ProcessExport} from "./process";
@@ -82,11 +82,12 @@ export interface RouteCheckerParams<
 	checkerExport extends CheckerExport, 
 	response extends Response,
 	floor extends {},
+	info extends string,
 >{
 	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
 	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
 	catch(response: response, info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): void;
-	output?: (drop: Floor<floor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	output?: (drop: Floor<floor>["drop"], info: info, data: ReturnCheckerType<checkerExport, info>) => void;
 	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
 	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
@@ -127,7 +128,15 @@ export interface BuilderPatternRoute<
 	>(
 		process: processExport, 
 		params?: RouteProcessAccessParams<processExport, pickup, floor>
-	): Omit<BuilderPatternRoute<request, response, extractObj, floor & PickupDropProcess<processExport, pickup>>, "hook" | "access">;
+	): Omit<
+		BuilderPatternRoute<
+			request, 
+			response, 
+			extractObj, 
+			floor & PickupDropProcess<processExport, pickup>
+		>, 
+		"hook" | "access"
+	>;
 
 	access<
 		localFloor extends {},
@@ -147,12 +156,26 @@ export interface BuilderPatternRoute<
 	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
 
 	check<
-		localFloor extends {},
 		checkerExport extends CheckerExport,
+		index extends string = never,
+		info extends keyof MapReturnCheckerType<checkerExport> = string,
 	>(
 		checker: checkerExport, 
-		params: RouteCheckerParams<checkerExport, response, floor & localFloor>
-	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
+		params: RouteCheckerParams<
+			checkerExport, 
+			response, 
+			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>},
+			info
+		>
+	): Omit<
+		BuilderPatternRoute<
+			request, 
+			response, 
+			extractObj, 
+			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>}
+		>, 
+		"hook" | "extract" | "access"
+	>;
 
 	process<
 		processExport extends ProcessExport,
@@ -160,7 +183,16 @@ export interface BuilderPatternRoute<
 	>(
 		process: processExport, 
 		params?: RouteProcessParams<processExport, pickup, floor>
-	): Omit<BuilderPatternRoute<request, response, extractObj, floor & PickupDropProcess<processExport, pickup>>, "hook" | "extract" | "access">;
+	): Omit<
+		BuilderPatternRoute<
+			request, 
+			response, 
+			extractObj, 
+			floor & PickupDropProcess<processExport, pickup extends keyof processExport ? pickup : never>
+		>
+		, 
+		"hook" | "extract" | "access"
+	>;
 
 	cut<localFloor extends {}>(
 		short: RouteShort<response, localFloor, floor>
@@ -323,7 +355,7 @@ export default function makeRoutesSystem(
 		};
 
 		const steps: any[] = [];
-		const process: BuilderPatternRoute["process"] = (processExport, params) => {
+		const process: BuilderPatternRoute<any, any, any, any>["process"] = (processExport, params) => {
 			steps.push({
 				type: "process",
 				name: processExport.name,
@@ -350,7 +382,7 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const check: BuilderPatternRoute["check"] = (checker, params) => {
+		const check: BuilderPatternRoute<any, any, any, any>["check"] = (checker, params) => {
 			steps.push({
 				type: "checker",
 				name: checker.name,

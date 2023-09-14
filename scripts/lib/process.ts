@@ -1,6 +1,6 @@
 import {ZodError, ZodType} from "zod";
 import {condition, mapped, spread} from "./route";
-import {CheckerExport, ReturnCheckerType} from "./checker";
+import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import makeFloor, {Floor} from "./floor";
 import {Request} from "./request";
@@ -72,11 +72,12 @@ export interface ProcessCheckerParams<
 	checkerExport extends CheckerExport, 
 	response extends Response,
 	floor extends {},
+	info extends string,
 >{
 	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
 	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
 	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
-	output?: (drop: Floor<floor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	output?: (drop: Floor<floor>["drop"], info: info, data: ReturnCheckerType<checkerExport, info>) => void;
 	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
 	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
@@ -95,7 +96,11 @@ export interface ProcessProcessParams<
 export type PickupDropProcess<
 	processExport extends ProcessExport,
 	pickup extends string,
-> = Pick<processExport extends ProcessExport<infer input, infer options, infer extractObj, infer floor>? floor : never, pickup>
+> = processExport extends ProcessExport<infer input, infer options, infer extractObj, infer floor>?
+	Pick<
+		floor, 
+		pickup extends keyof floor ? pickup : never
+	> : never;
 
 export interface BuilderPatternProcess<
 	request extends Request = Request, 
@@ -116,12 +121,28 @@ export interface BuilderPatternProcess<
 	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
 	check<
-		localFloor extends {},
 		checkerExport extends CheckerExport,
+		index extends string = never,
+		info extends keyof MapReturnCheckerType<checkerExport> = string,
 	>(
 		checker: checkerExport, 
-		params: ProcessCheckerParams<checkerExport, response, floor & localFloor>
-	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">; 
+		params: ProcessCheckerParams<
+			checkerExport, 
+			response, 
+			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>},
+			info
+		>
+	): Omit<
+		BuilderPatternProcess<
+			request, 
+			response, 
+			extractObj, 
+			options, 
+			input, 
+			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>}
+		>, 
+		"hook" | "extract"
+	>; 
 
 	process<
 		processExport extends ProcessExport,
@@ -129,7 +150,17 @@ export interface BuilderPatternProcess<
 	>(
 		process: processExport, 
 		params?: ProcessProcessParams<processExport, pickup, floor>
-	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & PickupDropProcess<processExport, pickup>>, "hook" | "extract">;
+	): Omit<
+		BuilderPatternProcess<
+			request, 
+			response, 
+			extractObj, 
+			options, 
+			input, 
+			floor & PickupDropProcess<processExport, pickup>
+		>, 
+		"hook" | "extract"
+	>;
 
 	cut<localFloor extends {}>(
 		short: ProcessShort<response, localFloor, floor>
@@ -209,7 +240,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 		};
 
 		const steps: any[] = [];
-		const process: BuilderPatternProcess["process"] = (processExport, params) => {
+		const process: BuilderPatternProcess<any, any, any, any, any, any>["process"] = (processExport, params) => {
 			steps.push({
 				type: "process",
 				name: processExport.name,
@@ -237,7 +268,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const check: BuilderPatternProcess["check"] = (checker, params) => {
+		const check: BuilderPatternProcess<any, any, any, any, any, any>["check"] = (checker, params) => {
 			steps.push({
 				type: "checker",
 				name: checker.name,

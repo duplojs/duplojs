@@ -1,5 +1,5 @@
 import {duplo} from ".";
-import {ReturnCheckerType, zod} from "../scripts";
+import {zod} from "../scripts";
 import {userExist} from "./checker";
 
 const mustBeConnected = duplo.declareAbstractRoute("mustBeConnected", {options: {t: 1}, prefix: "test"})
@@ -28,13 +28,13 @@ const deepAbstractRoute = mustBeConnected({pickup: ["test"], options: {t: 5}, ig
 		id: zod.coerce.number()
 	}
 })
-.check<{user: ReturnCheckerType<typeof userExist, undefined>}, typeof userExist>(
+.check<typeof userExist, "user", "user.exist">(
 	userExist,
 	{
-		input: (pickup) => pickup("id"),
-		validate: (info, data) => info === "user.exist",
+		input: pickup => pickup("id"),
+		validate: info => info === "user.exist",
 		catch: (response, info, data) => response.code(404).info(info).send(),
-		output: (drop, info, data) => drop("user", data as ReturnCheckerType<typeof userExist, undefined>),
+		output: (drop, info, data) => drop("user", data),
 		options: {type: "id"}
 	}
 )

@@ -1,5 +1,5 @@
 import {ZodType, ZodError} from "zod";
-import {CheckerExport, ReturnCheckerType} from "./checker";
+import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker";
 import makeFloor, {Floor} from "./floor";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {PickupDropProcess, ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
@@ -100,11 +100,12 @@ export interface AbstractRouteCheckerParams<
 	checkerExport extends CheckerExport, 
 	response extends Response,
 	floor extends {},
+	info extends string,
 >{
 	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
+	validate(info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>): boolean;
 	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
-	output?: (drop: Floor<floor>["drop"], info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>) => void;
+	output?: (drop: Floor<floor>["drop"], info: info, data: ReturnCheckerType<checkerExport, info>) => void;
 	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
 	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
@@ -118,7 +119,7 @@ export interface UseAbstractRoute<
 	drop extends string,
 	
 >{
-	<pickup extends string = never>(params?: AbstractRouteParams<drop, pickup, options>): {
+	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>): {
 		declareRoute<
 			req extends Request = request, 
 			res extends Response = response,
@@ -129,7 +130,7 @@ export interface UseAbstractRoute<
 				request & req, 
 				response & res, 
 				extractObj & extObj,
-				Pick<localFloor, pickup>
+				Pick<localFloor, pickup extends keyof localFloor ? pickup : never>
 			>
 		>,
 
@@ -145,7 +146,7 @@ export interface UseAbstractRoute<
 				response & res, 
 				extractObj & extObj,
 				options,
-				{options: options} & Pick<localFloor, pickup>
+				{options: options} & Pick<localFloor, pickup extends keyof localFloor ? pickup : never>
 			>
 		>,
 	};
@@ -167,7 +168,16 @@ export interface BuilderPatternAbstractRoute<
 	>(
 		process: processExport, 
 		params?: RouteProcessAccessParams<processExport, pickup, floor>
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & PickupDropProcess<processExport, pickup>>, "hook" | "access">;
+	): Omit<
+		BuilderPatternAbstractRoute<
+		request, 
+		response, 
+		extractObj, 
+		options, 
+		floor & PickupDropProcess<processExport, pickup>
+		>, 
+		"hook" | "access"
+	>;
 
 	access<
 		localFloor extends {},
@@ -187,12 +197,27 @@ export interface BuilderPatternAbstractRoute<
 	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
 
 	check<
-		localFloor extends {},
 		checkerExport extends CheckerExport,
+		index extends string = never,
+		info extends keyof MapReturnCheckerType<checkerExport> = string,
 	>(
 		checker: checkerExport, 
-		params: AbstractRouteCheckerParams<checkerExport, response, floor & localFloor>
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
+		params: AbstractRouteCheckerParams<
+			checkerExport, 
+			response,
+			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>},
+			info
+		>
+	): Omit<
+		BuilderPatternAbstractRoute<
+			request, 
+			response, 
+			extractObj, 
+			options, 
+			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>}
+		>, 
+		"hook" | "extract" | "access"
+	>;
 
 	process<
 		processExport extends ProcessExport,
@@ -200,7 +225,16 @@ export interface BuilderPatternAbstractRoute<
 	>(
 		process: processExport, 
 		params?: RouteProcessParams<processExport, pickup, floor>,
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & PickupDropProcess<processExport, pickup>>, "hook" | "extract" | "access">;
+	): Omit<
+		BuilderPatternAbstractRoute<
+			request, 
+			response, 
+			extractObj, 
+			options, 
+			floor & PickupDropProcess<processExport, pickup>
+		>, 
+		"hook" | "extract" | "access"
+	>;
 
 	cut<localFloor extends {}>(
 		short: AbstractRouteShort<response, localFloor, floor>
@@ -297,7 +331,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		};
 
 		const steps: any[] = [];
-		const process: BuilderPatternAbstractRoute["process"] = (processExport, params) => {
+		const process: BuilderPatternAbstractRoute<any, any, any, any, any>["process"] = (processExport, params) => {
 			steps.push({
 				type: "process",
 				name: processExport.name,
@@ -324,7 +358,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		const check: BuilderPatternAbstractRoute["check"] = (checker, params) => {
+		const check: BuilderPatternAbstractRoute<any, any, any, any, any>["check"] = (checker, params) => {
 			steps.push({
 				type: "checker",
 				name: checker.name,
