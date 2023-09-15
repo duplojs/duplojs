@@ -17,10 +17,10 @@ duplo.declareRoute("GET", "/user/{userId}")
 )
 .extract({
 	params: {
-		userId: zod.coerce.number()
+		userId: zod.coerce.number(),
 	},
-	cookies: {
-		test: zod.coerce.number()
+	headers: {
+		"user-agent": zod.string()
 	}
 })
 .check(
@@ -33,6 +33,7 @@ duplo.declareRoute("GET", "/user/{userId}")
 	}
 )
 .cut(({pickup}) => {
+	console.log(pickup("user-agent"));
 	
 	if(!!true) return {
 		obj: {hello: "world"}
