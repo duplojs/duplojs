@@ -14,18 +14,18 @@ export class Response{
 	rawResponse: InstanceType<typeof ServerResponse>;
 
 	code(status: number){
-		this.#status = status;
+		this.status = status;
 		return this;
 	}
 
-	#status = 200;
+	status = 200;
 
 	info(info: string){
-		this.#info = info;
+		this.information = info;
 		return this;
 	}
 
-	#info?: string;
+	information?: string;
 
 	send(data?: any){
 		if(this.isSend === true){
@@ -47,7 +47,7 @@ export class Response{
 
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 		this.#file = path;
-		this.#headers["content-type"] = mime.getType(path) || "text/plain; charset=utf-8";
+		this.headers["content-type"] = mime.getType(path) || "text/plain; charset=utf-8";
 		throw this;
 	}
 
@@ -60,8 +60,8 @@ export class Response{
 
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 		this.#file = path;
-		this.#headers["content-type"] = "application/octet-stream";
-		this.#headers["Content-Disposition"] = "attachment; filename=" + (name || basename(path));
+		this.headers["content-type"] = "application/octet-stream";
+		this.headers["Content-Disposition"] = "attachment; filename=" + (name || basename(path));
 		throw this;
 	}
 
@@ -72,31 +72,22 @@ export class Response{
 		}
 		this.isSend = true;
 
-		this.#headers["Location"] = path;
-		this.#status = this.#status === 200 ? 302 : this.#status;
+		this.headers["Location"] = path;
+		this.status = this.status === 200 ? 302 : this.status;
 		throw this;
 	}
 
-	getHeaders(){
-		return this.#headers;
-	}
-
-	getHeader(index: string){
-		return this.#headers[index.toLowerCase()];
-	}
-
 	setHeaders(headers: Record<string, string>){
-		this.#headers = {};
-		Object.entries(headers).forEach(([index, value]) => this.#headers[index.toLowerCase()] = value);
+		this.headers = {...this.headers, ...headers};
 		return this;
 	}
 
 	setHeader(index: string, value: string){
-		this.#headers[index.toLowerCase()] = value;
+		this.headers[index.toLowerCase()] = value;
 		return this;
 	}
 
-	#headers: Record<string, string> = {};
+	headers: Record<string, string> = {};
 
 	data: unknown;
 
@@ -105,30 +96,30 @@ export class Response{
 	isSend = false;
 
 	[__exec__](){
-		if(this.#info) this.#headers.info = this.#info;
+		if(this.information) this.headers.info = this.information;
 		if(this.data !== undefined){
-			const contentType = this.getHeader("content-type");
+			const contentType = this.headers["content-type"];
 			const hasContentType = contentType !== undefined;
 			
 			if(hasContentType === false && (typeof this.data === "string" || typeof this.data === "number")){
-				this.setHeader("content-type", "text/plain; charset=utf-8");
+				this.headers["content-type"] = "text/plain; charset=utf-8";
 				this.data = this.data.toString();
 			}
-			else if(hasContentType === false && this.data instanceof ArrayBuffer) this.setHeader("content-type", "application/octet-stream");
+			else if(hasContentType === false && this.data instanceof ArrayBuffer) this.headers["content-type"] = "application/octet-stream";
 			else if((hasContentType === false || /json/.test(contentType)) && typeof this.data === "object"){
-				if(hasContentType === false) this.setHeader("content-type", "application/json; charset=utf-8");
+				if(hasContentType === false) this.headers["content-type"] = "application/json; charset=utf-8";
 				this.data = JSON.stringify(this.data);
 			}
-			this.rawResponse.writeHead(this.#status, this.#headers);
+			this.rawResponse.writeHead(this.status, this.headers);
 			this.rawResponse.write(this.data);
 			this.rawResponse.end();
 		}
 		else if(this.#file){
-			this.rawResponse.writeHead(this.#status, this.#headers);
+			this.rawResponse.writeHead(this.status, this.headers);
 			createReadStream(this.#file).pipe(this.rawResponse);
 		}
 		else {
-			this.rawResponse.writeHead(this.#status, this.#headers);
+			this.rawResponse.writeHead(this.status, this.headers);
 			this.rawResponse.end();
 		}
 	}
