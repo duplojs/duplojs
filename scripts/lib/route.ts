@@ -711,7 +711,7 @@ currentExtractedType = "${type}";
 currentExtractedIndex = "";
 floor.drop(
 	"${type}",
-	this.extracted.${type}.parse(request.${type})
+	this.extracted["${type}"].parse(request["${type}"])
 );
 `;
 
@@ -720,7 +720,7 @@ currentExtractedType = "${type}";
 currentExtractedIndex = "${key}";
 floor.drop(
 	"${key}",
-	this.extracted.${type}.${key}.parse(request.${type}?.${key})
+	this.extracted["${type}"]["${key}"].parse(request["${type}"]?.["${key}"])
 );
 `;
 
