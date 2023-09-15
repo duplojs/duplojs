@@ -52,7 +52,7 @@ export default function makeContentTypeParserSystem(){
 			);
 
 			let stringFunction = /* js */`
-				const contentType = request.getHeader("content-type");
+				const contentType = request.headers["content-type"];
 				if(!contentType) return;
 			`;
 			contentTypeParsers.forEach((value, index) => {
