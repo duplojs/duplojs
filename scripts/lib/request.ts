@@ -17,11 +17,7 @@ export class Request{
 		return this.rawRequest.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
 	}
 
-	getHeader(key: string){
-		return this.rawRequest.headers[key.toLowerCase()];
-	}
-
-	getHeaders(){
+	get headers(){
 		return this.rawRequest.headers;
 	}
 
