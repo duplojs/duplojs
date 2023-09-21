@@ -34,7 +34,7 @@ interface CheckerOutputFunction<outputInfo extends string>{
 export interface CreateCheckerParameters<
 	input extends any, 
 	outputInfo extends string, 
-	options extends any, 
+	options extends Record<string, any>, 
 	returnOutputType extends CheckerOutput<outputInfo>,
 	context extends Record<string, AnyFunction>,
 > {
@@ -57,7 +57,7 @@ export interface CheckerParameters<input, outputInfo, options> {
 export type CheckerExport<
 	input extends any = any, 
 	outputInfo extends string = string, 
-	options extends any = any, 
+	options extends Record<string, any> = Record<string, any>, 
 	returnOutputType extends CheckerOutput<outputInfo> = CheckerOutput<outputInfo>,
 	context extends Record<string, AnyFunction> = Record<string, AnyFunction>
 > = {
@@ -71,7 +71,7 @@ export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeC
 	function createChecker<
 		input extends any, 
 		outputInfo extends string, 
-		options extends any, 
+		options extends Record<string, any>, 
 		returnOutputType extends CheckerOutput<outputInfo>,
 		context extends {},
 	>(name: string, createCheckerParameters: CreateCheckerParameters<input, outputInfo, options, returnOutputType, context>): CheckerExport<input, outputInfo, options, returnOutputType, context>

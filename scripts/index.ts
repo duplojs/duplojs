@@ -12,6 +12,7 @@ export type * from "./lib/process.ts";
 export {Request} from "./lib/request.ts";
 export {Response} from "./lib/response.ts";
 export type * from "./lib/route.ts";
+export type * from "./lib/utility.ts";
 
 export default Duplo;
 export {

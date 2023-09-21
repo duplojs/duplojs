@@ -5,6 +5,7 @@ export const userExist = duplo.createChecker(
 	"userExist",
 	{
 		async handler(value: number | string, output, options){
+			console.log(options);
 			if(options.type === "id"){
 				if(value !== 1) return output("user.notexist", undefined);
 				else return output("user.exist", {name: "math", id: value});
@@ -13,7 +14,7 @@ export const userExist = duplo.createChecker(
 			else return output("user.notexist", undefined);
 		},
 		outputInfo: ["user.exist", "user.notexist"],
-		options: {type: "id" as "id" | "firstname"},
+		options: {type: "id" as "id" | "firstname", test: "ok"},
 	}
 );
 

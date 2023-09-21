@@ -2,12 +2,10 @@
   "name": "@duplojs/duplojs",
   "version": "0.0.0",
   "author": "mathcovax",
-  "license": "ISC",
+  "description": "",
   "repository": "https://github.com/duplojs/duplojs",
-  "files": [
-    "dist",
-    "types"
-  ],
+  "license": "ISC",
+  "keywords": [],
   "types": "./types/index.ts",
   "exports": {
     "default": {
@@ -15,6 +13,10 @@
       "require": "./dist/duplo.cjs"
     }
   },
+  "files": [
+    "dist",
+    "types"
+  ],
   "publishConfig": {
     "access": "public"
   },
