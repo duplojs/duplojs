@@ -48,14 +48,14 @@ export type CreateProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
-	options extends any = any,
+	options extends Record<string, any> = Record<string, any>,
 	input extends any = any,
 > = (
 	name: string, 
 	params?: CreateProcessParams<options, input>,
 ) => BuilderPatternProcess<request, response, extractObj, options, input>;
 
-export interface CreateProcessParams<options extends any, input extends any>{
+export interface CreateProcessParams<options extends Record<string, any>, input extends any>{
 	options?: options;
 	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
 	allowExitProcess?: boolean;
@@ -106,7 +106,7 @@ export interface BuilderPatternProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
-	options extends any = any,
+	options extends Record<string, any> = Record<string, any>,
 	input extends any = any,
 	floor extends {options: options, input: input} = {options: options, input: input},
 >{
@@ -181,7 +181,7 @@ export interface BuilderPatternProcess<
 
 export interface ProcessExport<
 	input extends any = any, 
-	options extends any = any, 
+	options extends Record<string, any> = Record<string, any>, 
 	extractObj extends ProcessExtractObj = ProcessExtractObj,
 	floor extends Record<any, any> = Record<any, any>,
 	drop extends string = string,
@@ -241,10 +241,26 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 
 		const steps: any[] = [];
 		const process: BuilderPatternProcess<any, any, any, any, any, any>["process"] = (processExport, params) => {
+			let options;
+			if(
+				typeof processExport?.options === "object" && 
+				(
+					typeof params?.options === "function" ||
+					typeof params?.options === "object"
+				)
+			){
+				if(typeof params.options === "function") options = (pickup: any) => ({
+					...processExport.options,
+					...(params.options as (p: any) => any)(pickup)
+				});
+				else options = {...processExport.options, ...params.options};
+			}
+			else options = params?.options || processExport?.options;
+			
 			steps.push({
 				type: "process",
 				name: processExport.name,
-				options: params?.options || processExport?.options,
+				options: options,
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
@@ -269,11 +285,27 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 		};
 
 		const check: BuilderPatternProcess<any, any, any, any, any, any>["check"] = (checker, params) => {
+			let options;
+			if(
+				typeof checker?.options === "object" && 
+				(
+					typeof params?.options === "function" ||
+					typeof params?.options === "object"
+				)
+			){
+				if(typeof params.options === "function") options = (pickup: any) => ({
+					...checker.options,
+					...(params.options as (p: any) => any)(pickup)
+				});
+				else options = {...checker.options, ...params.options};
+			}
+			else options = params?.options || checker?.options;
+			
 			steps.push({
 				type: "checker",
 				name: checker.name,
 				handler: checker.handler,
-				options: params.options || checker.options || {},
+				options: options,
 				input: params.input,
 				validate: params.validate,
 				catch: params.catch,
@@ -452,7 +484,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			request extends Request = Request, 
 			response extends Response = Response,
 			extractObj extends ProcessExtractObj = ProcessExtractObj,
-			options extends any = any,
+			options extends Record<string, any> = Record<string, any>,
 			input extends any = any,
 		>(name: string, params?: CreateProcessParams<options, input>){
 			return createProcess(name, params) as BuilderPatternProcess<request, response, extractObj, options, input>;

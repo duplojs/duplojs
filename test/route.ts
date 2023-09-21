@@ -29,7 +29,7 @@ duplo.declareRoute("GET", "/user/{userId}")
 		input: (pickup) => pickup("userId"),
 		validate: (info, data) => info === "user.exist",
 		catch: (response, info, data) => response.code(404).info(info).send(),
-		options: {type: "id"}
+		options: {type: "id", test: "eeeeee"}
 	}
 )
 .cut(({pickup}) => {

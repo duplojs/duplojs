@@ -332,10 +332,26 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 
 		const steps: any[] = [];
 		const process: BuilderPatternAbstractRoute<any, any, any, any, any>["process"] = (processExport, params) => {
+			let options;
+			if(
+				typeof processExport?.options === "object" && 
+				(
+					typeof params?.options === "function" ||
+					typeof params?.options === "object"
+				)
+			){
+				if(typeof params.options === "function") options = (pickup: any) => ({
+					...processExport.options,
+					...(params.options as (p: any) => any)(pickup)
+				});
+				else options = {...processExport.options, ...params.options};
+			}
+			else options = params?.options || processExport?.options;
+			
 			steps.push({
 				type: "process",
 				name: processExport.name,
-				options: params?.options || processExport?.options,
+				options: options,
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
@@ -359,11 +375,27 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		};
 
 		const check: BuilderPatternAbstractRoute<any, any, any, any, any>["check"] = (checker, params) => {
+			let options;
+			if(
+				typeof checker?.options === "object" && 
+				(
+					typeof params?.options === "function" ||
+					typeof params?.options === "object"
+				)
+			){
+				if(typeof params.options === "function") options = (pickup: any) => ({
+					...checker.options,
+					...(params.options as (p: any) => any)(pickup)
+				});
+				else options = {...checker.options, ...params.options};
+			}
+			else options = params?.options || checker?.options;
+
 			steps.push({
 				type: "checker",
 				name: checker.name,
 				handler: checker.handler,
-				options: params.options || checker.options || {},
+				options: options,
 				input: params.input,
 				validate: params.validate,
 				catch: params.catch,

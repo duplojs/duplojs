@@ -10,11 +10,11 @@ const skipCheker = duplo.createChecker(
 			
 		},
 		outputInfo: ["notSkip"],
-		options: 10
+		options: {num: 10}
 	}
 );
 
-const skipProcessBis = duplo.createProcess("skipProcess", {options: 1})
+const skipProcessBis = duplo.createProcess("skipProcess", {options: {num: 1}})
 .cut(() => {
 	console.log("not skip process");
 	return {
@@ -43,7 +43,7 @@ const skipProcess = duplo.createProcess("skipProcess")
 )
 .process(
 	skipProcessBis,
-	{skip: (pickup) => pickup("skip"), options: 10, pickup: ["zoumba"]}
+	{skip: (pickup) => pickup("skip"), options: {num: 33}, pickup: ["zoumba"]}
 )
 .cut(({pickup}) => {
 	pickup("zoumba");
