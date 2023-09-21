@@ -10,11 +10,11 @@ const funcOptionsCheker = duplo.createChecker(
 			
 		},
 		outputInfo: ["notSkip"],
-		options: 1
+		options: {num: 1}
 	}
 );
 
-const funcOptionsProcess = duplo.createProcess("funcOptionsProcess", {options: 1, input: () => ({test: 1})})
+const funcOptionsProcess = duplo.createProcess("funcOptionsProcess", {options: {num: 10}, input: () => ({test: 1})})
 .extract({
 	params: {
 		test: zod.string().optional()
@@ -22,7 +22,7 @@ const funcOptionsProcess = duplo.createProcess("funcOptionsProcess", {options: 1
 })
 .cut(({pickup}) => {
 	pickup("test");
-	console.log("process : " + pickup("options"));
+	console.log("process : " + pickup("options").num);
 })
 .build();
 
@@ -42,13 +42,13 @@ duplo.declareRoute("GET", "/func/options/{number}")
 		input: (pickup) => pickup("number"),
 		validate: (info) => true,
 		catch: (response) => response.code(500).info("wtf").send(),
-		options: "111ef",
+		options: {num: 1},
 	}
 )
 .process(
 	funcOptionsProcess, 
 	{
-		options: 1,
+		options: {num: 1},
 	}
 )
 .check(
@@ -63,7 +63,7 @@ duplo.declareRoute("GET", "/func/options/{number}")
 .process(
 	funcOptionsProcess, 
 	{
-		options: (pickup) => pickup("number"),
+		options: (pickup) => ({num: pickup("number")}),
 	}
 )
 .check(
