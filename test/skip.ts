@@ -26,7 +26,7 @@ const skipProcessBis = duplo.createProcess("skipProcess", {options: {num: 1}})
 const skipProcess = duplo.createProcess("skipProcess")
 .extract({
 	query: {
-		skip: zod.string().containBool
+		skip: zod.string()
 	}
 })
 .cut(() => {
@@ -38,12 +38,12 @@ const skipProcess = duplo.createProcess("skipProcess")
 		input: () => {},
 		validate: () => true,
 		catch: (response) => response.code(500).info("wtf").send(),
-		skip: (pickup) => pickup("skip"),
+		skip: (pickup) => pickup("skip") === "true",
 	},
 )
 .process(
 	skipProcessBis,
-	{skip: (pickup) => pickup("skip"), options: {num: 33}, pickup: ["zoumba"]}
+	{skip: (pickup) => pickup("skip") === "true", options: {num: 33}, pickup: ["zoumba"]}
 )
 .cut(({pickup}) => {
 	pickup("zoumba");
@@ -53,7 +53,7 @@ const skipProcess = duplo.createProcess("skipProcess")
 duplo.declareRoute("GET", "/test/skip/{bool}")
 .extract({
 	params: {
-		bool: zod.string().containBool
+		bool: zod.string()
 	}
 })
 .check(
@@ -62,13 +62,13 @@ duplo.declareRoute("GET", "/test/skip/{bool}")
 		input: () => {},
 		validate: () => true,
 		catch: (response) => response.code(500).info("wtf").send(),
-		skip: (pickup) => pickup("bool"),
+		skip: (pickup) => pickup("bool") === "true",
 	}
 )
 .process(
 	skipProcess, 
 	{
-		skip: (pickup) => pickup("bool"), 
+		skip: (pickup) => pickup("bool") === "true", 
 		input: (pickup) => pickup("bool")
 	}
 )
