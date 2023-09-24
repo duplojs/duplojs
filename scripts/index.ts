@@ -1,5 +1,5 @@
 import Duplo from "./lib/main.ts";
-import {zod} from "./lib/zod";
+import {z as zod} from "zod";
 
 //types
 export type * from "./lib/abstractRoute.ts";
