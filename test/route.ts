@@ -99,3 +99,10 @@ duplo.declareRoute("GET", "/redirect")
 .handler((floor, response) => {
 	response.redirect("/return/number");
 });
+
+
+duplo.declareRoute("GET", "/static/*")
+.handler(async({}, response) => {
+	console.log("test");
+	response.send("test");
+});

@@ -604,11 +604,12 @@ export default function makeRoutesSystem(
 				let stringFunction = "let result;\n";
 
 				Object.keys(value).forEach((path) => {
-					let regex = `/^${(path as string).replace(/\//g, "\\/")}\\/?(?:\\?[^]*)?$/`.replace(
+					// le paterne (?:\\?[^]*)? serre a faire match un url avec des query arg 
+					const regex = `/^${(path as string).replace(/\//g, "\\/").replace(/\.?\*/g, ".*")}\\/?(?:\\?[^]*)?$/`.replace(
 						/\{([a-zA-Z0-9_\-]+)\}/g,
-						(match, group1) => `(?<${group1}>[a-zA-Z0-9_\-]+)`
+						(match, group1) => `(?<${group1}>[a-zA-Z0-9_\\-]+)`
 					);
-
+					
 					stringFunction += /* js */`
 						result = ${regex}.exec(path);
 						if(result !== null) return {
