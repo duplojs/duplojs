@@ -96,6 +96,13 @@ export type AbstractRouteShort<
 	floor extends {},
 > = (floor: Floor<floor>, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
 
+export type AbstractRouteCustom<
+	request extends Request, 
+	response extends Response,
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
+
 export interface AbstractRouteCheckerParams<
 	checkerExport extends CheckerExport, 
 	response extends Response,
@@ -240,6 +247,10 @@ export interface BuilderPatternAbstractRoute<
 		short: AbstractRouteShort<response, localFloor, floor>
 	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
 
+	custom<localFloor extends {}>(
+		customFunction: AbstractRouteCustom<request, response, localFloor, floor>
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
+
 	handler(
 		handlerFunction: AbstractRouteHandlerFunction<response, floor>
 	): Pick<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, "build">;
@@ -276,6 +287,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				cut,
 				handler,
 				build,
+				custom,
 			};
 		};
 
@@ -308,6 +320,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
+				custom,
 			};
 		};
 
@@ -327,6 +340,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
+				custom,
 			};
 		};
 
@@ -371,6 +385,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				handler,
 				cut,
 				build,
+				custom,
 			};
 		};
 
@@ -409,6 +424,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
+				custom,
 			};
 		};
 
@@ -421,6 +437,23 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
+				custom,
+			};
+		};
+
+		const custom: BuilderPatternAbstractRoute<any, any, any, any, any>["custom"] = (customFunction) => {
+			steps.push({
+				customFunction,
+				type: "custom"
+			});
+
+			return {
+				check,
+				handler,
+				build,
+				process,
+				cut,
+				custom,
 			};
 		};
 
@@ -483,31 +516,36 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 									steps,
 									(step, index) => typeof step === "function" ?
 										cutStep(step.constructor.name === "AsyncFunction", index) :
-										step.type === "checker" ?
-											skipStep(
-												!!step.skip,
-												index,
-												checkerStep(
-													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
-													index,
-													!!step.output,
-													typeof step.options === "function",
-												)
+										step.type === "custom" ?
+											cutsomStep(
+												(step.customFunction as () => {}).constructor.name === "AsyncFunction",
+												index
 											) :
-											skipStep(
-												!!step.skip,
-												index,
-												processStep(
-													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+											step.type === "checker" ?
+												skipStep(
+													!!step.skip,
 													index,
-													!!step.input,
-													typeof step.options === "function",
-													mapped(
-														step?.pickup || [],
-														(value) => processDrop(value)
+													checkerStep(
+														(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+														index,
+														!!step.output,
+														typeof step.options === "function",
+													)
+												) :
+												skipStep(
+													!!step.skip,
+													index,
+													processStep(
+														(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+														index,
+														!!step.input,
+														typeof step.options === "function",
+														mapped(
+															step?.pickup || [],
+															(value) => processDrop(value)
+														)
 													)
 												)
-											)
 								)
 							)
 						),
@@ -587,6 +625,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			cut,
 			handler,
 			build,
+			custom,
 		};
 	};
 	
@@ -709,6 +748,12 @@ ${block}
 
 const cutStep = (async: boolean, index: number) => /* js */`
 result = ${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+
+if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
+`;
+
+const cutsomStep = (async: boolean, index: number) => /* js */`
+result = ${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response, this.exitProcess);
 
 if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
