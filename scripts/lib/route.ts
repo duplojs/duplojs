@@ -78,6 +78,13 @@ export type RouteShort<
 	floor extends {},
 > = (floor: Floor<floor>, response: response) => PromiseOrNot<returnFloor | undefined | void>;
 
+export type RouteCustom<
+	request extends Request, 
+	response extends Response,
+	returnFloor extends {},
+	floor extends {},
+> = (floor: Floor<floor>, request: request, response: response) => PromiseOrNot<returnFloor | undefined | void>;
+
 export interface RouteCheckerParams<
 	checkerExport extends CheckerExport, 
 	response extends Response,
@@ -198,6 +205,10 @@ export interface BuilderPatternRoute<
 		short: RouteShort<response, localFloor, floor>
 	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
 
+	custom<localFloor extends {}>(
+		customFunction: RouteCustom<request, response, localFloor, floor>
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
+
 	handler(handlerFunction: RoutehandlerFunction<response, floor>): void;
 }
 
@@ -302,6 +313,7 @@ export default function makeRoutesSystem(
 				process,
 				cut,
 				access,
+				custom,
 			};
 		};
 		
@@ -333,6 +345,7 @@ export default function makeRoutesSystem(
 				check,
 				process,
 				cut,
+				custom,
 			};
 		};
 
@@ -351,6 +364,7 @@ export default function makeRoutesSystem(
 				handler,
 				process,
 				cut,
+				custom,
 			};
 		};
 
@@ -395,6 +409,7 @@ export default function makeRoutesSystem(
 				process,
 				handler,
 				cut,
+				custom,
 			};
 		};
 
@@ -432,6 +447,7 @@ export default function makeRoutesSystem(
 				handler,
 				process,
 				cut,
+				custom,
 			};
 		};
 
@@ -443,6 +459,22 @@ export default function makeRoutesSystem(
 				handler,
 				process,
 				cut,
+				custom,
+			};
+		};
+
+		const custom: BuilderPatternRoute<any, any, any, any>["custom"] = (customFunction) => {
+			steps.push({
+				customFunction,
+				type: "custom"
+			});
+
+			return {
+				check,
+				handler,
+				process,
+				cut,
+				custom,
 			};
 		};
 
@@ -505,31 +537,36 @@ export default function makeRoutesSystem(
 								steps,
 								(step, index) => typeof step === "function" ?
 									cutStep(step.constructor.name === "AsyncFunction", index) :
-									step.type === "checker" ?
-										skipStep(
-											!!step.skip,
-											index,
-											checkerStep(
-												(step as CheckerExport).handler.constructor.name === "AsyncFunction",
-												index,
-												!!step.output,
-												typeof step.options === "function",
-											)
+									step.type === "custom" ?
+										cutsomStep(
+											(step.customFunction as () => {}).constructor.name === "AsyncFunction",
+											index
 										) :
-										skipStep(
-											!!step.skip,
-											index,
-											processStep(
-												(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+										step.type === "checker" ?
+											skipStep(
+												!!step.skip,
 												index,
-												!!step.input,
-												typeof step.options === "function",
-												mapped(
-													step?.pickup || [],
-													(value) => processDrop(value)
+												checkerStep(
+													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+													index,
+													!!step.output,
+													typeof step.options === "function",
+												)
+											) :
+											skipStep(
+												!!step.skip,
+												index,
+												processStep(
+													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+													index,
+													!!step.input,
+													typeof step.options === "function",
+													mapped(
+														step?.pickup || [],
+														(value) => processDrop(value)
+													)
 												)
 											)
-										)
 							)
 						)
 					),
@@ -581,6 +618,7 @@ export default function makeRoutesSystem(
 			check,
 			process,
 			cut,
+			custom,
 			handler,
 		};
 	};
@@ -766,6 +804,12 @@ ${block}
 const cutStep = (async: boolean, index: number) => /* js */`
 currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}](floor, response);
+
+if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
+`;
+
+const cutsomStep = (async: boolean, index: number) => /* js */`
+result = ${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response);
 
 if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;

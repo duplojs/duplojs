@@ -39,6 +39,9 @@ const deepAbstractRoute = mustBeConnected({pickup: ["test"], options: {t: 5}, ig
 	}
 )
 .cut((floor) => ({deep: "deep ABS"}))
+.custom((floor, request, response) => {
+	console.log(floor, request, response);
+})
 .build(["user", "deep", "test"]);
 
 deepAbstractRoute({pickup: ["user", "deep", "test"], ignorePrefix: true})
