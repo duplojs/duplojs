@@ -39,10 +39,14 @@ duplo.declareRoute("GET", "/user/{userId}")
 		obj: {hello: "world"}
 	};
 })
-.handler((floor, response) => {
+.custom((floor, request, response) => {
+	console.log(floor, request, response);
+	
+})
+.handler(({pickup}, response) => {
 	response.code(200).send({
-		obj: floor.pickup("obj"),
-		user: floor.pickup("user")
+		obj: pickup("obj"),
+		user: pickup("user")
 	});
 });
 
