@@ -240,6 +240,8 @@ export default function makeRoutesSystem(
 			
 			try {
 				try {
+					await mainHooksLifeCyle.beforeRouteExecution.launchSubscriber(request, response);
+
 					await notFoundFunction(request, response);
 				
 					response.code(503).info("NO_RESPONSE_SENT").send();
@@ -285,6 +287,10 @@ export default function makeRoutesSystem(
 			mainHooksLifeCyle.onConstructResponse.subscribers,
 			abstractRoute?.hooksLifeCyle.onConstructResponse.subscribers || []
 		);
+		hooksLifeCyle.beforeRouteExecution.copySubscriber(
+			mainHooksLifeCyle.beforeRouteExecution.subscribers,
+			abstractRoute?.hooksLifeCyle.beforeRouteExecution.subscribers || []
+		);
 		hooksLifeCyle.beforeParsingBody.copySubscriber(
 			mainHooksLifeCyle.beforeParsingBody.subscribers,
 			abstractRoute?.hooksLifeCyle.beforeParsingBody.subscribers || []
@@ -325,6 +331,7 @@ export default function makeRoutesSystem(
 			else {
 				hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
 				hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
+				hooksLifeCyle.beforeRouteExecution.copySubscriber(processExport.hooksLifeCyle.beforeRouteExecution.subscribers);
 				hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
 				hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
 				hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
@@ -399,6 +406,7 @@ export default function makeRoutesSystem(
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
 			hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
+			hooksLifeCyle.beforeRouteExecution.copySubscriber(processExport.hooksLifeCyle.beforeRouteExecution.subscribers);
 			hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
 			hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
 			hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
@@ -481,6 +489,7 @@ export default function makeRoutesSystem(
 		const handler: BuilderPatternRoute<any, any, any, any>["handler"] = (handlerFunction) => {
 			const launchOnConstructRequest = hooksLifeCyle.onConstructRequest.build();
 			const launchOnConstructResponse = hooksLifeCyle.onConstructResponse.build();
+			const beforeRouteExecution = hooksLifeCyle.beforeRouteExecution.build();
 			const launchBeforeParsingBody = hooksLifeCyle.beforeParsingBody.build();
 			const launchOnError = hooksLifeCyle.onError.build();
 			const launchBeforeSend = hooksLifeCyle.beforeSend.build();
@@ -593,6 +602,7 @@ export default function makeRoutesSystem(
 					launchOnConstructRequest,
 					launchOnConstructResponse,
 					launchOnError,
+					beforeRouteExecution,
 				},
 				grapAccess,
 				abstractRoute,
@@ -695,6 +705,8 @@ const routeFunctionString = (async: boolean, block: string) => /* js */`
 
 		try {
 			try{
+				await this.hooks.beforeRouteExecution(request, response);
+				
 				const floor = this.makeFloor();
 				let result;
 
