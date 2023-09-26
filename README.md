@@ -368,7 +368,7 @@ duplo
     getUser,
     {
         pickup: ["user"], // récupère la valeur user
-		input: (pickup) => pickup("id")
+        input: (pickup) => pickup("id")
     }
 )
 .handler((floor, response) => {
