@@ -20,6 +20,7 @@ export interface AddHooksLifeCycle<
 >{
 	addHook(name: "onConstructRequest", functionHook: ReturnType<HooksLifeCycle<request, response>["onConstructRequest"]["build"]>): returnType;
 	addHook(name: "onConstructResponse", functionHook: ReturnType<HooksLifeCycle<request, response>["onConstructResponse"]["build"]>): returnType;
+	addHook(name: "beforeRouteExecution", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeRouteExecution"]["build"]>): returnType;
 	addHook(name: "beforeParsingBody", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeParsingBody"]["build"]>): returnType;
 	addHook(name: "onError", functionHook: ReturnType<HooksLifeCycle<request, response>["onError"]["build"]>): returnType;
 	addHook(name: "beforeSend", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeSend"]["build"]>): returnType;
@@ -75,6 +76,7 @@ export function makeHooksLifeCycle<
 	return {
 		onConstructRequest: makeHook<((request: request) => PromiseOrNot<true | void>)>(1),
 		onConstructResponse: makeHook<((response: response) => PromiseOrNot<true | void>)>(1),
+		beforeRouteExecution: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
 		beforeParsingBody: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
 		onError: makeHook<((request: request, response: response, error: Error) => PromiseOrNot<true | void>)>(3),
 		beforeSend: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
