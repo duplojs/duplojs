@@ -269,6 +269,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			//copy abstract hook
 			hooksLifeCyle.onConstructRequest.copySubscriber(abstractRoute.hooksLifeCyle.onConstructRequest.subscribers);
 			hooksLifeCyle.onConstructResponse.copySubscriber(abstractRoute.hooksLifeCyle.onConstructResponse.subscribers);
+			hooksLifeCyle.beforeRouteExecution.copySubscriber(abstractRoute.hooksLifeCyle.beforeRouteExecution.subscribers);
 			hooksLifeCyle.beforeParsingBody.copySubscriber(abstractRoute.hooksLifeCyle.beforeParsingBody.subscribers);
 			hooksLifeCyle.onError.copySubscriber(abstractRoute.hooksLifeCyle.onError.subscribers);
 			hooksLifeCyle.beforeSend.copySubscriber(abstractRoute.hooksLifeCyle.beforeSend.subscribers);
@@ -299,6 +300,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			else {
 				hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
 				hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
+				hooksLifeCyle.beforeRouteExecution.copySubscriber(processExport.hooksLifeCyle.beforeRouteExecution.subscribers);
 				hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
 				hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
 				hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
@@ -374,6 +376,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			
 			hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
 			hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
+			hooksLifeCyle.beforeRouteExecution.copySubscriber(processExport.hooksLifeCyle.beforeRouteExecution.subscribers);
 			hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
 			hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
 			hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
@@ -595,7 +598,9 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 					prefix: params?.ignorePrefix ? "" : ((abstractRoute?.prefix || "") + correctPath(declareParams?.prefix || "")),
 					pickup: params?.pickup || [],
 					options: params?.options || declareParams?.options || {},
-					abstractRouteSubscribers: {
+					// information défini pour le hook onDeclareRoute
+					// elle permet de donner des info sur la route abstraite parent
+					abstractRouteSubscribers: { 
 						name,
 						abstractRoute: abstractRoute?.abstractRouteSubscribers,
 						hooksLifeCyle,
@@ -611,7 +616,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 
 				return {
 					declareRoute: (method, path) => declareRoute(method, path, AbstractRouteParams) as any,
-					declareAbstractRoute: (nameAbstractRoute) => declareAbstractRoute(nameAbstractRoute, AbstractRouteParams) as any,
+					declareAbstractRoute: (nameAbstractRoute, optionsAbstractRoute) => declareAbstractRoute(nameAbstractRoute, optionsAbstractRoute, AbstractRouteParams) as any,
 				};
 			};
 		};
@@ -776,7 +781,6 @@ ${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, resu
 `;
 
 const processStep = (async: boolean, index: number, hasInput: boolean, optionsIsFunction: boolean, drop: string) => /* js */`
-currentChecker = this.steps[${index}].name;
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 	request, 
 	response, 
