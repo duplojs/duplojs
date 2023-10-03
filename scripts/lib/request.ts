@@ -40,4 +40,6 @@ export class Request{
 	params: Record<string, string>;
 
 	body: unknown;
+
+	isFound = true;
 }

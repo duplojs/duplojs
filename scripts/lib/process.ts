@@ -5,7 +5,7 @@ import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCy
 import makeFloor, {Floor} from "./floor";
 import {Request} from "./request";
 import {Response} from "./response";
-import {FlatExtract, PromiseOrNot} from "./utility";
+import {FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
 
 export type ErrorExtractProcessFunction<response extends Response> = (response: response, type: keyof ProcessExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
 
@@ -33,14 +33,7 @@ export interface ProcessSubscribers{
 	drop?: string[];
 	hooksLifeCyle: HooksLifeCycle;
 	extracted: ProcessExtractObj;
-	steps: Array<
-		ProcessShort<Response, any, any> | {
-			type: "checker" | "process" | "custom",
-			name: string,
-			options: unknown,
-			pickup?: string[]
-		}
-	>
+	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
 	handlerFunction?: ProcessHandlerFunction<any, any>;
 }
 
@@ -239,7 +232,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const steps: any[] = [];
+		const steps: (StepChecker | StepProcess | StepCut | StepCustom)[] = [];
 		const process: BuilderPatternProcess<any, any, any, any, any, any>["process"] = (processExport, params) => {
 			let options;
 			if(
@@ -264,6 +257,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
+				extracted: processExport.extracted,
 				skip: params?.skip,
 			});
 			
@@ -325,7 +319,10 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 		};
 
 		const cut: BuilderPatternProcess<any, any, any, any, any, any>["cut"] = (short) => {
-			steps.push(short);
+			steps.push({
+				type: "cut",
+				cutFunction: short,
+			});
 
 			return {
 				check,
@@ -387,8 +384,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 							steps.length !== 0,
 							() => mapped(
 								steps,
-								(step, index) => typeof step === "function" ?
-									cutStep(step.constructor.name === "AsyncFunction", index) :
+								(step, index) => step.type === "cut" ?
+									cutStep((step.cutFunction as () => {}).constructor.name === "AsyncFunction", index) :
 									step.type === "custom" ?
 										cutsomStep(
 											(step.customFunction as () => {}).constructor.name === "AsyncFunction",
@@ -399,7 +396,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 												!!step.skip,
 												index,
 												checkerStep(
-													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+													step.handler.constructor.name === "AsyncFunction",
 													index,
 													!!step.output,
 													typeof step.options === "function",
@@ -409,7 +406,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 												!!step.skip,
 												index,
 												processStep(
-													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+													step.processFunction.constructor.name === "AsyncFunction",
 													index,
 													!!step.input,
 													typeof step.options === "function",
@@ -452,7 +449,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				hooksLifeCyle,
 				extracted,
 				handlerFunction: grapHandlerFunction,
-				steps: steps as any,
+				steps: steps,
 			});
 
 			return {
@@ -496,6 +493,7 @@ const processFunctionString = (hasInput: boolean, hasOptions: boolean, block: st
 (
 	${(/await/.test(block) ? "async " : "")}function(request, response, options, input){
 		const floor = this.makeFloor();
+		let result;
 
 		${hasInput ? /* js */`floor.drop("input", ${"input"});` : ""}
 		${hasOptions ? /* js */`floor.drop("options", ${"options"});` : ""}
@@ -531,8 +529,6 @@ let currentExtractedType;
 let currentExtractedIndex;
 
 try{
-	let result;
-
 	${block}
 }
 catch(error) {
@@ -566,7 +562,7 @@ floor.drop(
 `;
 
 const cutStep = (async: boolean, index: number) => /* js */`
-result = ${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+result = ${async ? "await " : ""}this.steps[${index}].cutFunction(floor, response, this.exitProcess);
 
 if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;

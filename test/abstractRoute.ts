@@ -1,5 +1,5 @@
 import {duplo} from ".";
-import {zod} from "../scripts";
+import {Request, Response, zod} from "../scripts";
 import {userExist} from "./checker";
 
 const mustBeConnected = duplo.declareAbstractRoute("mustBeConnected", {options: {t: 1}, prefix: "test"})
@@ -45,9 +45,9 @@ const deepAbstractRoute = mustBeConnected({pickup: ["test"], options: {t: 5}, ig
 	}
 )
 .cut((floor) => ({deep: "deep ABS"}))
-// .custom((floor, request, response) => {
-// 	console.log(floor, request, response);
-// })
+.custom((floor, request, response) => {
+	console.log(floor, request instanceof Request, response instanceof Response);
+})
 .build(["user", "deep", "test"]);
 
 deepAbstractRoute({pickup: ["user", "deep", "test"], ignorePrefix: true})

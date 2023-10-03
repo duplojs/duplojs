@@ -9,7 +9,7 @@ import {DuploConfig} from "./main";
 import {PickupDropProcess, ProcessExport} from "./process";
 import makeContentTypeParserSystem from "./contentTypeParser";
 import makeAbstractRoutesSystem, {AbstractRoute, AbstractRouteSubscribers} from "./abstractRoute";
-import {FlatExtract, PromiseOrNot} from "./utility";
+import {FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
 
 
 export type DeclareRoute<
@@ -31,14 +31,7 @@ export interface RouteSubscribers{
 		pickup?: string[]
 	};
 	extracted: RouteExtractObj;
-	steps: Array<
-		RouteShort<Response, any, any> | {
-			type: "checker" | "process",
-			name: string,
-			options: unknown,
-			pickup?: string[]
-		}
-	>;
+	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
 }
 
 export interface RouteExtractObj{
@@ -235,6 +228,8 @@ export default function makeRoutesSystem(
 	//function to set notfound handler with hooklifecycle
 	function setNotfoundHandler(notFoundFunction: RouteNotfoundHandlerFunction){
 		notfoundHandlerFunction = async(request: Request, response: Response) => {
+			request.isFound = false;
+
 			await mainHooksLifeCyle.onConstructRequest.launchSubscriber(request);
 			await mainHooksLifeCyle.onConstructResponse.launchSubscriber(response);
 			
@@ -375,7 +370,7 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const steps: any[] = [];
+		const steps: (StepChecker | StepProcess | StepCut | StepCustom)[] = [];
 		const process: BuilderPatternRoute<any, any, any, any>["process"] = (processExport, params) => {
 			let options;
 			if(
@@ -460,7 +455,10 @@ export default function makeRoutesSystem(
 		};
 
 		const cut: BuilderPatternRoute<any, any, any, any>["cut"] = (short) => {
-			steps.push(short);
+			steps.push({
+				type: "cut",
+				cutFunction: short,
+			});
 
 			return {
 				check,
@@ -473,8 +471,8 @@ export default function makeRoutesSystem(
 
 		const custom: BuilderPatternRoute<any, any, any, any>["custom"] = (customFunction) => {
 			steps.push({
+				type: "custom",
 				customFunction,
-				type: "custom"
 			});
 
 			return {
@@ -541,42 +539,40 @@ export default function makeRoutesSystem(
 					),
 					condition(
 						steps.length !== 0,
-						() => startStep(
-							mapped(
-								steps,
-								(step, index) => typeof step === "function" ?
-									cutStep(step.constructor.name === "AsyncFunction", index) :
-									step.type === "custom" ?
-										cutsomStep(
-											(step.customFunction as () => {}).constructor.name === "AsyncFunction",
-											index
+						() => mapped(
+							steps,
+							(step, index) => step.type === "cut" ?
+								cutStep((step.cutFunction as () => {}).constructor.name === "AsyncFunction", index) :
+								step.type === "custom" ?
+									cutsomStep(
+										(step.customFunction as () => {}).constructor.name === "AsyncFunction",
+										index
+									) :
+									step.type === "checker" ?
+										skipStep(
+											!!step.skip,
+											index,
+											checkerStep(
+												step.handler.constructor.name === "AsyncFunction",
+												index,
+												!!step.output,
+												typeof step.options === "function",
+											)
 										) :
-										step.type === "checker" ?
-											skipStep(
-												!!step.skip,
+										skipStep(
+											!!step.skip,
+											index,
+											processStep(
+												step.processFunction.constructor.name === "AsyncFunction",
 												index,
-												checkerStep(
-													(step as CheckerExport).handler.constructor.name === "AsyncFunction",
-													index,
-													!!step.output,
-													typeof step.options === "function",
-												)
-											) :
-											skipStep(
-												!!step.skip,
-												index,
-												processStep(
-													(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
-													index,
-													!!step.input,
-													typeof step.options === "function",
-													mapped(
-														step?.pickup || [],
-														(value) => processDrop(value)
-													)
+												!!step.input,
+												typeof step.options === "function",
+												mapped(
+													step?.pickup || [],
+													(value) => processDrop(value)
 												)
 											)
-							)
+										)
 						)
 					),
 				)
@@ -758,7 +754,7 @@ result = ${async ? "await " : ""}this.grapAccess.processFunction(
 	request, 
 	response, 
 	this.grapAccess.options,
-	${hasInput ? /* js */"this.grapAccess.input(floor.pickup)" : ""}
+	${hasInput ? "this.grapAccess.input(floor.pickup)" : ""}
 );
 
 ${drop}
@@ -807,15 +803,8 @@ floor.drop(
 );
 `;
 
-const startStep = (block: string) =>/* js */`
-let currentStep;
-
-${block}
-`;
-
 const cutStep = (async: boolean, index: number) => /* js */`
-currentStep = ${index};
-result = ${async ? "await " : ""}this.steps[${index}](floor, response);
+result = ${async ? "await " : ""}this.steps[${index}].cutFunction(floor, response);
 
 if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
@@ -827,7 +816,6 @@ if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, 
 `;
 
 const checkerStep = (async: boolean, index: number, hasOutput: boolean, optionsIsFunction: boolean) => /* js */`
-currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].handler(
 	this.steps[${index}].input(floor.pickup),
 	(info, data) => ({info, data}),
@@ -844,7 +832,6 @@ ${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, resu
 `;
 
 const processStep = (async: boolean, index: number, hasInput: boolean, optionsIsFunction: boolean, drop: string) => /* js */`
-currentStep = ${index};
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
 	request, 
 	response, 

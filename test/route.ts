@@ -1,4 +1,4 @@
-import {zod} from "../scripts";
+import {Request, Response, zod} from "../scripts";
 import {duplo} from ".";
 import {userExist} from "./checker";
 import {getUser} from "./process";
@@ -40,8 +40,7 @@ duplo.declareRoute("GET", "/user/{userId}")
 	};
 })
 .custom((floor, request, response) => {
-	console.log(floor, request, response);
-	
+	console.log(floor, request instanceof Request, response instanceof Response);
 })
 .handler(({pickup}, response) => {
 	response.code(200).send({
