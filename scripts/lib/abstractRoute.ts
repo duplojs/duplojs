@@ -7,7 +7,7 @@ import {DeclareRoute, RouteExtractObj, RouteProcessAccessParams, RouteProcessPar
 import correctPath from "./correctPath";
 import {Response} from "./response";
 import {Request} from "./request";
-import {FlatExtract, PromiseOrNot} from "./utility";
+import {FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
 
 export interface AbstractRoute{
 	prefix: string;
@@ -30,14 +30,7 @@ export interface AbstractRouteSubscribers{
 		pickup?: string[]
 	};
 	extracted: RouteExtractObj;
-	steps: Array<
-		AbstractRouteShort<Response, any, any> | {
-			type: "checker" | "process",
-			name: string,
-			options: unknown,
-			pickup?: string[]
-		}
-	>;
+	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
 	handlerFunction?: AbstractRouteHandlerFunction<any, any>;
 	options?: any;
 	drop?: string[];
@@ -346,7 +339,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		const steps: any[] = [];
+		const steps: (StepChecker | StepProcess | StepCut | StepCustom)[] = [];
 		const process: BuilderPatternAbstractRoute<any, any, any, any, any>["process"] = (processExport, params) => {
 			let options;
 			if(
@@ -371,6 +364,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				input: params?.input || processExport?.input,
 				processFunction: processExport.processFunction,
 				pickup: params?.pickup,
+				extracted: processExport.extracted,
 				skip: params?.skip,
 			});
 			
@@ -432,7 +426,10 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		};
 
 		const cut: BuilderPatternAbstractRoute<any, any, any, any, any>["cut"] = (short) => {
-			steps.push(short);
+			steps.push({
+				type: "cut",
+				cutFunction: short,
+			});
 
 			return {
 				check,
@@ -517,8 +514,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 							() => startStep(
 								mapped(
 									steps,
-									(step, index) => typeof step === "function" ?
-										cutStep(step.constructor.name === "AsyncFunction", index) :
+									(step, index) => step.type === "cut" ?
+										cutStep((step.cutFunction as () => {}).constructor.name === "AsyncFunction", index) :
 										step.type === "custom" ?
 											cutsomStep(
 												(step.customFunction as () => {}).constructor.name === "AsyncFunction",
@@ -529,7 +526,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 													!!step.skip,
 													index,
 													checkerStep(
-														(step as CheckerExport).handler.constructor.name === "AsyncFunction",
+														step.handler.constructor.name === "AsyncFunction",
 														index,
 														!!step.output,
 														typeof step.options === "function",
@@ -539,7 +536,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 													!!step.skip,
 													index,
 													processStep(
-														(step as ProcessExport).processFunction.constructor.name === "AsyncFunction",
+														step.processFunction.constructor.name === "AsyncFunction",
 														index,
 														!!step.input,
 														typeof step.options === "function",
@@ -752,7 +749,7 @@ ${block}
 `;
 
 const cutStep = (async: boolean, index: number) => /* js */`
-result = ${async ? "await " : ""}this.steps[${index}](floor, response, this.exitProcess);
+result = ${async ? "await " : ""}this.steps[${index}].cutFunction(floor, response, this.exitProcess);
 
 if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
 `;
