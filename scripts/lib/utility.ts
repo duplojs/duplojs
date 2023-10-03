@@ -24,3 +24,36 @@ type FromPaths<T extends { path: string; type: unknown }> = {
 }
 
 export type AnyFunction = (...args: any) => any;
+
+export type StepChecker = {
+	type: "checker",
+	name: string,
+	handler: AnyFunction,
+	options?: Record<string, any>,
+	input: AnyFunction,
+	validate: AnyFunction,
+	catch: AnyFunction,
+	output?: AnyFunction,
+	skip?: AnyFunction,
+}
+
+export type StepProcess = {
+	type: "process",
+	name: string,
+	options?: Record<string, any>,
+	input?: AnyFunction,
+	processFunction: AnyFunction,
+	pickup?: string[],
+	extracted: ProcessExtractObj,
+	skip?: AnyFunction,
+}
+
+export type StepCut = {
+	type: "cut",
+	cutFunction: AnyFunction,
+}
+
+export type StepCustom = {
+	type: "custom",
+	customFunction: AnyFunction,
+}
