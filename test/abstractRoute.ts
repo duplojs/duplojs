@@ -64,3 +64,54 @@ deepAbstractRoute({pickup: ["user", "deep", "test"], ignorePrefix: true})
 	const options = floor.pickup("usser");
 	response.code(200).info("test").send(options);
 });
+
+const testAbstractRoute1 = duplo.declareAbstractRoute("testAbstractRoute1")
+.hook("beforeRouteExecution", () => console.log("merge hook beforeRouteExecution"))
+.extract({
+	headers: {
+		headerTesr: zod.number().optional(),
+	}
+})
+.cut(({pickup}) => ({returnTest1: pickup("headerTesr")}))
+.build(["returnTest1"]);
+
+const testAbstractRoute1Instance = testAbstractRoute1({pickup: ["returnTest1"]});
+
+testAbstractRoute1Instance.declareRoute("GET", "/test1")
+.extract({
+	query: {
+		test: zod.string().optional()
+	}
+})
+.cut(({pickup}) => ({
+	pick: {
+		test: pickup("test"),
+		returnTest1: pickup("returnTest1"),
+	}
+}))
+.handler(({pickup}, response) => response.send(pickup("pick")));
+
+const testDeepAbstractRoute1Instance = deepAbstractRoute({pickup: ["user"]});
+
+const testMerge = duplo.mergeAbstractRoute(
+	[
+		testAbstractRoute1Instance,
+		testDeepAbstractRoute1Instance,
+	],
+	["returnTest1", "user"]
+);
+
+testMerge
+.declareRoute("GET", "/merge/test")
+.extract({
+	query: {
+		testQuery1: zod.string().optional()
+	}
+})
+.cut(({pickup}) => ({
+	pick: {
+		user: pickup("user"),
+		returnTest1: pickup("returnTest1"),
+	}
+}))
+.handler(({pickup}, response) => response.send(pickup("pick")));

@@ -29,7 +29,7 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
 	config: duploConfig;
 	launch(onReady?: () => void): DuploInstance<duploConfig>["server"];
-	addHook: AddHooksLifeCycle["addHook"] & AddServerHooksLifeCycle["addHook"];
+	addHook: AddHooksLifeCycle<DuploInstance<duploConfig>>["addHook"] & AddServerHooksLifeCycle<DuploInstance<duploConfig>>["addHook"];
 	declareRoute: ReturnType<typeof makeRoutesSystem>["declareRoute"];
 	createChecker: ReturnType<typeof makeCheckerSystem>["createChecker"];
 	setNotfoundHandler: ReturnType<typeof makeRoutesSystem>["setNotfoundHandler"];
@@ -37,6 +37,7 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	createProcess: ReturnType<typeof makeProcessSystem>["createProcess"];
 	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
 	declareAbstractRoute: ReturnType<typeof makeRoutesSystem>["declareAbstractRoute"];
+	mergeAbstractRoute: ReturnType<typeof makeRoutesSystem>["mergeAbstractRoute"];
 	use<
 		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
@@ -58,7 +59,8 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		findRoute, 
 		setNotfoundHandler, 
 		setErrorHandler, 
-		declareAbstractRoute
+		declareAbstractRoute,
+		mergeAbstractRoute,
 	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
 
 	const server = http.createServer( 
@@ -75,9 +77,10 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		}
 	);
 
-	const addHook: AddHooksLifeCycle["addHook"] & AddServerHooksLifeCycle["addHook"] = (name, hookFunction) => {
+	const addHook: AddHooksLifeCycle<typeof duploInstance>["addHook"] & AddServerHooksLifeCycle<typeof duploInstance>["addHook"] = (name, hookFunction) => {
 		if(hooksLifeCyle[name as keyof typeof hooksLifeCyle])hooksLifeCyle[name as keyof typeof hooksLifeCyle].addSubscriber(hookFunction as any);
 		else if(serverHooksLifeCycle[name as keyof typeof serverHooksLifeCycle])serverHooksLifeCycle[name as keyof typeof serverHooksLifeCycle].addSubscriber(hookFunction as any);
+		return duploInstance;
 	};
 
 	const duploInstance: DuploInstance<duploConfig> = {
@@ -112,6 +115,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		createProcess,
 		addContentTypeParsers,
 		declareAbstractRoute,
+		mergeAbstractRoute,
 		use(input, options){
 			return input(duploInstance, options);
 		}
