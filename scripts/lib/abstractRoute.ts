@@ -8,20 +8,26 @@ import correctPath from "./correctPath";
 import {Response} from "./response";
 import {Request} from "./request";
 import {FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
+import makeMergeAbstractRoutesSystem from "./mergeAbstractRoute";
 
-export interface AbstractRoute{
+export const __abstractRoute__ = Symbol("abstractRoute");
+
+export interface AbstractRoute<
+	options extends Record<string, any> = Record<string, any>,
+	floor extends {} = {},
+>{
 	prefix: string;
 	name: string;
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
 	pickup: string[];
-	options: Record<string, any>;
+	options: options;
 	abstractRouteFunction: AbstractRouteFunction;
-	abstractRouteSubscribers?: AbstractRouteSubscribers;
+	abstractRouteSubscribers: AbstractRouteSubscribers | AbstractRouteSubscribers[];
 }
 
 export interface AbstractRouteSubscribers{
 	name: string;
-	abstractRoute?: AbstractRouteSubscribers;
+	abstractRoute?: AbstractRouteSubscribers | AbstractRouteSubscribers[];
 	hooksLifeCyle: HooksLifeCycle;
 	access: AbstractRouteShortAccess<any, any, any, any> | {
 		type: "process",
@@ -45,7 +51,7 @@ export interface DeclareAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-	options extends any = any,
+	options extends Record<string, any> = Record<string, any>,
 	floor extends {} = {},
 >{
 	(
@@ -74,7 +80,7 @@ export interface AbstractRouteParams<
 	options extends any,
 >{
 	pickup?: drop[] & pickup[]; 
-	options?: options;
+	options?: Partial<options>;
 	ignorePrefix?: boolean;
 }
 
@@ -110,53 +116,66 @@ export interface AbstractRouteCheckerParams<
 	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
-export interface UseAbstractRoute<
+export interface AbstractRouteUseFunction<
 	request extends Request,
 	response extends Response,
 	extractObj extends RouteExtractObj,
-	options extends any,
+	options extends Record<string, any>,
 	floor extends Record<any, any>,
 	drop extends string,
-	
 >{
-	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>): {
-		declareRoute<
-			req extends Request = request, 
-			res extends Response = response,
-			extObj extends RouteExtractObj = extractObj,
-			localFloor extends floor = floor,
-		>(method: Request["method"], path: string | string[]): ReturnType<
-			DeclareRoute<
-				request & req, 
-				response & res, 
-				extractObj & extObj,
-				Pick<localFloor, pickup extends keyof localFloor ? pickup : never>
-			>
-		>,
+	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>): AbstractRouteInstance<
+		request,
+		response,
+		extractObj,
+		options,
+		Pick<floor, pickup extends keyof floor ? pickup : never>
+	>;
+}
 
-		declareAbstractRoute<
-			req extends Request = request, 
-			res extends Response = response,
-			extObj extends RouteExtractObj = extractObj,
-			options extends {} = {},
-			localFloor extends floor = floor,
-		>(name: string, params?: DeclareAbstractRouteParams<options>): ReturnType<
-			DeclareAbstractRoute<
-				request & req, 
-				response & res, 
-				extractObj & extObj,
-				options,
-				{options: options} & Pick<localFloor, pickup extends keyof localFloor ? pickup : never>
-			>
-		>,
-	};
+export interface AbstractRouteInstance<
+	request extends Request = Request,
+	response extends Response = Response,
+	extractObj extends RouteExtractObj = RouteExtractObj,
+	options extends Record<string, any> = Record<string, any>,
+	floor extends {} = {},
+>{
+	declareRoute<
+		req extends Request = request, 
+		res extends Response = response,
+		extObj extends RouteExtractObj = extractObj,
+	>(method: Request["method"], path: string | string[]): ReturnType<
+		DeclareRoute<
+			request & req, 
+			response & res, 
+			extractObj & extObj,
+			floor
+		>
+	>;
+
+	declareAbstractRoute<
+		req extends Request = request, 
+		res extends Response = response,
+		extObj extends RouteExtractObj = extractObj,
+		options extends {} = {},
+	>(name: string, params?: DeclareAbstractRouteParams<options>): ReturnType<
+		DeclareAbstractRoute<
+			request & req, 
+			response & res, 
+			extractObj & extObj,
+			options,
+			{options: options} & floor
+		>
+	>;
+
+	[__abstractRoute__]: AbstractRoute<options, floor>
 }
 
 export interface BuilderPatternAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-	options extends any = any,
+	options extends Record<string, any> = Record<string, any>,
 	floor extends {} = {},
 >{
 	hook: AddHooksLifeCycle<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, request, response>["addHook"];
@@ -252,7 +271,7 @@ export interface BuilderPatternAbstractRoute<
 		drop extends string,
 	>(
 		drop?: (keyof floor)[] & drop[]
-	): UseAbstractRoute<request, response, extractObj, options, floor, drop>;
+	): AbstractRouteUseFunction<request, response, extractObj, options, floor, drop>;
 }
 
 export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, serverHooksLifeCycle: ServerHooksLifeCycle){
@@ -323,7 +342,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		let errorExtract: ErrorExtractAbstractRouteFunction<Response> = (response, type, index, err) => {
 			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
 		};
-		const extract: BuilderPatternAbstractRoute["extract"] = (extractObj, error?) => {
+		const extract: BuilderPatternAbstractRoute<any, any, any, any, any>["extract"] = (extractObj, error?) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
 				extracted[index as keyof RouteExtractObj] = value;
 			});
@@ -588,15 +607,17 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			});
 
 			return (params) => {
-				const AbstractRouteParams = {
+				const abstractRouteParams = {
 					abstractRouteFunction,
 					hooksLifeCyle,
 					name,
 					prefix: params?.ignorePrefix ? "" : ((abstractRoute?.prefix || "") + correctPath(declareParams?.prefix || "")),
-					pickup: params?.pickup || [],
-					options: params?.options || declareParams?.options || {},
+					pickup: (params?.pickup || []) as any,
+					options: {
+						...(declareParams?.options || {}),
+						...(params?.options || {}),
+					},
 					// information défini pour le hook onDeclareRoute
-					// elle permet de donner des info sur la route abstraite parent
 					abstractRouteSubscribers: { 
 						name,
 						abstractRoute: abstractRoute?.abstractRouteSubscribers,
@@ -612,8 +633,9 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				};
 
 				return {
-					declareRoute: (method, path) => declareRoute(method, path, AbstractRouteParams) as any,
-					declareAbstractRoute: (nameAbstractRoute, optionsAbstractRoute) => declareAbstractRoute(nameAbstractRoute, optionsAbstractRoute, AbstractRouteParams) as any,
+					declareRoute: (method, path) => declareRoute(method, path, abstractRouteParams) as any,
+					declareAbstractRoute: (nameAbstractRoute, optionsAbstractRoute) => declareAbstractRoute(nameAbstractRoute, optionsAbstractRoute, abstractRouteParams) as any,
+					[__abstractRoute__]: abstractRouteParams,
 				};
 			};
 		};
@@ -630,17 +652,20 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			custom,
 		};
 	};
+
+	const {mergeAbstractRoute} = makeMergeAbstractRoutesSystem(declareRoute, declareAbstractRoute);
 	
 	return {
 		declareAbstractRoute<
 			request extends Request = Request, 
 			response extends Response = Response,
 			extractObj extends RouteExtractObj = RouteExtractObj,
-			options extends any = any,
-			floor extends {options: options} = {options: options},
+			options extends Record<string, any> = Record<string, any>,
 		>(name: string, params?: DeclareAbstractRouteParams<options>){
-			return declareAbstractRoute(name, params) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, floor>>;
+			return declareAbstractRoute(name, params) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
 		},
+
+		mergeAbstractRoute
 	};
 }
 

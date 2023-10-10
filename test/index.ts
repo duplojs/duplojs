@@ -23,9 +23,9 @@ duplo.addContentTypeParsers(/json/, (request) => new Promise(
 	}
 ));
 
-duplo.addHook("beforeRouteExecution", (request) => console.log("global hook beforeRouteExecution"));
-
-duplo.addHook("onDeclareRoute", route => {
+duplo
+.addHook("beforeRouteExecution", (request) => console.log("global hook beforeRouteExecution"))
+.addHook("onDeclareRoute", route => {
 	// if(route.abstractRoute)console.log(route);
 });
 

@@ -11,7 +11,6 @@ import makeContentTypeParserSystem from "./contentTypeParser";
 import makeAbstractRoutesSystem, {AbstractRoute, AbstractRouteSubscribers} from "./abstractRoute";
 import {FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
 
-
 export type DeclareRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
@@ -22,7 +21,7 @@ export type DeclareRoute<
 export interface RouteSubscribers{
 	path: string[];
 	method: string;
-	abstractRoute?: AbstractRouteSubscribers;
+	abstractRoute?: AbstractRouteSubscribers | AbstractRouteSubscribers[];
 	hooksLifeCyle: HooksLifeCycle;
 	access: RouteShortAccess<any, any, any, any> | {
 		type: "process",
@@ -629,7 +628,7 @@ export default function makeRoutesSystem(
 		};
 	};
 
-	const {declareAbstractRoute} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
+	const {declareAbstractRoute, mergeAbstractRoute} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
 
 	return {
 		declareRoute<
@@ -688,6 +687,7 @@ export default function makeRoutesSystem(
 			return buildedRoutes[method](path);
 		},
 		declareAbstractRoute,
+		mergeAbstractRoute,
 		routes,
 		buildedRoutes,
 	};
