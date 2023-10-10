@@ -97,8 +97,7 @@ const testMerge = duplo.mergeAbstractRoute(
 	[
 		testAbstractRoute1Instance,
 		testDeepAbstractRoute1Instance,
-	],
-	["returnTest1", "user"]
+	]
 );
 
 testMerge

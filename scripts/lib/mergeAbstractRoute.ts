@@ -1,27 +1,30 @@
 import {AbstractRoute, AbstractRouteInstance, DeclareAbstractRoute, __abstractRoute__} from "./abstractRoute";
 import {makeHooksLifeCycle} from "./hook";
 import {Request} from "./request";
-import {DeclareRoute, condition, mapped} from "./route";
+import {DeclareRoute, RouteExtractObj, condition, mapped} from "./route";
 import makeFloor from "./floor";
 import {UnionToIntersection} from "./utility";
+import {Response} from "./response";
 
 export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute, declareAbstractRoute: DeclareAbstractRoute){
 	function mergeAbstractRoute<
 		abstractRouteInstance extends AbstractRouteInstance,
-		pickup extends string,
-		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor> ? floor : never
+		request extends abstractRouteInstance extends AbstractRouteInstance<infer request>? request : never,
+		response extends abstractRouteInstance extends AbstractRouteInstance<any, infer response>? response : never,
+		extractObj extends abstractRouteInstance extends AbstractRouteInstance<any, any, infer extractObj>? extractObj : never,
+		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>? floor : never
 	>(
 		abstractRouteInstances: abstractRouteInstance[],
-		pickup: (keyof UnionToIntersection<floor>)[] & pickup[],
 	): AbstractRouteInstance<
-		abstractRouteInstance extends AbstractRouteInstance<infer request>? UnionToIntersection<request> : never,
-		abstractRouteInstance extends AbstractRouteInstance<any, infer response>? UnionToIntersection<response> : never,
-		abstractRouteInstance extends AbstractRouteInstance<any, any, infer extractObj>? UnionToIntersection<extractObj> : never,
+		UnionToIntersection<request> extends Request? UnionToIntersection<request> : never,
+		UnionToIntersection<response> extends Response? UnionToIntersection<response> : never,
+		UnionToIntersection<extractObj> extends RouteExtractObj? UnionToIntersection<extractObj> : never,
 		Record<string, any>, 
-		Pick<UnionToIntersection<floor>, pickup extends keyof UnionToIntersection<floor> ? pickup : never>
+		UnionToIntersection<floor> extends {}? UnionToIntersection<floor> : never
 	>
 	{
 		const hooksLifeCyle = makeHooksLifeCycle();
+		const pickup: string[] = [];
 
 		abstractRouteInstances.forEach(ari => {
 			hooksLifeCyle.onConstructRequest.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.onConstructRequest.subscribers);
@@ -31,6 +34,8 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 			hooksLifeCyle.onError.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.onError.subscribers);
 			hooksLifeCyle.beforeSend.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.beforeSend.subscribers);
 			hooksLifeCyle.afterSend.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.afterSend.subscribers);
+
+			pickup.push(...ari[__abstractRoute__].pickup);
 		});
 
 		const stringFunction = mergeAbstractRouteFunctionString(
@@ -45,7 +50,7 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 					)
 				)
 			),
-			pickup || []
+			pickup
 		);
 
 		const abstractRouteFunction = eval(stringFunction).bind({
@@ -60,7 +65,7 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 			hooksLifeCyle,
 			name: `merge(${mapAbstractRouteSubscribers.map(ars => ars.name).join(",")})`,
 			prefix: "",
-			pickup: pickup || [],
+			pickup: pickup,
 			options: {},
 			abstractRouteSubscribers: mapAbstractRouteSubscribers,
 		};
