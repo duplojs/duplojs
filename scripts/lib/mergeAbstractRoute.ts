@@ -25,6 +25,7 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 	{
 		const hooksLifeCyle = makeHooksLifeCycle();
 		const pickup: string[] = [];
+		const descs: any[] = [];
 
 		abstractRouteInstances.forEach(ari => {
 			hooksLifeCyle.onConstructRequest.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.onConstructRequest.subscribers);
@@ -36,6 +37,7 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 			hooksLifeCyle.afterSend.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.afterSend.subscribers);
 
 			pickup.push(...ari[__abstractRoute__].pickup);
+			descs.push(...ari[__abstractRoute__].descs);
 		});
 
 		const stringFunction = mergeAbstractRouteFunctionString(
@@ -68,6 +70,7 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 			pickup: pickup,
 			options: {},
 			abstractRouteSubscribers: mapAbstractRouteSubscribers,
+			descs,
 		};
 
 		return {

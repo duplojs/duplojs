@@ -16,7 +16,7 @@ export type DeclareRoute<
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
 	floor extends {} = {},
-> = (method: Request["method"], path: string | string[], abstractRoute?: AbstractRoute) => BuilderPatternRoute<request, response, extractObj, floor>;
+> = (method: Request["method"], path: string | string[], abstractRoute?: AbstractRoute, ...desc: any[]) => BuilderPatternRoute<request, response, extractObj, floor>;
 
 export interface RouteSubscribers{
 	path: string[];
@@ -31,6 +31,7 @@ export interface RouteSubscribers{
 	};
 	extracted: RouteExtractObj;
 	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
+	descs: any[];
 }
 
 export interface RouteExtractObj{
@@ -126,7 +127,8 @@ export interface BuilderPatternRoute<
 		pickup extends string,
 	>(
 		process: processExport, 
-		params?: RouteProcessAccessParams<processExport, pickup, floor>
+		params?: RouteProcessAccessParams<processExport, pickup, floor>,
+		...desc: any[]
 	): Omit<
 		BuilderPatternRoute<
 			request, 
@@ -143,7 +145,7 @@ export interface BuilderPatternRoute<
 		pickup extends string,
 	>(
 		process: RouteShortAccess<request, response, localFloor, floor>, 
-		params?: never
+		...desc: any[]
 	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "access">;
 
 	extract<
@@ -152,6 +154,7 @@ export interface BuilderPatternRoute<
 	>(
 		extractObj: localeExtractObj, 
 		error?: ErrorExtractFunction<response>,
+		...desc: any[]
 	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
 
 	check<
@@ -165,7 +168,8 @@ export interface BuilderPatternRoute<
 			response, 
 			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>},
 			info
-		>
+		>,
+		...desc: any[]
 	): Omit<
 		BuilderPatternRoute<
 			request, 
@@ -181,27 +185,29 @@ export interface BuilderPatternRoute<
 		pickup extends string,
 	>(
 		process: processExport, 
-		params?: RouteProcessParams<processExport, pickup, floor>
+		params?: RouteProcessParams<processExport, pickup, floor>,
+		...desc: any[]
 	): Omit<
 		BuilderPatternRoute<
 			request, 
 			response, 
 			extractObj, 
 			floor & PickupDropProcess<processExport, pickup>
-		>
-		, 
+		>, 
 		"hook" | "extract" | "access"
 	>;
 
 	cut<localFloor extends {}>(
-		short: RouteShort<response, localFloor, floor>
+		short: RouteShort<response, localFloor, floor>,
+		...desc: any[]
 	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
 
 	custom<localFloor extends {}>(
-		customFunction: RouteCustom<request, response, localFloor, floor>
+		customFunction: RouteCustom<request, response, localFloor, floor>,
+		...desc: any[]
 	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
 
-	handler(handlerFunction: RoutehandlerFunction<response, floor>): void;
+	handler(handlerFunction: RoutehandlerFunction<response, floor>, ...desc: any[]): void;
 }
 
 export default function makeRoutesSystem(
@@ -266,9 +272,12 @@ export default function makeRoutesSystem(
 		response.code(500).info("INTERNAL_SERVER_ERROR").send(error.stack);
 	};
 
-	const declareRoute: DeclareRoute = (method, path, abstractRoute) => {
+	const declareRoute: DeclareRoute = (method, path, abstractRoute, ...desc) => {
 		if(path instanceof Array)path = path.map((p) => config.prefix + (abstractRoute?.prefix || "") + correctPath(p));
 		else path = [config.prefix + (abstractRoute?.prefix || "") + correctPath(path)];
+
+		const descs = desc;
+		if(abstractRoute)descs.push(...abstractRoute.descs);
 
 		const hooksLifeCyle = makeHooksLifeCycle();
 		
@@ -318,7 +327,7 @@ export default function makeRoutesSystem(
 		};
 		
 		let grapAccess: any;
-		const access: BuilderPatternRoute["access"] = (processExport, params) => {
+		const access: BuilderPatternRoute["access"] = (processExport, ...desc) => {
 			if(typeof processExport === "function"){
 				grapAccess = processExport;
 			}
@@ -330,15 +339,24 @@ export default function makeRoutesSystem(
 				hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
 				hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
 				hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
+				
+				const params = desc.shift();
 
 				grapAccess = {
 					name: processExport.name,
-					options: params?.options || processExport?.options,
+					options: {
+						...processExport?.options,
+						...params?.options
+					},
 					input: params?.input || processExport?.input,
 					processFunction: processExport.processFunction,
 					pickup: params?.pickup,
 				};
+
+				descs.push(...processExport.descs);
 			}
+
+			descs.push(...desc);
 
 			return {
 				extract,
@@ -354,11 +372,13 @@ export default function makeRoutesSystem(
 		let errorExtract: ErrorExtractFunction<Response> = (response, type, index, err) => {
 			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
 		};
-		const extract: BuilderPatternRoute["extract"] = (extractObj, error?) => {
+		const extract: BuilderPatternRoute["extract"] = (extractObj, error?, ...desc) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
 				extracted[index as keyof RouteExtractObj] = value;
 			});
 			errorExtract = error || errorExtract;
+
+			descs.push(...desc);
 
 			return {
 				check,
@@ -370,7 +390,7 @@ export default function makeRoutesSystem(
 		};
 
 		const steps: (StepChecker | StepProcess | StepCut | StepCustom)[] = [];
-		const process: BuilderPatternRoute<any, any, any, any>["process"] = (processExport, params) => {
+		const process: BuilderPatternRoute<any, any, any, any>["process"] = (processExport, params, ...desc) => {
 			let options;
 			if(
 				typeof processExport?.options === "object" && 
@@ -406,6 +426,9 @@ export default function makeRoutesSystem(
 			hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
 			hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
 			
+			descs.push(...processExport.descs);
+			descs.push(...desc);
+
 			return {
 				check,
 				process,
@@ -415,7 +438,7 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const check: BuilderPatternRoute<any, any, any, any>["check"] = (checker, params) => {
+		const check: BuilderPatternRoute<any, any, any, any>["check"] = (checker, params, ...desc) => {
 			let options;
 			if(
 				typeof checker?.options === "object" && 
@@ -444,6 +467,8 @@ export default function makeRoutesSystem(
 				skip: params.skip,
 			});
 
+			descs.push(...desc);
+
 			return {
 				check,
 				handler,
@@ -453,12 +478,14 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const cut: BuilderPatternRoute<any, any, any, any>["cut"] = (short) => {
+		const cut: BuilderPatternRoute<any, any, any, any>["cut"] = (short, ...desc) => {
 			steps.push({
 				type: "cut",
 				cutFunction: short,
 			});
 
+			descs.push(...desc);
+
 			return {
 				check,
 				handler,
@@ -468,12 +495,14 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const custom: BuilderPatternRoute<any, any, any, any>["custom"] = (customFunction) => {
+		const custom: BuilderPatternRoute<any, any, any, any>["custom"] = (customFunction, ...desc) => {
 			steps.push({
 				type: "custom",
 				customFunction,
 			});
 
+			descs.push(...desc);
+
 			return {
 				check,
 				handler,
@@ -483,7 +512,7 @@ export default function makeRoutesSystem(
 			};
 		};
 
-		const handler: BuilderPatternRoute<any, any, any, any>["handler"] = (handlerFunction) => {
+		const handler: BuilderPatternRoute<any, any, any, any>["handler"] = (handlerFunction, ...desc) => {
 			const launchOnConstructRequest = hooksLifeCyle.onConstructRequest.build();
 			const launchOnConstructResponse = hooksLifeCyle.onConstructResponse.build();
 			const beforeRouteExecution = hooksLifeCyle.beforeRouteExecution.build();
@@ -605,6 +634,8 @@ export default function makeRoutesSystem(
 
 			(path as string[]).forEach(p => routes[method][p] = routeFunction);
 
+			descs.push(...desc);
+
 			serverHooksLifeCycle.onDeclareRoute.launchSubscriber({
 				path: path as string[],
 				method,
@@ -613,6 +644,7 @@ export default function makeRoutesSystem(
 				access: grapAccess,
 				extracted,
 				steps: steps,
+				descs
 			});
 		};
 
@@ -635,8 +667,8 @@ export default function makeRoutesSystem(
 			request extends Request = Request, 
 			response extends Response = Response,
 			extractObj extends RouteExtractObj = RouteExtractObj,
-		>(method: Request["method"], path: string | string[]){
-			return declareRoute(method, path) as BuilderPatternRoute<request, response, extractObj>;
+		>(method: Request["method"], path: string | string[], ...desc: any[]){
+			return declareRoute(method, path, undefined, ...desc) as BuilderPatternRoute<request, response, extractObj>;
 		},
 		setNotfoundHandler,
 		setErrorHandler(errorFunction: RouteErrorHandlerFunction){

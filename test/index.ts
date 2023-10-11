@@ -26,7 +26,7 @@ duplo.addContentTypeParsers(/json/, (request) => new Promise(
 duplo
 .addHook("beforeRouteExecution", (request) => console.log("global hook beforeRouteExecution"))
 .addHook("onDeclareRoute", route => {
-	// if(route.abstractRoute)console.log(route);
+	if(route.path.includes("/user/{userId}"))console.log(route.descs);
 });
 
 let a = duplo.use((test, options: {lala: 1}) => options, {lala: 1});

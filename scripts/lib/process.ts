@@ -35,6 +35,7 @@ export interface ProcessSubscribers{
 	extracted: ProcessExtractObj;
 	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
 	handlerFunction?: ProcessHandlerFunction<any, any>;
+	descs: any[];
 }
 
 export type CreateProcess<
@@ -46,6 +47,7 @@ export type CreateProcess<
 > = (
 	name: string, 
 	params?: CreateProcessParams<options, input>,
+	...desc: any[]
 ) => BuilderPatternProcess<request, response, extractObj, options, input>;
 
 export interface CreateProcessParams<options extends Record<string, any>, input extends any>{
@@ -110,7 +112,8 @@ export interface BuilderPatternProcess<
 		localFloor extends FlatExtract<localeExtractObj>,
 	>(
 		extractObj: localeExtractObj, 
-		error?: ErrorExtractProcessFunction<response>
+		error?: ErrorExtractProcessFunction<response>, 
+		...desc: any[]
 	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
 	check<
@@ -124,7 +127,8 @@ export interface BuilderPatternProcess<
 			response, 
 			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>},
 			info
-		>
+		>, 
+		...desc: any[]
 	): Omit<
 		BuilderPatternProcess<
 			request, 
@@ -142,7 +146,8 @@ export interface BuilderPatternProcess<
 		pickup extends string,
 	>(
 		process: processExport, 
-		params?: ProcessProcessParams<processExport, pickup, floor>
+		params?: ProcessProcessParams<processExport, pickup, floor>, 
+		...desc: any[]
 	): Omit<
 		BuilderPatternProcess<
 			request, 
@@ -156,19 +161,23 @@ export interface BuilderPatternProcess<
 	>;
 
 	cut<localFloor extends {}>(
-		short: ProcessShort<response, localFloor, floor>
+		short: ProcessShort<response, localFloor, floor>, 
+		...desc: any[]
 	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
 	custom<localFloor extends {}>(
-		customFunction: ProcessCustom<request, response, localFloor, floor>
+		customFunction: ProcessCustom<request, response, localFloor, floor>, 
+		...desc: any[]
 	): Omit<BuilderPatternProcess<request, response, extractObj, options, input, floor & localFloor>, "hook" | "extract">;
 
 	handler(
-		handlerFunction: ProcessHandlerFunction<response, floor>
+		handlerFunction: ProcessHandlerFunction<response, floor>, 
+		...desc: any[]
 	): Pick<BuilderPatternProcess<request, response, extractObj, options, input, floor>, "build">;
 	
 	build<drop extends string>(
-		drop?: (keyof floor)[] & drop[]
+		drop?: (keyof floor)[] & drop[], 
+		...desc: any[]
 	): ProcessExport<input, options, extractObj, floor, drop>;
 }
 
@@ -185,7 +194,8 @@ export interface ProcessExport<
 	drop?: drop[];
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
 	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
-	extracted: extractObj
+	extracted: extractObj,
+	descs: any[],
 }
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
@@ -193,9 +203,7 @@ export type ProcessFunction = (request: Request, response: Response, options: an
 export const __exitProcess__ = Symbol("exitProcess");
 
 export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
-		
-	const createProcess: CreateProcess = (name, createParams) => {
-		const extracted: ProcessExtractObj = {};
+	const createProcess: CreateProcess = (name, createParams, ...desc) => {
 		const hooksLifeCyle = makeHooksLifeCycle();
 
 		const hook: BuilderPatternProcess["hook"] = (name, hookFunction) => {
@@ -213,14 +221,19 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
+		const descs = desc;
+
+		const extracted: ProcessExtractObj = {};
 		let errorExtract: ErrorExtractProcessFunction<Response> = (response, type, index, err, exitProcess) => {
 			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
 		};
-		const extract: BuilderPatternProcess["extract"] = (extractObj, error?) => {
+		const extract: BuilderPatternProcess["extract"] = (extractObj, error?, ...desc) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
 				extracted[index as keyof ProcessExtractObj] = value;
 			});
 			errorExtract = error || errorExtract;
+
+			descs.push(...desc);
 
 			return {
 				handler,
@@ -233,7 +246,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 		};
 
 		const steps: (StepChecker | StepProcess | StepCut | StepCustom)[] = [];
-		const process: BuilderPatternProcess<any, any, any, any, any, any>["process"] = (processExport, params) => {
+		const process: BuilderPatternProcess<any, any, any, any, any, any>["process"] = (processExport, params, ...desc) => {
 			let options;
 			if(
 				typeof processExport?.options === "object" && 
@@ -269,6 +282,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
 			hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
 
+			descs.push(...desc);
+
 			return {
 				check,
 				process,
@@ -279,7 +294,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const check: BuilderPatternProcess<any, any, any, any, any, any>["check"] = (checker, params) => {
+		const check: BuilderPatternProcess<any, any, any, any, any, any>["check"] = (checker, params, ...desc) => {
 			let options;
 			if(
 				typeof checker?.options === "object" && 
@@ -308,6 +323,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				skip: params.skip,
 			});
 
+			descs.push(...desc);
+
 			return {
 				check,
 				handler,
@@ -318,12 +335,14 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const cut: BuilderPatternProcess<any, any, any, any, any, any>["cut"] = (short) => {
+		const cut: BuilderPatternProcess<any, any, any, any, any, any>["cut"] = (short, ...desc) => {
 			steps.push({
 				type: "cut",
 				cutFunction: short,
 			});
 
+			descs.push(...desc);
+
 			return {
 				check,
 				handler,
@@ -334,11 +353,13 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const custom: BuilderPatternProcess<any, any, any, any, any, any>["custom"] = (customFunction) => {
+		const custom: BuilderPatternProcess<any, any, any, any, any, any>["custom"] = (customFunction, ...desc) => {
 			steps.push({
 				customFunction,
 				type: "custom"
 			});
+
+			descs.push(...desc);
 
 			return {
 				check,
@@ -351,15 +372,17 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 		};
 
 		let grapHandlerFunction: ProcessHandlerFunction<Response, any>;
-		const handler: BuilderPatternProcess<any, any, any, any, any, any>["handler"] = (handlerFunction) => {
+		const handler: BuilderPatternProcess<any, any, any, any, any, any>["handler"] = (handlerFunction, ...desc) => {
 			grapHandlerFunction = handlerFunction;
+
+			descs.push(...desc);
 
 			return {
 				build
 			};
 		};
 
-		const build: BuilderPatternProcess["build"] = (drop) => {
+		const build: BuilderPatternProcess["build"] = (drop, ...desc) => {
 			const stringFunction = processFunctionString(
 				!!createParams?.input,
 				!!createParams?.options,
@@ -442,6 +465,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 					() => {throw new Error("ExitProcess function is call in Process who has not 'allowExitProcess' define on true");}
 			});
 
+			descs.push(...desc);
+
 			serverHooksLifeCycle.onCreateProcess.launchSubscriber({
 				name,
 				options: createParams?.options,
@@ -450,6 +475,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				extracted,
 				handlerFunction: grapHandlerFunction,
 				steps: steps,
+				descs
 			});
 
 			return {
@@ -460,6 +486,7 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				processFunction,
 				hooksLifeCyle,
 				extracted,
+				descs,
 			};
 		};
 
@@ -482,8 +509,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			extractObj extends ProcessExtractObj = ProcessExtractObj,
 			options extends Record<string, any> = Record<string, any>,
 			input extends any = any,
-		>(name: string, params?: CreateProcessParams<options, input>){
-			return createProcess(name, params) as BuilderPatternProcess<request, response, extractObj, options, input>;
+		>(name: string, params?: CreateProcessParams<options, input>, ...desc: any[]){
+			return createProcess(name, params, ...desc) as BuilderPatternProcess<request, response, extractObj, options, input>;
 		}
 	};
 }
