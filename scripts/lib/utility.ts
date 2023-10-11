@@ -59,3 +59,44 @@ export type StepCustom = {
 }
 
 export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
+
+export interface DescriptionFirst{
+	type: "first",
+	descStep: any[],
+}
+
+export interface DescriptionAbstractRoute{
+	type: "abstractRoute",
+	desc: DescriptionAll[]
+}
+
+export interface DescriptionAccess{
+	type: "access",
+	isShort: boolean,
+	descStep: any[],
+	desc: (DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild)[]
+}
+
+export interface DescriptionExtracted{
+	type: "extracted",
+	descStep: any[],
+}
+
+export interface DescriptionStep{
+	type: "checker" | "process" | "cut" | "custom",
+	index: number,
+	descStep: any[],
+	desc: (DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild)[]
+}
+
+export interface DescriptionHandler{
+	type: "handler",
+	descStep: any[],
+}
+
+export interface DescriptionBuild{
+	type: "build",
+	descStep: any[],
+}
+
+export type DescriptionAll = DescriptionFirst | DescriptionAbstractRoute | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild

@@ -5,7 +5,7 @@ import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCy
 import makeFloor, {Floor} from "./floor";
 import {Request} from "./request";
 import {Response} from "./response";
-import {FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
+import {DescriptionBuild, DescriptionExtracted, DescriptionFirst, DescriptionHandler, DescriptionStep, FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
 
 export type ErrorExtractProcessFunction<response extends Response> = (response: response, type: keyof ProcessExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
 
@@ -26,17 +26,6 @@ export type ProcessCustom<
 	returnFloor extends {},
 	floor extends {},
 > = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
-
-export interface ProcessSubscribers{
-	name: string;
-	options: unknown;
-	drop?: string[];
-	hooksLifeCyle: HooksLifeCycle;
-	extracted: ProcessExtractObj;
-	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
-	handlerFunction?: ProcessHandlerFunction<any, any>;
-	descs: any[];
-}
 
 export type CreateProcess<
 	request extends Request = Request, 
@@ -191,11 +180,13 @@ export interface ProcessExport<
 	name: string;
 	options?: options;
 	processFunction: ProcessFunction;
-	drop?: drop[];
+	drop: drop[];
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
 	input?: (pickup: ReturnType<typeof makeFloor>["pickup"]) => input;
 	extracted: extractObj,
-	descs: any[],
+	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
+	handlerFunction?: ProcessHandlerFunction<any, any>;
+	descs: (DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild)[],
 }
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
@@ -221,7 +212,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			};
 		};
 
-		const descs = desc;
+		const descs: (DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild)[] = [];
+		if(desc.length !== 0)descs.push({type: "first", descStep: desc});
 
 		const extracted: ProcessExtractObj = {};
 		let errorExtract: ErrorExtractProcessFunction<Response> = (response, type, index, err, exitProcess) => {
@@ -233,7 +225,10 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			});
 			errorExtract = error || errorExtract;
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "extracted", 
+				descStep: desc,
+			});
 
 			return {
 				handler,
@@ -282,7 +277,12 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 			hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
 			hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
 
-			descs.push(...desc);
+			if(desc.length !== 0 || processExport.descs.length !== 0)descs.push({
+				type: "process", 
+				descStep: desc, 
+				desc: processExport.descs,
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -323,7 +323,12 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				skip: params.skip,
 			});
 
-			descs.push(...desc);
+			if(desc.length !== 0 || checker.desc.length !== 0)descs.push({
+				type: "checker", 
+				descStep: desc, 
+				desc: checker.desc, 
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -341,7 +346,12 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				cutFunction: short,
 			});
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "cut", 
+				descStep: desc, 
+				desc: [],
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -359,7 +369,12 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				type: "custom"
 			});
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "custom", 
+				descStep: desc, 
+				desc: [],
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -375,7 +390,10 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 		const handler: BuilderPatternProcess<any, any, any, any, any, any>["handler"] = (handlerFunction, ...desc) => {
 			grapHandlerFunction = handlerFunction;
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "handler", 
+				descStep: desc
+			});
 
 			return {
 				build
@@ -465,29 +483,27 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 					() => {throw new Error("ExitProcess function is call in Process who has not 'allowExitProcess' define on true");}
 			});
 
-			descs.push(...desc);
-
-			serverHooksLifeCycle.onCreateProcess.launchSubscriber({
-				name,
-				options: createParams?.options,
-				drop: drop,
-				hooksLifeCyle,
-				extracted,
-				handlerFunction: grapHandlerFunction,
-				steps: steps,
-				descs
+			if(desc.length !== 0)descs.push({
+				type: "build", 
+				descStep: desc
 			});
 
-			return {
+			const processExport: ProcessExport = {
 				name,
 				options: createParams?.options,
-				input: createParams?.input,
-				drop: drop,
 				processFunction,
+				drop: drop || [],
 				hooksLifeCyle,
+				input: createParams?.input,
 				extracted,
+				steps,
+				handlerFunction: grapHandlerFunction,
 				descs,
 			};
+
+			serverHooksLifeCycle.onCreateProcess.syncLaunchSubscriber(processExport);
+
+			return processExport as any;
 		};
 
 		return {

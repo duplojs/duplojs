@@ -50,7 +50,7 @@ const deepAbstractRoute = mustBeConnected({pickup: ["test"], options: {t: 5}, ig
 })
 .build(["user", "deep", "test"]);
 
-deepAbstractRoute({pickup: ["user", "deep", "test"], ignorePrefix: true})
+deepAbstractRoute({pickup: ["user", "deep", "test"]})
 .declareRoute("GET", "/api")
 .hook("beforeRouteExecution", () => console.log("local hook beforeRouteExecution"))
 .access((floor, request, response) => {

@@ -2,12 +2,12 @@ import {ZodType, ZodError} from "zod";
 import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker";
 import makeFloor, {Floor} from "./floor";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
-import {PickupDropProcess, ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
+import {PickupDropProcess, ProcessExport, ProcessFunction, ProcessHandlerFunction, __exitProcess__} from "./process";
 import {DeclareRoute, RouteExtractObj, RouteProcessAccessParams, RouteProcessParams, condition, mapped, spread} from "./route";
 import correctPath from "./correctPath";
 import {Response} from "./response";
 import {Request} from "./request";
-import {FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
+import {DescriptionAll, FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
 import makeMergeAbstractRoutesSystem from "./mergeAbstractRoute";
 
 export const __abstractRoute__ = Symbol("abstractRoute");
@@ -16,33 +16,21 @@ export interface AbstractRoute<
 	options extends Record<string, any> = Record<string, any>,
 	floor extends {} = {},
 >{
-	prefix: string;
 	name: string;
+	localPrefix: string;
+	fullPrefix: string;
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
 	pickup: string[];
 	options: options;
 	abstractRouteFunction: AbstractRouteFunction;
-	abstractRouteSubscribers: AbstractRouteSubscribers | AbstractRouteSubscribers[];
-	descs: any[]
-}
-
-export interface AbstractRouteSubscribers{
-	name: string;
-	abstractRoute?: AbstractRouteSubscribers | AbstractRouteSubscribers[];
-	hooksLifeCyle: HooksLifeCycle;
-	access: AbstractRouteShortAccess<any, any, any, any> | {
-		type: "process",
-		name: string,
-		options: unknown,
-		pickup?: string[]
-	};
+	descs: DescriptionAll[];
+	parentAbstractRoute?: AbstractRoute;
+	access?: AbstractRouteShortAccess<any, any, any, any> | Omit<StepProcess, "type" | "skip">;
 	extracted: RouteExtractObj;
 	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
 	handlerFunction?: AbstractRouteHandlerFunction<any, any>;
-	options?: any;
-	drop?: string[];
-	pickup?: string[];
-	descs: any[];
+	drop: string[];
+	mergeAbstractRoute?: AbstractRoute[]
 }
 
 export type ErrorExtractAbstractRouteFunction<response extends Response> = (response: response, type: keyof RouteExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
@@ -59,7 +47,7 @@ export interface DeclareAbstractRoute<
 	(
 		name: string, 
 		params?: DeclareAbstractRouteParams<options>, 
-		abstractRoute?: AbstractRoute,
+		parentAbstractRoute?: AbstractRoute,
 		...desc: any[]
 	): BuilderPatternAbstractRoute<request, response, extractObj, options, floor>;
 }
@@ -286,20 +274,21 @@ export interface BuilderPatternAbstractRoute<
 }
 
 export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, serverHooksLifeCycle: ServerHooksLifeCycle){
-	const declareAbstractRoute: DeclareAbstractRoute = (name, declareParams, abstractRoute, ...desc) => {
-		const descs = desc;
-		if(abstractRoute)descs.push(...abstractRoute.descs);
+	const declareAbstractRoute: DeclareAbstractRoute = (name, declareParams, parentAbstractRoute, ...desc) => {
+		const descs: DescriptionAll[] = [];
+		if(desc.length !== 0)descs.push({type: "first", descStep: desc});
+		if(parentAbstractRoute && parentAbstractRoute.descs.length !== 0)descs.push({type: "abstractRoute", desc: parentAbstractRoute.descs});
 		
 		const hooksLifeCyle = makeHooksLifeCycle();
-		if(abstractRoute){
+		if(parentAbstractRoute){
 			//copy abstract hook
-			hooksLifeCyle.onConstructRequest.copySubscriber(abstractRoute.hooksLifeCyle.onConstructRequest.subscribers);
-			hooksLifeCyle.onConstructResponse.copySubscriber(abstractRoute.hooksLifeCyle.onConstructResponse.subscribers);
-			hooksLifeCyle.beforeRouteExecution.copySubscriber(abstractRoute.hooksLifeCyle.beforeRouteExecution.subscribers);
-			hooksLifeCyle.beforeParsingBody.copySubscriber(abstractRoute.hooksLifeCyle.beforeParsingBody.subscribers);
-			hooksLifeCyle.onError.copySubscriber(abstractRoute.hooksLifeCyle.onError.subscribers);
-			hooksLifeCyle.beforeSend.copySubscriber(abstractRoute.hooksLifeCyle.beforeSend.subscribers);
-			hooksLifeCyle.afterSend.copySubscriber(abstractRoute.hooksLifeCyle.afterSend.subscribers);
+			hooksLifeCyle.onConstructRequest.copySubscriber(parentAbstractRoute.hooksLifeCyle.onConstructRequest.subscribers);
+			hooksLifeCyle.onConstructResponse.copySubscriber(parentAbstractRoute.hooksLifeCyle.onConstructResponse.subscribers);
+			hooksLifeCyle.beforeRouteExecution.copySubscriber(parentAbstractRoute.hooksLifeCyle.beforeRouteExecution.subscribers);
+			hooksLifeCyle.beforeParsingBody.copySubscriber(parentAbstractRoute.hooksLifeCyle.beforeParsingBody.subscribers);
+			hooksLifeCyle.onError.copySubscriber(parentAbstractRoute.hooksLifeCyle.onError.subscribers);
+			hooksLifeCyle.beforeSend.copySubscriber(parentAbstractRoute.hooksLifeCyle.beforeSend.subscribers);
+			hooksLifeCyle.afterSend.copySubscriber(parentAbstractRoute.hooksLifeCyle.afterSend.subscribers);
 		}
 
 		const hook: BuilderPatternAbstractRoute["hook"] = (name, hookFunction) => {
@@ -318,10 +307,16 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		let grapAccess: any;
+		let grapAccess: Omit<StepProcess, "type" | "skip"> | AbstractRouteShortAccess<any, any, any, any>;
 		const access: BuilderPatternAbstractRoute["access"] = (processExport, ...desc) => {
 			if(typeof processExport === "function"){
 				grapAccess = processExport;
+				if(desc.length !== 0)descs.push({
+					type: "access", 
+					descStep: desc, 
+					isShort: true, 
+					desc: []
+				});
 			}
 			else {
 				hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
@@ -343,12 +338,16 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 					input: params?.input || processExport?.input,
 					processFunction: processExport.processFunction,
 					pickup: params?.pickup,
+					extracted: processExport.extracted
 				};
 
-				descs.push(...processExport.descs);
+				if(desc.length !== 0 || processExport.descs.length !== 0)descs.push({
+					type: "access", 
+					descStep: desc, 
+					isShort: false, 
+					desc: processExport.descs
+				});
 			}
-
-			descs.push(...desc);
 
 			return {
 				extract,
@@ -371,7 +370,10 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			});
 			errorExtract = error || errorExtract;
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "extracted", 
+				descStep: desc,
+			});
 
 			return {
 				check,
@@ -420,7 +422,12 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
 			hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
 			
-			descs.push(...desc);
+			if(desc.length !== 0 || processExport.descs.length !== 0)descs.push({
+				type: "process", 
+				descStep: desc, 
+				desc: processExport.descs,
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -461,7 +468,12 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				skip: params.skip,
 			});
 
-			descs.push(...desc);
+			if(desc.length !== 0 || checker.desc.length !== 0)descs.push({
+				type: "checker", 
+				descStep: desc, 
+				desc: checker.desc, 
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -479,7 +491,12 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				cutFunction: short,
 			});
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "cut", 
+				descStep: desc, 
+				desc: [],
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -497,7 +514,12 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				type: "custom"
 			});
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "custom", 
+				descStep: desc, 
+				desc: [],
+				index: steps.length - 1
+			});
 
 			return {
 				check,
@@ -513,7 +535,10 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		const handler: BuilderPatternAbstractRoute<any, any, any, any, any>["handler"] = (handlerFunction, ...desc) => {
 			grapHandlerFunction = handlerFunction;
 
-			descs.push(...desc);
+			if(desc.length !== 0)descs.push({
+				type: "handler", 
+				descStep: desc
+			});
 
 			return {
 				build
@@ -527,11 +552,11 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 					!!declareParams?.allowExitProcess,
 					spread(
 						condition(
-							!!abstractRoute,
-							() => abstractRouteString(
-								abstractRoute?.abstractRouteFunction.constructor.name === "AsyncFunction",
+							!!parentAbstractRoute,
+							() => parentAbstractRouteString(
+								parentAbstractRoute?.abstractRouteFunction.constructor.name === "AsyncFunction",
 								mapped(
-									abstractRoute?.pickup || [],
+									parentAbstractRoute?.pickup || [],
 									(value) => processDrop(value)
 								)
 							)
@@ -622,60 +647,52 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				ZodError,
 				grapHandlerFunction,
 				grapAccess,
-				abstractRoute,
+				parentAbstractRoute,
 				__exitProcess__,
 				exitProcess: declareParams?.allowExitProcess ?
 					() => {throw __exitProcess__;} :
 					() => {throw new Error("ExitProcess function is call in abstractRoute who has not 'allowExitProcess' define on true");}
 			}); 
 			
-			descs.push(...desc);
-
-			serverHooksLifeCycle.onDeclareAbstractRoute.launchSubscriber({
-				name,
-				abstractRoute: abstractRoute?.abstractRouteSubscribers,
-				hooksLifeCyle,
-				access: grapAccess,
-				extracted,
-				steps: steps,
-				handlerFunction: grapHandlerFunction,
-				options: declareParams?.options,
-				drop: drop,
-				descs
+			if(desc.length !== 0)descs.push({
+				type: "build", 
+				descStep: desc
 			});
 
+			const abstractRoute: AbstractRoute = {
+				name,
+				localPrefix: declareParams?.prefix || "",
+				fullPrefix: (parentAbstractRoute?.fullPrefix || "") + correctPath(declareParams?.prefix || ""),
+				hooksLifeCyle,
+				pickup: [],
+				options: declareParams?.options || {},
+				abstractRouteFunction,
+				descs,
+				parentAbstractRoute,
+				access: grapAccess,
+				extracted,
+				steps,
+				handlerFunction: grapHandlerFunction,
+				drop: drop || []
+			};
+
+			serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(abstractRoute);
+
 			return (params) => {
-				const abstractRouteParams = {
-					abstractRouteFunction,
-					hooksLifeCyle,
-					name,
-					prefix: params?.ignorePrefix ? "" : ((abstractRoute?.prefix || "") + correctPath(declareParams?.prefix || "")),
-					pickup: (params?.pickup || []) as any,
+				const subAbstractRoute = {
+					...abstractRoute,
+					fullPrefix: params?.ignorePrefix ? "" : abstractRoute.fullPrefix,
+					pickup: (params?.pickup || []),
 					options: {
-						...(declareParams?.options || {}),
+						...abstractRoute.options,
 						...(params?.options || {}),
 					},
-					// information défini pour le hook onDeclareRoute
-					abstractRouteSubscribers: { 
-						name,
-						abstractRoute: abstractRoute?.abstractRouteSubscribers,
-						hooksLifeCyle,
-						access: grapAccess,
-						extracted,
-						steps: steps,
-						handlerFunction: grapHandlerFunction,
-						options: params?.options || declareParams?.options || {},
-						drop: drop,
-						pickup: params?.pickup || [],
-						descs
-					},
-					descs
 				};
 
 				return {
-					declareRoute: (method, path, ...desc) => declareRoute(method, path, abstractRouteParams, ...desc) as any,
-					declareAbstractRoute: (nameAbstractRoute, optionsAbstractRoute, ...desc) => declareAbstractRoute(nameAbstractRoute, optionsAbstractRoute, abstractRouteParams, ...desc) as any,
-					[__abstractRoute__]: abstractRouteParams,
+					declareRoute: (method, path, ...desc) => declareRoute(method, path, subAbstractRoute, ...desc) as any,
+					declareAbstractRoute: (nameAbstractRoute, optionsAbstractRoute, ...desc) => declareAbstractRoute(nameAbstractRoute, optionsAbstractRoute, subAbstractRoute, ...desc) as any,
+					[__abstractRoute__]: subAbstractRoute,
 				};
 			};
 		};
@@ -693,7 +710,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		};
 	};
 
-	const {mergeAbstractRoute} = makeMergeAbstractRoutesSystem(declareRoute, declareAbstractRoute);
+	const {mergeAbstractRoute} = makeMergeAbstractRoutesSystem(declareRoute, declareAbstractRoute, serverHooksLifeCycle);
 	
 	return {
 		declareAbstractRoute<
@@ -701,8 +718,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			response extends Response = Response,
 			extractObj extends RouteExtractObj = RouteExtractObj,
 			options extends Record<string, any> = Record<string, any>,
-		>(name: string, params?: DeclareAbstractRouteParams<options>){
-			return declareAbstractRoute(name, params) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
+		>(name: string, params?: DeclareAbstractRouteParams<options>, ...desc: any[]){
+			return declareAbstractRoute(name, params, undefined, ...desc) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
 		},
 
 		mergeAbstractRoute
@@ -743,11 +760,11 @@ catch(error){
 ${block}
 `;
 
-const abstractRouteString = (async: boolean, drop: string) => /* js */`
-result = ${async ? "await " : ""}this.abstractRoute.abstractRouteFunction(
+const parentAbstractRouteString = (async: boolean, drop: string) => /* js */`
+result = ${async ? "await " : ""}this.parentAbstractRoute.abstractRouteFunction(
 	request, 
 	response, 
-	this.abstractRoute.options,
+	this.parentAbstractRoute.options,
 );
 
 ${drop}
