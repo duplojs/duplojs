@@ -7,13 +7,14 @@ import "./skip";
 import "./custom";
 import "./functionOptions";
 
-duplo.declareRoute("GET", "/user/{userId}")
+duplo.declareRoute("GET", "/user/{userId}", "test")
 .hook("onConstructRequest", () => console.log("local hook"))
 .access(
 	getUser,
 	{
 		pickup: ["user"],
-	}
+	},
+	"test1"
 )
 .extract({
 	params: {
@@ -29,8 +30,9 @@ duplo.declareRoute("GET", "/user/{userId}")
 		input: (pickup) => pickup("userId"),
 		validate: (info, data) => info === "user.exist",
 		catch: (response, info, data) => response.code(404).info(info).send(),
-		options: {type: "id", test: "eeeeee"}
-	}
+		options: {type: "id"}
+	},
+	"test2"
 )
 .cut(({pickup}) => {
 	console.log(pickup("user-agent"));
