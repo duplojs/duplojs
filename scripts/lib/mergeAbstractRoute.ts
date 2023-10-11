@@ -1,12 +1,12 @@
 import {AbstractRoute, AbstractRouteInstance, DeclareAbstractRoute, __abstractRoute__} from "./abstractRoute";
-import {makeHooksLifeCycle} from "./hook";
+import {ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {Request} from "./request";
 import {DeclareRoute, RouteExtractObj, condition, mapped} from "./route";
 import makeFloor from "./floor";
-import {UnionToIntersection} from "./utility";
+import {DescriptionAbstractRoute, UnionToIntersection} from "./utility";
 import {Response} from "./response";
 
-export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute, declareAbstractRoute: DeclareAbstractRoute){
+export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute, declareAbstractRoute: DeclareAbstractRoute, serverHooksLifeCycle: ServerHooksLifeCycle){
 	function mergeAbstractRoute<
 		abstractRouteInstance extends AbstractRouteInstance,
 		request extends abstractRouteInstance extends AbstractRouteInstance<infer request>? request : never,
@@ -14,7 +14,7 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 		extractObj extends abstractRouteInstance extends AbstractRouteInstance<any, any, infer extractObj>? extractObj : never,
 		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>? floor : never
 	>(
-		abstractRouteInstances: abstractRouteInstance[],
+		abstractRouteInstances: abstractRouteInstance[]
 	): AbstractRouteInstance<
 		UnionToIntersection<request> extends Request? UnionToIntersection<request> : never,
 		UnionToIntersection<response> extends Response? UnionToIntersection<response> : never,
@@ -23,21 +23,24 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 		UnionToIntersection<floor> extends {}? UnionToIntersection<floor> : never
 	>
 	{
+		const abstractRoutes = abstractRouteInstances.map(ari => ari[__abstractRoute__]);
 		const hooksLifeCyle = makeHooksLifeCycle();
 		const pickup: string[] = [];
-		const descs: any[] = [];
+		const descs: DescriptionAbstractRoute[] = [];
+		const fullPrefix: string[] = [];
 
-		abstractRouteInstances.forEach(ari => {
-			hooksLifeCyle.onConstructRequest.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.onConstructRequest.subscribers);
-			hooksLifeCyle.onConstructResponse.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.onConstructResponse.subscribers);
-			hooksLifeCyle.beforeRouteExecution.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.beforeRouteExecution.subscribers);
-			hooksLifeCyle.beforeParsingBody.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.beforeParsingBody.subscribers);
-			hooksLifeCyle.onError.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.onError.subscribers);
-			hooksLifeCyle.beforeSend.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.beforeSend.subscribers);
-			hooksLifeCyle.afterSend.copySubscriber(ari[__abstractRoute__].hooksLifeCyle.afterSend.subscribers);
+		abstractRoutes.forEach(ar => {
+			hooksLifeCyle.onConstructRequest.copySubscriber(ar.hooksLifeCyle.onConstructRequest.subscribers);
+			hooksLifeCyle.onConstructResponse.copySubscriber(ar.hooksLifeCyle.onConstructResponse.subscribers);
+			hooksLifeCyle.beforeRouteExecution.copySubscriber(ar.hooksLifeCyle.beforeRouteExecution.subscribers);
+			hooksLifeCyle.beforeParsingBody.copySubscriber(ar.hooksLifeCyle.beforeParsingBody.subscribers);
+			hooksLifeCyle.onError.copySubscriber(ar.hooksLifeCyle.onError.subscribers);
+			hooksLifeCyle.beforeSend.copySubscriber(ar.hooksLifeCyle.beforeSend.subscribers);
+			hooksLifeCyle.afterSend.copySubscriber(ar.hooksLifeCyle.afterSend.subscribers);
 
-			pickup.push(...ari[__abstractRoute__].pickup);
-			descs.push(...ari[__abstractRoute__].descs);
+			pickup.push(...ar.pickup);
+			if(ar.descs.length !== 0)descs.push({type: "abstractRoute", desc: ar.descs});
+			fullPrefix.push(ar.fullPrefix);
 		});
 
 		const stringFunction = mergeAbstractRouteFunctionString(
@@ -56,27 +59,31 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 		);
 
 		const abstractRouteFunction = eval(stringFunction).bind({
-			abstractRoutes: abstractRouteInstances.map(ari => ari[__abstractRoute__]),
+			abstractRoutes,
 			makeFloor,
 		});
 
-		const mapAbstractRouteSubscribers = abstractRouteInstances.map(ari => ari[__abstractRoute__].abstractRouteSubscribers).flat();
-
-		const abstractRouteParams: AbstractRoute = {
-			abstractRouteFunction,
+		const abstractRoute: AbstractRoute = {
+			name: `@merge{${abstractRoutes.map(ar => ar.name).join(",")}}`,
+			localPrefix: "",
+			fullPrefix: fullPrefix.join(""),
 			hooksLifeCyle,
-			name: `merge(${mapAbstractRouteSubscribers.map(ars => ars.name).join(",")})`,
-			prefix: "",
 			pickup: pickup,
 			options: {},
-			abstractRouteSubscribers: mapAbstractRouteSubscribers,
+			abstractRouteFunction,
 			descs,
+			extracted: {},
+			steps: [],
+			drop: pickup,
+			mergeAbstractRoute: abstractRoutes,
 		};
 
+		serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(abstractRoute);
+
 		return {
-			declareRoute: (method: Request["method"], path: string) => declareRoute(method, path, abstractRouteParams),
-			declareAbstractRoute: (nameAbstractRoute: string, optionsAbstractRoute: Record<string, any>) => declareAbstractRoute(nameAbstractRoute, optionsAbstractRoute, abstractRouteParams),
-			[__abstractRoute__]: abstractRouteParams,
+			declareRoute: (method: Request["method"], path: string, ...desc: any[]) => declareRoute(method, path, abstractRoute, ...desc),
+			declareAbstractRoute: (nameAbstractRoute: string, optionsAbstractRoute: Record<string, any>, ...desc: any[]) => declareAbstractRoute(nameAbstractRoute, optionsAbstractRoute, abstractRoute, ...desc),
+			[__abstractRoute__]: abstractRoute,
 		} as any;
 	}
 
