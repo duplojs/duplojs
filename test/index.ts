@@ -26,7 +26,25 @@ duplo.addContentTypeParsers(/json/, (request) => new Promise(
 duplo
 .addHook("beforeRouteExecution", (request) => console.log("global hook beforeRouteExecution"))
 .addHook("onDeclareRoute", route => {
-	// if(route.descs.length !== 0)console.log(route.path, route.descs);
+	if(route.descs.length !== 0){
+		// console.log(route.stringFunction);
+		// console.log(route.path, route.descs);
+		route.extends.myIndex = 3;
+		route.stringFunction = route.stringFunction.replace(
+			/\/\* first_line \*\/([^]*)/,
+			(match, g1) => {
+				const [block, afterBlock] = g1.split(/\/\* end_block \*\/([^]*)/s);
+				return `
+					/* first_line */
+					${block}
+					console.log("test injection", request.path, this.extends.myIndex);
+					/* end_block */
+					${afterBlock}
+				`;
+			}
+		);
+		route.build();
+	}
 });
 
 let a = duplo.use((test, options: {lala: 1}) => options, {lala: 1});

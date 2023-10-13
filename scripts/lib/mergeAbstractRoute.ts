@@ -1,12 +1,17 @@
-import {AbstractRoute, AbstractRouteInstance, DeclareAbstractRoute, __abstractRoute__} from "./abstractRoute";
+import {AbstractRoute, AbstractRouteInstance, AbstractRoutes, DeclareAbstractRoute, __abstractRoute__} from "./abstractRoute";
 import {ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {Request} from "./request";
 import {DeclareRoute, RouteExtractObj, condition, mapped} from "./route";
 import makeFloor from "./floor";
-import {DescriptionAbstractRoute, UnionToIntersection} from "./utility";
+import {UnionToIntersection} from "./utility";
 import {Response} from "./response";
 
-export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute, declareAbstractRoute: DeclareAbstractRoute, serverHooksLifeCycle: ServerHooksLifeCycle){
+export default function makeMergeAbstractRoutesSystem(
+	declareRoute: DeclareRoute, 
+	declareAbstractRoute: DeclareAbstractRoute, 
+	serverHooksLifeCycle: ServerHooksLifeCycle, 
+	allAbstractRoutes: AbstractRoutes,
+){
 	function mergeAbstractRoute<
 		abstractRouteInstance extends AbstractRouteInstance,
 		request extends abstractRouteInstance extends AbstractRouteInstance<infer request>? request : never,
@@ -14,7 +19,7 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 		extractObj extends abstractRouteInstance extends AbstractRouteInstance<any, any, infer extractObj>? extractObj : never,
 		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>? floor : never
 	>(
-		abstractRouteInstances: abstractRouteInstance[]
+		abstractRouteInstances: abstractRouteInstance[],
 	): AbstractRouteInstance<
 		UnionToIntersection<request> extends Request? UnionToIntersection<request> : never,
 		UnionToIntersection<response> extends Response? UnionToIntersection<response> : never,
@@ -26,7 +31,6 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 		const abstractRoutes = abstractRouteInstances.map(ari => ari[__abstractRoute__]);
 		const hooksLifeCyle = makeHooksLifeCycle();
 		const pickup: string[] = [];
-		const descs: DescriptionAbstractRoute[] = [];
 		const fullPrefix: string[] = [];
 
 		abstractRoutes.forEach(ar => {
@@ -39,45 +43,53 @@ export default function makeMergeAbstractRoutesSystem(declareRoute: DeclareRoute
 			hooksLifeCyle.afterSend.copySubscriber(ar.hooksLifeCyle.afterSend.subscribers);
 
 			pickup.push(...ar.pickup);
-			if(ar.descs.length !== 0)descs.push({type: "abstractRoute", desc: ar.descs});
 			fullPrefix.push(ar.fullPrefix);
-		});
-
-		const stringFunction = mergeAbstractRouteFunctionString(
-			mapped(
-				abstractRouteInstances, 
-				(value, index) => abstractRoutesString(
-					value[__abstractRoute__].abstractRouteFunction.constructor.name === "AsyncFunction",
-					index,
-					mapped(
-						value[__abstractRoute__].pickup,
-						(value) => processDrop(value)
-					)
-				)
-			),
-			pickup
-		);
-
-		const abstractRouteFunction = eval(stringFunction).bind({
-			abstractRoutes,
-			makeFloor,
 		});
 
 		const abstractRoute: AbstractRoute = {
 			name: `@merge{${abstractRoutes.map(ar => ar.name).join(",")}}`,
 			localPrefix: "",
 			fullPrefix: fullPrefix.join(""),
-			hooksLifeCyle,
+			drop: pickup,
 			pickup: pickup,
 			options: {},
-			abstractRouteFunction,
-			descs,
-			extracted: {},
-			steps: [],
-			drop: pickup,
+			allowExitProcess: false,
+			hooksLifeCyle,
 			mergeAbstractRoute: abstractRoutes,
+			extracted: {},
+			errorExtract: () => {},
+			steps: [],
+			abstractRouteFunction: () => ({}),
+			params: {},
+			descs: [],
+			extends: {},
+			stringFunction: "",
+			build: (customStringFunction) => {
+				abstractRoute.mergeAbstractRoute?.forEach(ar => ar.build());
+				abstractRoute.stringFunction = customStringFunction || abstractRoute.stringFunction || mergeAbstractRouteFunctionString(
+					mapped(
+						abstractRouteInstances, 
+						(value, index) => abstractRoutesString(
+							value[__abstractRoute__].abstractRouteFunction.constructor.name === "AsyncFunction",
+							index,
+							mapped(
+								value[__abstractRoute__].pickup,
+								(value) => processDrop(value)
+							)
+						)
+					),
+					pickup
+				);
+		
+				abstractRoute.abstractRouteFunction = eval(abstractRoute.stringFunction).bind({
+					abstractRoutes,
+					makeFloor,
+				});
+			}
 		};
 
+		abstractRoute.build();
+		allAbstractRoutes[abstractRoute.name] = abstractRoute;
 		serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(abstractRoute);
 
 		return {

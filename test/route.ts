@@ -111,3 +111,8 @@ duplo.declareRoute("GET", "/static/*")
 	console.log("test");
 	response.send("test");
 });
+
+duplo.declareRoute("GET", "/autocannon")
+.handler((floor, response) => {
+	response.send();
+});

@@ -1,6 +1,7 @@
 import {ZodType} from "zod";
-import {ProcessExtractObj} from "./process";
-import {RouteExtractObj} from "./route";
+import {ProcessCheckerParams, ProcessExport, ProcessExtractObj, ProcessProcessParams} from "./process";
+import {RouteCheckerParams, RouteExtractObj, RouteProcessAccessParams, RouteProcessParams} from "./route";
+import {AbstractRouteCheckerParams} from "./abstractRoute";
 
 export type PromiseOrNot<T> = T | Promise<T>;
 
@@ -35,6 +36,10 @@ export type StepChecker = {
 	catch: AnyFunction,
 	output?: AnyFunction,
 	skip?: AnyFunction,
+	params: RouteCheckerParams<any, any, any, any> | 
+		ProcessCheckerParams<any, any, any, any> | 
+		AbstractRouteCheckerParams<any, any, any, any>,
+	build: () => void,
 }
 
 export type StepProcess = {
@@ -44,8 +49,9 @@ export type StepProcess = {
 	input?: AnyFunction,
 	processFunction: AnyFunction,
 	pickup?: string[],
-	extracted: ProcessExtractObj,
 	skip?: AnyFunction,
+	params: RouteProcessParams<any, any, any> | ProcessProcessParams<any, any, any>,
+	build: () => void,
 }
 
 export type StepCut = {
@@ -65,16 +71,10 @@ export interface DescriptionFirst{
 	descStep: any[],
 }
 
-export interface DescriptionAbstractRoute{
-	type: "abstractRoute",
-	desc: DescriptionAll[]
-}
-
 export interface DescriptionAccess{
 	type: "access",
 	isShort: boolean,
 	descStep: any[],
-	desc: (DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild)[]
 }
 
 export interface DescriptionExtracted{
@@ -86,7 +86,6 @@ export interface DescriptionStep{
 	type: "checker" | "process" | "cut" | "custom",
 	index: number,
 	descStep: any[],
-	desc: (DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild)[]
 }
 
 export interface DescriptionHandler{
@@ -99,4 +98,7 @@ export interface DescriptionBuild{
 	descStep: any[],
 }
 
-export type DescriptionAll = DescriptionFirst | DescriptionAbstractRoute | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild
+export type DescriptionAll = DescriptionFirst | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild
+
+
+export const deepFreeze = (object: Record<any, any>): void => Object.values(Object.freeze(object)).forEach(object => typeof object !== "object" || deepFreeze(object));
