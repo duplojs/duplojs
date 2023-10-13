@@ -2,13 +2,12 @@ import http from "http";
 import {AddHooksLifeCycle, AddServerHooksLifeCycle, makeHooksLifeCycle, makeServerHooksLifeCycle} from "./hook.ts";
 import {Request} from "./request.ts";
 import {__exec__, Response} from "./response.ts";
-import makeRoutesSystem from "./route.ts";
-import makeCheckerSystem from "./checker.ts";
+import makeRoutesSystem, {RoutesObject} from "./route.ts";
+import makeCheckerSystem, {Checkers} from "./checker.ts";
 import correctPath from "./correctPath.ts";
-import makeProcessSystem from "./process.ts";
+import makeProcessSystem, {Processes} from "./process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
-import {AnyFunction} from "./utility.ts";
-import {DeclareAbstractRoute} from "./abstractRoute.ts";
+import {AbstractRoutes} from "./abstractRoute.ts";
 
 declare module "http"{
 	interface IncomingMessage{
@@ -23,6 +22,8 @@ export interface DuploConfig{
 	onClose?: () => void;
 	prefix?: string;
 }
+
+export type Plugins = Record<string, {version: string, data: any}>;
 export interface DuploInstance<duploConfig extends DuploConfig> {
 	Request: typeof Request;
 	Response: typeof Response;
@@ -36,11 +37,18 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	setErrorHandler: ReturnType<typeof makeRoutesSystem>["setErrorHandler"];
 	createProcess: ReturnType<typeof makeProcessSystem>["createProcess"];
 	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
+	buildContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["buildContentTypeBody"]
 	declareAbstractRoute: ReturnType<typeof makeRoutesSystem>["declareAbstractRoute"];
 	mergeAbstractRoute: ReturnType<typeof makeRoutesSystem>["mergeAbstractRoute"];
 	use<
 		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
+	buildRouter: ReturnType<typeof makeRoutesSystem>["buildRouter"];
+	routes: RoutesObject;
+	checkers: Checkers;
+	processes: Processes;
+	abstractRoutes: AbstractRoutes;
+	plugins: Plugins;
 }
 
 export default function Duplo<duploConfig extends DuploConfig>(config: duploConfig): DuploInstance<duploConfig>{
@@ -51,16 +59,18 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 	const serverHooksLifeCycle = makeServerHooksLifeCycle();
 
 	const {addContentTypeParsers, buildContentTypeBody, parseContentTypeBody} = makeContentTypeParserSystem();
-	const {createChecker} = makeCheckerSystem(serverHooksLifeCycle);
-	const {createProcess} = makeProcessSystem(serverHooksLifeCycle);
+	const {createChecker, checkers} = makeCheckerSystem(serverHooksLifeCycle);
+	const {createProcess, processes} = makeProcessSystem(serverHooksLifeCycle);
 	const {
 		declareRoute, 
-		buildRoute, 
+		buildRouter, 
 		findRoute, 
 		setNotfoundHandler, 
 		setErrorHandler, 
 		declareAbstractRoute,
 		mergeAbstractRoute,
+		routes, 
+		abstractRoutes
 	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
 
 	const server = http.createServer( 
@@ -89,7 +99,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		server,
 		config,
 		launch(onLaunch = () => console.log("Ready !")){
-			buildRoute();
+			buildRouter();
 			buildContentTypeBody();
 
 			serverHooksLifeCycle.onServerError.addSubscriber((error) => console.error(error));
@@ -114,11 +124,16 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		setErrorHandler,
 		createProcess,
 		addContentTypeParsers,
+		buildContentTypeBody,
 		declareAbstractRoute,
 		mergeAbstractRoute,
-		use(input, options){
-			return input(duploInstance, options);
-		}
+		use: (input, options) => input(duploInstance, options),
+		buildRouter,
+		routes,
+		checkers,
+		processes,
+		abstractRoutes,
+		plugins: {}
 	};
 
 	return duploInstance; 

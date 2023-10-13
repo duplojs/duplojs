@@ -68,7 +68,11 @@ export type CheckerExport<
 	desc: any[]
 }
 
+export type Checkers = Record<string, CheckerExport>
+
 export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
+	const checkers: Checkers = {};
+
 	function createChecker<
 		input extends any, 
 		outputInfo extends string, 
@@ -95,6 +99,7 @@ export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeC
 	}
 
 	return {
-		createChecker
+		createChecker,
+		checkers,
 	};
 }
