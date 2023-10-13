@@ -32,7 +32,7 @@ export interface AbstractRoute<
 	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
 	handlerFunction?: AbstractRouteHandlerFunction<any, any>;
 	abstractRouteFunction: AbstractRouteFunction;
-	params?: AbstractRouteParams<any, any, any>;
+	params: AbstractRouteParams<any, any, any>;
 	descs: DescriptionAll[];
 	extends: Record<string, any>;
 	stringFunction: string;
@@ -581,7 +581,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			const abstractRoute: AbstractRoute = {
 				name,
 				localPrefix: declareParams?.prefix || "",
-				fullPrefix: (parentAbstractRoute?.fullPrefix || "") + correctPath(declareParams?.prefix || ""),
+				fullPrefix: "",
 				drop: drop || [],
 				pickup: [],
 				options: declareParams?.options || {},
@@ -600,6 +600,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				stringFunction: "",
 				build: (customStringFunction) => {
 					if(abstractRoute.parentAbstractRoute)abstractRoute.parentAbstractRoute.build();
+
+					abstractRoute.fullPrefix = (abstractRoute.parentAbstractRoute?.fullPrefix || "") + correctPath(declareParams?.prefix || "");
 					
 					abstractRoute.steps.forEach(value => 
 						value.type === "checker" || value.type === "process" ? value.build() : undefined
@@ -723,12 +725,12 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			return (params) => {
 				const subAbstractRoute: AbstractRoute = {
 					...abstractRoute,
-					fullPrefix: params?.ignorePrefix ? "" : abstractRoute.fullPrefix,
 					params: params || {},
 					build: () => {
 						Object.entries(abstractRoute).forEach(([key, value]) => 
-							["params", "fullPrefix"].includes(key) || ((subAbstractRoute as any)[key] = value)
+							["params"].includes(key) || ((subAbstractRoute as any)[key] = value)
 						);
+						subAbstractRoute.fullPrefix = subAbstractRoute.params.ignorePrefix ? "" : abstractRoute.fullPrefix;
 						subAbstractRoute.pickup = subAbstractRoute.params?.pickup || [];
 						subAbstractRoute.options = {
 							...abstractRoute.options,

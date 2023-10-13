@@ -65,6 +65,7 @@ export default function makeMergeAbstractRoutesSystem(
 			extends: {},
 			stringFunction: "",
 			build: (customStringFunction) => {
+				abstractRoute.mergeAbstractRoute?.forEach(ar => ar.build());
 				abstractRoute.stringFunction = customStringFunction || abstractRoute.stringFunction || mergeAbstractRouteFunctionString(
 					mapped(
 						abstractRouteInstances, 

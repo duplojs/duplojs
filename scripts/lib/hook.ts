@@ -35,6 +35,7 @@ export interface AddServerHooksLifeCycle<returnType extends any = any>{
 	addHook(name: "onDeclareRoute", functionHook: ReturnType<ServerHooksLifeCycle["onDeclareRoute"]["build"]>): returnType;
 	addHook(name: "onReady", functionHook: ReturnType<ServerHooksLifeCycle["onReady"]["build"]>): returnType;
 	addHook(name: "onServerError", functionHook: ReturnType<ServerHooksLifeCycle["onServerError"]["build"]>): returnType;
+	addHook(name: "beforeBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["beforeBuildRouter"]["build"]>): returnType;
 }
 
 export default function makeHook<TypeHookFunction extends((...any: any) => any)>(numberArgs: number){
@@ -94,5 +95,6 @@ export function makeServerHooksLifeCycle(){
 		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onClose: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onServerError: makeHook<((error: Error) => PromiseOrNot<true | void>)>(1),
+		beforeBuildRouter: makeHook<(() => true | void)>(0),
 	};
 }

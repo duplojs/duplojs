@@ -271,9 +271,6 @@ export default function makeRoutesSystem(
 	};
 
 	const declareRoute: DeclareRoute = (method, path, abstractRoute, ...desc) => {
-		if(path instanceof Array)path = path.map((p) => config.prefix + (abstractRoute?.fullPrefix || "") + correctPath(p));
-		else path = [config.prefix + (abstractRoute?.fullPrefix || "") + correctPath(path)];
-
 		const descs: DescriptionAll[] = [];
 		if(desc.length !== 0)descs.push({type: "first", descStep: desc});
 
@@ -567,7 +564,7 @@ export default function makeRoutesSystem(
 			});
 
 			const route: Route = {
-				path: path as string[],
+				path: [],
 				method,
 				abstractRoute,
 				hooksLifeCyle,
@@ -581,6 +578,9 @@ export default function makeRoutesSystem(
 				extends: {},
 				stringFunction: "",
 				build: (customStringFunction) => {
+					if(path instanceof Array)route.path = path.map((p) => config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(p));
+					else route.path = [config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(path)];
+
 					if(route.abstractRoute)route.abstractRoute.build();
 
 					if(route.access && typeof route.access !== "function")route.access.build();
@@ -708,9 +708,7 @@ export default function makeRoutesSystem(
 			};
 
 			route.build();
-
-			(path as string[]).forEach(p => routes[method][p] = route);
-
+			serverHooksLifeCycle.beforeBuildRouter.addSubscriber(() => route.path.forEach(p => routes[method][p] = route));
 			serverHooksLifeCycle.onDeclareRoute.syncLaunchSubscriber(route);
 
 			return route;

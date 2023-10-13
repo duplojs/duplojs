@@ -8,6 +8,7 @@ import correctPath from "./correctPath.ts";
 import makeProcessSystem, {Processes} from "./process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
 import {AbstractRoutes} from "./abstractRoute.ts";
+import {deepFreeze} from "./utility.ts";
 
 declare module "http"{
 	interface IncomingMessage{
@@ -43,7 +44,6 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	use<
 		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
-	buildRouter: ReturnType<typeof makeRoutesSystem>["buildRouter"];
 	routes: RoutesObject;
 	checkers: Checkers;
 	processes: Processes;
@@ -99,6 +99,12 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		server,
 		config,
 		launch(onLaunch = () => console.log("Ready !")){
+			serverHooksLifeCycle.beforeBuildRouter.syncLaunchSubscriber();
+			deepFreeze(routes);
+			deepFreeze(checkers);
+			deepFreeze(processes);
+			deepFreeze(abstractRoutes);
+			
 			buildRouter();
 			buildContentTypeBody();
 
@@ -128,7 +134,6 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		declareAbstractRoute,
 		mergeAbstractRoute,
 		use: (input, options) => input(duploInstance, options),
-		buildRouter,
 		routes,
 		checkers,
 		processes,
