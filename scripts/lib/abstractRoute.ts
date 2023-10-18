@@ -599,8 +599,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				extends: {},
 				stringFunction: "",
 				build: (customStringFunction) => {
-					if(abstractRoute.parentAbstractRoute)abstractRoute.parentAbstractRoute.build();
-
 					abstractRoute.fullPrefix = (abstractRoute.parentAbstractRoute?.fullPrefix || "") + correctPath(declareParams?.prefix || "");
 					
 					abstractRoute.steps.forEach(value => 
