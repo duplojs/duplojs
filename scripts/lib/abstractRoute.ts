@@ -738,6 +738,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 						};
 					}
 				};
+				subAbstractRoute.build();
 
 				return {
 					declareRoute: (method, path, ...desc) => declareRoute(method, path, subAbstractRoute, ...desc) as any,

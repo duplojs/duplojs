@@ -581,8 +581,6 @@ export default function makeRoutesSystem(
 					if(path instanceof Array)route.path = path.map((p) => config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(p));
 					else route.path = [config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(path)];
 
-					if(route.abstractRoute)route.abstractRoute.build();
-
 					if(route.access && typeof route.access !== "function")route.access.build();
 
 					route.steps.forEach(value => 
