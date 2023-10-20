@@ -11,6 +11,7 @@ export type testing = {
 	params?: Record<string, boolean | string | number | undefined>,
 	body?: Record<string, any> | string,
 	headers?: Record<string, boolean | string | number | undefined>,
+	sleepAfterRequest?: number,
 	response?: {
 		code?: number,
 		info?: string,
@@ -78,6 +79,8 @@ export async function test(file: string, testing: testing[]){
 		if(responseContentType.indexOf("application/json") !== -1) result = await response.json();
 		else if(responseContentType.indexOf("text/") !== -1) result = await response.text();
 		else result = await response.blob();
+		
+		if(test.sleepAfterRequest) await new Promise<void>((res) => setTimeout(res, test.sleepAfterRequest));
 
 		if(test.response?.code){
 			if(test.response.code !== response.status){

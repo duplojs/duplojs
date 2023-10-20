@@ -1,4 +1,3 @@
-import {zod} from "../../scripts";
 import {test} from "../testing";
 
 export default test(

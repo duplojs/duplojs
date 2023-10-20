@@ -6,6 +6,7 @@ import chalk from "chalk";
 	numberError += await (await import("./process")).default;
 	numberError += await (await import("./abstractRoute")).default;
 	numberError += await (await import("./mergeAbstractRoute")).default;
+	numberError += await (await import("./hook")).default;
 	if(numberError !== 0) throw numberError + " " + chalk.redBright("Errors");
 })();
 
