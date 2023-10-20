@@ -62,7 +62,7 @@ export interface ProcessCheckerParams<
 	validate(info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): boolean;
 	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
 	output?: (drop: Floor<floor>["drop"], info: info, data: ReturnCheckerType<checkerExport, info>) => void;
-	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
+	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
 	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
@@ -71,7 +71,7 @@ export interface ProcessProcessParams<
 	pickup extends string,
 	floor extends {},
 >{
-	options?: processExport["options"] | ((pickup: ReturnType<typeof makeFloor>["pickup"]) => processExport["options"]);
+	options?: Partial<processExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<processExport["options"]>);
 	pickup?: processExport["drop"] & pickup[];
 	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<processExport["input"], undefined>>;
 	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
