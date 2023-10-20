@@ -47,7 +47,7 @@ export interface DeclareAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-	options extends Record<string, any> = Record<string, any>,
+	options extends {} = {},
 	floor extends {} = {},
 >{
 	(
@@ -65,7 +65,7 @@ export type AbstractRouteShortAccess<
 	floor extends {},
 > = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
 
-export interface  DeclareAbstractRouteParams<options extends any>{
+export interface  DeclareAbstractRouteParams<options extends {}>{
 	options?: options;
 	allowExitProcess?: boolean;
 	prefix?: string;
@@ -109,16 +109,18 @@ export interface AbstractRouteCheckerParams<
 	validate(info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>): boolean;
 	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
 	output?: (drop: Floor<floor>["drop"], info: info, data: ReturnCheckerType<checkerExport, info>) => void;
-	options?: checkerExport["options"] | ((pickup: Floor<floor>["pickup"]) => checkerExport["options"]);
+	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
 	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
+
+const noneKey = Symbol("none");
 
 export interface AbstractRouteUseFunction<
 	request extends Request,
 	response extends Response,
 	extractObj extends RouteExtractObj,
-	options extends Record<string, any>,
-	floor extends Record<any, any>,
+	options extends {},
+	floor extends {},
 	drop extends string,
 >{
 	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>): AbstractRouteInstance<
@@ -126,7 +128,7 @@ export interface AbstractRouteUseFunction<
 		response,
 		extractObj,
 		options,
-		Pick<floor, pickup extends keyof floor ? pickup : never>
+		Pick<floor & {[noneKey]?: undefined}, pickup extends keyof floor? pickup : typeof noneKey>
 	>;
 }
 
@@ -134,7 +136,7 @@ export interface AbstractRouteInstance<
 	request extends Request = Request,
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-	options extends Record<string, any> = Record<string, any>,
+	options extends {} = {},
 	floor extends {} = {},
 >{
 	declareRoute<
@@ -172,7 +174,7 @@ export interface BuilderPatternAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-	options extends Record<string, any> = Record<string, any>,
+	options extends {} = {},
 	floor extends {} = {},
 >{
 	hook: AddHooksLifeCycle<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, request, response>["addHook"];
@@ -766,9 +768,9 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			request extends Request = Request, 
 			response extends Response = Response,
 			extractObj extends RouteExtractObj = RouteExtractObj,
-			options extends Record<string, any> = Record<string, any>,
+			options extends {} = {},
 		>(name: string, params?: DeclareAbstractRouteParams<options>, ...desc: any[]){
-			return declareAbstractRoute(name, params, undefined, ...desc) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
+			return (declareAbstractRoute(name, params, undefined, ...desc) as any) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
 		},
 		mergeAbstractRoute, 
 		abstractRoutes,
