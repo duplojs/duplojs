@@ -62,7 +62,7 @@ export default function makeMergeAbstractRoutesSystem(
 			steps: [],
 			abstractRouteFunction: () => ({}),
 			params: {},
-			descs: desc.map(d => ({type: "first", descStep: d})),
+			descs: [{type: "first", descStep: desc}],
 			extends: {},
 			stringFunction: "",
 			build: (customStringFunction) => {
