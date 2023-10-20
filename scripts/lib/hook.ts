@@ -1,9 +1,9 @@
-import {AbstractRouteSubscribers} from "./abstractRoute";
+import {AbstractRoute} from "./abstractRoute";
 import {CheckerExport} from "./checker";
-import {ProcessSubscribers} from "./process";
+import {ProcessExport} from "./process";
 import {Request} from "./request";
 import {Response} from "./response";
-import {RouteSubscribers} from "./route";
+import {Route} from "./route";
 import {PromiseOrNot} from "./utility";
 
 export type HooksLifeCycle<
@@ -35,6 +35,7 @@ export interface AddServerHooksLifeCycle<returnType extends any = any>{
 	addHook(name: "onDeclareRoute", functionHook: ReturnType<ServerHooksLifeCycle["onDeclareRoute"]["build"]>): returnType;
 	addHook(name: "onReady", functionHook: ReturnType<ServerHooksLifeCycle["onReady"]["build"]>): returnType;
 	addHook(name: "onServerError", functionHook: ReturnType<ServerHooksLifeCycle["onServerError"]["build"]>): returnType;
+	addHook(name: "beforeBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["beforeBuildRouter"]["build"]>): returnType;
 }
 
 export default function makeHook<TypeHookFunction extends((...any: any) => any)>(numberArgs: number){
@@ -45,11 +46,16 @@ export default function makeHook<TypeHookFunction extends((...any: any) => any)>
 		subscribers,
 		addSubscriber: (hookFunction: TypeHookFunction) => {subscribers.push(hookFunction);},
 		copySubscriber: (...spreadOtherSubscribers: Array<TypeHookFunction[]>) => subscribers.push(...spreadOtherSubscribers.flat()),
-		launchSubscriber: (async(...agrs) => {
+		launchSubscriber: (async(...args) => {
 			for(const fnc of subscribers){
-				await fnc(...agrs);
+				if(await fnc(...args as any) === true) break;
 			}
-		}) as TypeHookFunction,
+		}) as (...args: Parameters<TypeHookFunction>) => Promise<void>,
+		syncLaunchSubscriber: ((...args) => {
+			for(const fnc of subscribers){
+				if(fnc(...args as any) === true) break;
+			}
+		}) as (...args: Parameters<TypeHookFunction>) => void,
 		build: (): TypeHookFunction => {
 			let stringFunction = "";
 			let isAsync = false;
@@ -86,12 +92,13 @@ export function makeHooksLifeCycle<
 
 export function makeServerHooksLifeCycle(){
 	return {
-		onDeclareRoute: makeHook<((route: RouteSubscribers) => PromiseOrNot<true | void>)>(1),
-		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRouteSubscribers) => PromiseOrNot<true | void>)>(1),
+		onDeclareRoute: makeHook<((route: Route) => PromiseOrNot<true | void>)>(1),
+		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRoute) => PromiseOrNot<true | void>)>(1),
 		onCreateChecker: makeHook<((checker: CheckerExport) => PromiseOrNot<true | void>)>(1),
-		onCreateProcess: makeHook<((process: ProcessSubscribers) => PromiseOrNot<true | void>)>(1),
+		onCreateProcess: makeHook<((process: ProcessExport) => PromiseOrNot<true | void>)>(1),
 		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onClose: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onServerError: makeHook<((error: Error) => PromiseOrNot<true | void>)>(1),
+		beforeBuildRouter: makeHook<(() => true | void)>(0),
 	};
 }

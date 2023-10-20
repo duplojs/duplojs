@@ -65,30 +65,41 @@ export type CheckerExport<
 	handler: CreateCheckerParameters<input, outputInfo, options, returnOutputType, context>["handler"],
 	options: CheckerParameters<input, outputInfo, options>["options"] | {},
 	outputInfo: outputInfo[],
+	desc: any[]
 }
 
+export type Checkers = Record<string, CheckerExport>
+
 export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
+	const checkers: Checkers = {};
+
 	function createChecker<
 		input extends any, 
 		outputInfo extends string, 
 		options extends Record<string, any>, 
 		returnOutputType extends CheckerOutput<outputInfo>,
 		context extends {},
-	>(name: string, createCheckerParameters: CreateCheckerParameters<input, outputInfo, options, returnOutputType, context>): CheckerExport<input, outputInfo, options, returnOutputType, context>
+	>(
+		name: string, 
+		createCheckerParameters: CreateCheckerParameters<input, outputInfo, options, returnOutputType, context>,
+		...desc: any
+	): CheckerExport<input, outputInfo, options, returnOutputType, context>
 	{
 		const checker = {
 			name,
 			handler: createCheckerParameters.handler,
 			options: createCheckerParameters.options,
 			outputInfo: createCheckerParameters.outputInfo,
+			desc
 		};
 
-		serverHooksLifeCycle.onCreateChecker.launchSubscriber(checker);
+		serverHooksLifeCycle.onCreateChecker.syncLaunchSubscriber(checker);
 
 		return checker;
 	}
 
 	return {
-		createChecker
+		createChecker,
+		checkers,
 	};
 }

@@ -11,19 +11,6 @@ services:
     working_dir: /home/node/duplo
     entrypoint: npm i
 
-  # compiler:
-  #   container_name: compiler
-  #   image: node:18.13.0-alpine
-  #   volumes:
-  #     - ./:/home/node/duplo
-  #   environment:
-  #     npm_config_cache: /home/node/cache
-  #   working_dir: /home/node/duplo
-  #   command: npm run dev
-  #   depends_on:
-  #     installer: 
-  #       condition: service_completed_successfully
-
   test:
     container_name: test
     image: node:20.4.0-alpine
