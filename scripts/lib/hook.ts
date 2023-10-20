@@ -46,12 +46,16 @@ export default function makeHook<TypeHookFunction extends((...any: any) => any)>
 		subscribers,
 		addSubscriber: (hookFunction: TypeHookFunction) => {subscribers.push(hookFunction);},
 		copySubscriber: (...spreadOtherSubscribers: Array<TypeHookFunction[]>) => subscribers.push(...spreadOtherSubscribers.flat()),
-		launchSubscriber: (async(...agrs) => {
+		launchSubscriber: (async(...args) => {
 			for(const fnc of subscribers){
-				await fnc(...agrs as any);
+				if(await fnc(...args as any) === true) break;
 			}
 		}) as (...args: Parameters<TypeHookFunction>) => Promise<void>,
-		syncLaunchSubscriber: ((...args) => subscribers.forEach(fnc => fnc(...args as any))) as (...args: Parameters<TypeHookFunction>) => void,
+		syncLaunchSubscriber: ((...args) => {
+			for(const fnc of subscribers){
+				if(fnc(...args as any) === true) break;
+			}
+		}) as (...args: Parameters<TypeHookFunction>) => void,
 		build: (): TypeHookFunction => {
 			let stringFunction = "";
 			let isAsync = false;

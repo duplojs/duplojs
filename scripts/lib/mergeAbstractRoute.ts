@@ -20,6 +20,7 @@ export default function makeMergeAbstractRoutesSystem(
 		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>? floor : never
 	>(
 		abstractRouteInstances: abstractRouteInstance[],
+		...desc: any[]
 	): AbstractRouteInstance<
 		UnionToIntersection<request> extends Request? UnionToIntersection<request> : never,
 		UnionToIntersection<response> extends Response? UnionToIntersection<response> : never,
@@ -61,11 +62,10 @@ export default function makeMergeAbstractRoutesSystem(
 			steps: [],
 			abstractRouteFunction: () => ({}),
 			params: {},
-			descs: [],
+			descs: [{type: "first", descStep: desc}],
 			extends: {},
 			stringFunction: "",
 			build: (customStringFunction) => {
-				abstractRoute.mergeAbstractRoute?.forEach(ar => ar.build());
 				abstractRoute.stringFunction = customStringFunction || abstractRoute.stringFunction || mergeAbstractRouteFunctionString(
 					mapped(
 						abstractRouteInstances, 
@@ -82,7 +82,8 @@ export default function makeMergeAbstractRoutesSystem(
 				);
 		
 				abstractRoute.abstractRouteFunction = eval(abstractRoute.stringFunction).bind({
-					abstractRoutes,
+					abstractRoutes: abstractRoute.mergeAbstractRoute,
+					extends: abstractRoute.extends,
 					makeFloor,
 				});
 			}
@@ -107,11 +108,15 @@ export default function makeMergeAbstractRoutesSystem(
 const mergeAbstractRouteFunctionString = (block: string, returnArray: string[]) => /* js */`
 (
 	${(/await/.test(block) ? "async " : "")}function(request, response, options){
+		/* first_line */
+		/* end_block */
 		const floor = this.makeFloor();
 		let result;
-
+		/* after_make_floor */
+		/* end_block */
 		${block}
-
+		/* before_return */
+		/* end_block */
 	${condition(
 		returnArray.length !== 0,
 		() => /* js */`
@@ -125,13 +130,18 @@ const mergeAbstractRouteFunctionString = (block: string, returnArray: string[]) 
 `;
 
 const abstractRoutesString = (async: boolean, index: number, drop: string) => /* js */`
+/* before_abstract_route_[${index}] */
+/* end_block */
 result = ${async ? "await " : ""}this.abstractRoutes[${index}].abstractRouteFunction(
 	request, 
 	response, 
 	this.abstractRoutes[${index}].options,
 );
-
+/* after_abstract_route_[${index}] */
+/* end_block */
 ${drop}
+/* after_drop_abstract_route_[${index}] */
+/* end_block */
 `;
 
 const processDrop = (key: string) => /* js */`
