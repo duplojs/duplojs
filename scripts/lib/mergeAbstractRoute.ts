@@ -20,6 +20,7 @@ export default function makeMergeAbstractRoutesSystem(
 		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>? floor : never
 	>(
 		abstractRouteInstances: abstractRouteInstance[],
+		...desc: any[]
 	): AbstractRouteInstance<
 		UnionToIntersection<request> extends Request? UnionToIntersection<request> : never,
 		UnionToIntersection<response> extends Response? UnionToIntersection<response> : never,
@@ -61,7 +62,7 @@ export default function makeMergeAbstractRoutesSystem(
 			steps: [],
 			abstractRouteFunction: () => ({}),
 			params: {},
-			descs: [],
+			descs: desc.map(d => ({type: "first", descStep: d})),
 			extends: {},
 			stringFunction: "",
 			build: (customStringFunction) => {
@@ -81,7 +82,7 @@ export default function makeMergeAbstractRoutesSystem(
 				);
 		
 				abstractRoute.abstractRouteFunction = eval(abstractRoute.stringFunction).bind({
-					abstractRoutes,
+					abstractRoutes: abstractRoute.mergeAbstractRoute,
 					makeFloor,
 				});
 			}
