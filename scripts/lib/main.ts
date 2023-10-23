@@ -9,6 +9,7 @@ import makeProcessSystem, {Processes} from "./process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
 import {AbstractRoutes} from "./abstractRoute.ts";
 import {deepFreeze} from "./utility.ts";
+import {deleteDescriptions} from "./description.ts";
 
 declare module "http"{
 	interface IncomingMessage{
@@ -22,6 +23,7 @@ export interface DuploConfig{
 	onLaunch?: () => void;
 	onClose?: () => void;
 	prefix?: string;
+	keepDescriptions?: boolean;
 }
 
 export type Plugins = Record<string, {version: string, data: any}>;
@@ -100,6 +102,8 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		config,
 		launch(onLaunch = () => console.log("Ready !")){
 			serverHooksLifeCycle.beforeBuildRouter.syncLaunchSubscriber();
+			
+			if(config.keepDescriptions !== true) deleteDescriptions(routes,	checkers, processes, abstractRoutes);
 			deepFreeze(routes);
 			deepFreeze(checkers);
 			deepFreeze(processes);
