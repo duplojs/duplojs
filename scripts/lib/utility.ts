@@ -101,4 +101,12 @@ export interface DescriptionBuild{
 export type DescriptionAll = DescriptionFirst | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild
 
 
-export const deepFreeze = (object: Record<any, any>): void => Object.values(Object.freeze(object)).forEach(object => typeof object !== "object" || deepFreeze(object));
+export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): void => {
+	deep === 0 ||
+	Object.values(Object.freeze(object)).forEach(
+		object => 
+			typeof object !== "object" ||
+			object === null || 
+			deepFreeze(object, deep - 1)
+	);
+};

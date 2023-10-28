@@ -1,5 +1,4 @@
 import {ServerResponse} from "http";
-import {DuploConfig} from "./main";
 import {createReadStream, existsSync,} from "fs";
 import mime from "mime";
 import {basename} from "path";
@@ -7,7 +6,7 @@ import {basename} from "path";
 export const __exec__ = Symbol("exec");
 
 export class Response{
-	constructor(response: InstanceType<typeof ServerResponse>, config: DuploConfig){
+	constructor(response: InstanceType<typeof ServerResponse>){
 		this.rawResponse = response;
 	}
 

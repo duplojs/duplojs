@@ -191,8 +191,11 @@ export interface ProcessExport<
 	descs: DescriptionAll[],
 	extends: Record<string, any>;
 	stringFunction: string;
-	build: (customStringFunction?: string) => void;
+	editingFunctions: EditingFunctionProcess[];
+	build: () => void;
 }
+
+export type EditingFunctionProcess = (processExport: ProcessExport) => void;
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
 
@@ -443,12 +446,13 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 				descs,
 				extends: {},
 				stringFunction: "",
-				build: (customStringFunction) => {
+				editingFunctions: [],
+				build: () => {
 					processExport.steps.forEach(value => 
 						value.type === "checker" || value.type === "process" ? value.build() : undefined
 					);
 
-					processExport.stringFunction = customStringFunction || processExport.stringFunction || processFunctionString(
+					processExport.stringFunction = processFunctionString(
 						!!processExport.input,
 						!!processExport.options,
 						exitProcessTry(
@@ -516,6 +520,8 @@ export default function makeProcessSystem(serverHooksLifeCycle: ServerHooksLifeC
 						),
 						drop || []
 					);
+
+					processExport.editingFunctions.forEach(editingFunction => editingFunction(processExport));
 
 					processExport.processFunction = eval(processExport.stringFunction).bind({
 						extracted: processExport.extracted,

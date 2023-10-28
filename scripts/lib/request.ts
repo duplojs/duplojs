@@ -1,45 +1,44 @@
-import {IncomingMessage} from "http";
-import {DuploConfig} from "./main";
+import {IncomingHttpHeaders, IncomingMessage} from "http";
 import fastQueryString from "fast-querystring";
 
 export class Request{
-	constructor(request: InstanceType<typeof IncomingMessage>, config: DuploConfig){
+	constructor(
+		request: InstanceType<typeof IncomingMessage>, 
+		params: Record<string, string>, 
+		matchedPath: string | null,
+	){
 		const [path, query] = (request.url ?? "").split("?");
 		this.rawRequest = request;
+		this.method = request.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
+		this.headers = request.headers;
+		this.url = request.url || "";
+		this.host = request.headers.host || "";
+		this.origin = request.headers.origin || "";
 		this.path = path.endsWith("/") ? (path.slice(0, -1) || "/") : path;
-		this.params = request.params;
+		this.params = params;
 		this.query = query ? fastQueryString.parse(query) : {};
+		this.matchedPath = matchedPath;
 	}
 
 	rawRequest: InstanceType<typeof IncomingMessage>;
 
-	get method(){
-		return this.rawRequest.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
-	}
+	method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
 
-	get headers(){
-		return this.rawRequest.headers;
-	}
+	headers: IncomingHttpHeaders;
 
-	get url(){
-		return this.rawRequest.url || "";
-	}
+	url: string;
 
-	get host(){
-		return this.rawRequest.headers.host || "";
-	}
+	host: string;
 
-	get origin(){
-		return this.rawRequest.headers.origin || "";
-	}
+	origin: string;
 
 	path: string;
 
-	query: Record<string, string>;
-
 	params: Record<string, string>;
 
-	body: unknown;
+	query: Record<string, string>;
 
-	isFound = true;
+	matchedPath: string | null;
+
+	body: unknown;
 }
