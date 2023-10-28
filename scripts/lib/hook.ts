@@ -56,6 +56,7 @@ export default function makeHook<TypeHookFunction extends((...any: any) => any)>
 				if(fnc(...args as any) === true) break;
 			}
 		}) as (...args: Parameters<TypeHookFunction>) => void,
+		hasSubscriber: (fnc: TypeHookFunction) => !!subscribers.find(f => f === fnc),
 		build: (): TypeHookFunction => {
 			let stringFunction = "";
 			let isAsync = false;

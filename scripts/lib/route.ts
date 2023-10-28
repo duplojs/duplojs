@@ -32,8 +32,11 @@ export interface Route{
 	descs: DescriptionAll[];
 	extends: Record<string, any>;
 	stringFunction: string;
-	build: (customStringFunction?: string) => void;
+	editingFunctions: EditingFunctionRoute[];
+	build: () => void;
 }
+
+export type EditingFunctionRoute = (route: Route) => void;
 
 export interface RouteExtractObj{
 	body?: Record<string, ZodType> | ZodType,
@@ -224,29 +227,33 @@ export default function makeRoutesSystem(
 		HEAD: {}, 
 	};
 
-	const buildedRoutes: Record<string, (path: string) => {routeFunction: RouteFunction, params: Record<string, string>}> = {};
+	const buildedRoutes: Record<string, (path: string) => {routeFunction: RouteFunction, params: Record<string, string>, matchedPath: string}> = {};
 
-	let notfoundHandlerFunction: RouteNotfoundHandlerFunction;
+	let notfoundHandlerFunction: RouteNotfoundHandlerFunction = (request, response) => response.code(404).info("NOTFOUND").send(`${request.method}:${request.path} not found`);
+	let buildedNotfoundFunction: RouteNotfoundHandlerFunction;
+	function buildNotfoundHandler(){
+		const onConstructRequest = mainHooksLifeCyle.onConstructRequest.build();
+		const onConstructResponse = mainHooksLifeCyle.onConstructResponse.build();
+		const beforeRouteExecution = mainHooksLifeCyle.beforeRouteExecution.build();
+		const onError = mainHooksLifeCyle.onError.build();
+		const beforeSend = mainHooksLifeCyle.beforeSend.build();
+		const afterSend = mainHooksLifeCyle.afterSend.build();
 
-	//function to set notfound handler with hooklifecycle
-	function setNotfoundHandler(notFoundFunction: RouteNotfoundHandlerFunction){
-		notfoundHandlerFunction = async(request: Request, response: Response) => {
-			request.isFound = false;
-
-			await mainHooksLifeCyle.onConstructRequest.launchSubscriber(request);
-			await mainHooksLifeCyle.onConstructResponse.launchSubscriber(response);
+		buildedNotfoundFunction = async(request: Request, response: Response) => {
+			await onConstructRequest(request);
+			await onConstructResponse(response);
 			
 			try {
 				try {
-					await mainHooksLifeCyle.beforeRouteExecution.launchSubscriber(request, response);
+					await beforeRouteExecution(request, response);
 
-					await notFoundFunction(request, response);
+					await notfoundHandlerFunction(request, response);
 				
 					response.code(503).info("NO_RESPONSE_SENT").send();
 				}
 				catch (error){
 					if(error instanceof Error){
-						mainHooksLifeCyle.onError.launchSubscriber(request, response, error);
+						onError(request, response, error);
 						errorHandlerFunction(request, response, error);
 					}
 					else throw error;
@@ -254,17 +261,14 @@ export default function makeRoutesSystem(
 			} 
 			catch (response){
 				if(response instanceof Response){
-					await  mainHooksLifeCyle.beforeSend.launchSubscriber(request, response);
+					await beforeSend(request, response);
 					response[__exec__]();
-					await mainHooksLifeCyle.afterSend.launchSubscriber(request, response);
+					await afterSend(request, response);
 				}
 				else throw response;
 			}
 		};
 	}
-
-	//set default notfound function
-	setNotfoundHandler((request, response) => response.code(404).info("NOTFOUND").send(`${request.method}:${request.path} not found`));
 
 	let errorHandlerFunction: RouteErrorHandlerFunction = (request, response, error) => {
 		response.code(500).info("INTERNAL_SERVER_ERROR").send(error.stack);
@@ -577,7 +581,8 @@ export default function makeRoutesSystem(
 				descs,
 				extends: {},
 				stringFunction: "",
-				build: (customStringFunction) => {
+				editingFunctions: [],
+				build: () => {
 					if(path instanceof Array)route.path = path.map((p) => config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(p));
 					else route.path = [config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(path)];
 
@@ -587,8 +592,14 @@ export default function makeRoutesSystem(
 						value.type === "checker" || value.type === "process" ? value.build() : undefined
 					);
 
-					route.stringFunction = customStringFunction || route.stringFunction || routeFunctionString(
+					route.stringFunction = routeFunctionString(
 						route.handlerFunction.constructor.name === "AsyncFunction",
+						!!route.hooksLifeCyle.onConstructRequest.subscribers.length,
+						!!route.hooksLifeCyle.onConstructResponse.subscribers.length,
+						!!route.hooksLifeCyle.beforeRouteExecution.subscribers.length,
+						!!route.hooksLifeCyle.onError.subscribers.length,
+						!!route.hooksLifeCyle.beforeSend.subscribers.length,
+						!!route.hooksLifeCyle.afterSend.subscribers.length,
 						spread(
 							condition(
 								!!route.abstractRoute,
@@ -615,7 +626,7 @@ export default function makeRoutesSystem(
 							),
 							condition(
 								!!route.extracted.body,
-								() => hookBody()
+								() => hookBody(!!route.hooksLifeCyle.beforeParsingBody.subscribers.length)
 							),
 							condition(
 								Object.keys(route.extracted).length !== 0,
@@ -672,6 +683,8 @@ export default function makeRoutesSystem(
 						)
 					);
 
+					route.editingFunctions.forEach(editingFunction => editingFunction(route));
+
 					route.routeFunction = eval(route.stringFunction).bind({
 						abstractRoute: route.abstractRoute,
 						access: route.access,
@@ -688,7 +701,7 @@ export default function makeRoutesSystem(
 							launchOnConstructRequest: route.hooksLifeCyle.onConstructRequest.build(),
 							launchOnConstructResponse: route.hooksLifeCyle.onConstructResponse.build(),
 							launchOnError: route.hooksLifeCyle.onError.build(),
-							beforeRouteExecution: route.hooksLifeCyle.beforeRouteExecution.build(),
+							launchBeforeRouteExecution: route.hooksLifeCyle.beforeRouteExecution.build(),
 						},
 						get errorHandlerFunction(){
 							return errorHandlerFunction;
@@ -734,11 +747,15 @@ export default function makeRoutesSystem(
 		>(method: Request["method"], path: string | string[], ...desc: any[]){
 			return declareRoute(method, path, undefined, ...desc) as BuilderPatternRoute<request, response, extractObj>;
 		},
-		setNotfoundHandler,
+		setNotfoundHandler(notfoundFunction: RouteNotfoundHandlerFunction){
+			notfoundHandlerFunction = notfoundFunction;
+		},
 		setErrorHandler(errorFunction: RouteErrorHandlerFunction){
 			errorHandlerFunction = errorFunction;
 		},
 		buildRouter(){
+			buildNotfoundHandler();
+
 			Object.entries(routes).forEach(([method, value]) => {
 				let stringFunction = "let result;\n";
 
@@ -754,6 +771,7 @@ export default function makeRoutesSystem(
 						if(result !== null) return {
 							routeFunction: this.routes["${path}"].routeFunction,
 							params: result.groups || {},
+							matchedPath: "${path}",
 						};
 					`;
 
@@ -763,21 +781,21 @@ export default function makeRoutesSystem(
 					return {
 						routeFunction: this.notfoundHandlerFunction,
 						params: {},
+						matchedPath: null,
 					};
 				`;
 				
 				buildedRoutes[method] = eval(/* js */`(function(path){${stringFunction}})`).bind({
 					routes: routes[method as Request["method"]],
-					get notfoundHandlerFunction(){
-						return notfoundHandlerFunction;
-					}, 
+					notfoundHandlerFunction: buildedNotfoundFunction, 
 				});
 			});
 		},
 		findRoute(method: Request["method"], path: string){
 			if(!buildedRoutes[method]) return {
-				routeFunction: notfoundHandlerFunction,
+				routeFunction: buildedNotfoundFunction,
 				params: {},
+				matchedPath: null,
 			};
 			
 			return buildedRoutes[method](path);
@@ -790,7 +808,16 @@ export default function makeRoutesSystem(
 	};
 }
 
-const routeFunctionString = (async: boolean, block: string) => /* js */`
+const routeFunctionString = (
+	async: boolean, 
+	hasHookOnConstructRequest: boolean, 
+	hasHookOnConstructResponse: boolean,
+	hasHookBeforeRouteExecution: boolean,
+	hasHookOnError: boolean,
+	hasHookBeforeSend: boolean,
+	hasHookAfterSend: boolean,
+	block: string, 
+) => /* js */`
 (
 	async function(request, response){
 		/* first_line */
@@ -798,13 +825,13 @@ const routeFunctionString = (async: boolean, block: string) => /* js */`
 
 		/* before_hook_on_construct_request */
 		/* end_block */
-		await this.hooks.launchOnConstructRequest(request);
+		${hasHookOnConstructRequest ? "await this.hooks.launchOnConstructRequest(request);" : ""}
 		/* after_hook_on_construct_request */
 		/* end_block */
 
 		/* before_hook_on_construct_response */
 		/* end_block */
-		await this.hooks.launchOnConstructResponse(response);
+		${hasHookOnConstructResponse ? "await this.hooks.launchOnConstructResponse(response);" : ""}
 		/* after_hook_on_construct_response */
 		/* end_block */
 
@@ -817,7 +844,7 @@ const routeFunctionString = (async: boolean, block: string) => /* js */`
 
 				/* before_hook_before_route_execution */
 				/* end_block */
-				await this.hooks.beforeRouteExecution(request, response);
+				${hasHookBeforeRouteExecution ? "await this.hooks.launchBeforeRouteExecution(request, response);" : ""}
 				/* after_hook_before_route_execution */
 				/* end_block */
 				const floor = this.makeFloor();
@@ -838,7 +865,7 @@ const routeFunctionString = (async: boolean, block: string) => /* js */`
 				if(error instanceof Error){
 					/* before_hook_on_error */
 					/* end_block */
-					this.hooks.launchOnError(request, response, error);
+					${hasHookOnError ? "await this.hooks.launchOnError(request, response, error);" : ""}
 					/* after_hook_on_error */
 					/* end_block */
 					this.errorHandlerFunction(request, response, error);
@@ -852,13 +879,13 @@ const routeFunctionString = (async: boolean, block: string) => /* js */`
 			if(response instanceof this.Response){
 				/* before_hook_before_send */
 				/* end_block */
-				await this.hooks.launchBeforeSend(request, response);
+				${hasHookBeforeSend ? "await this.hooks.launchBeforeSend(request, response);" : ""}
 				/* after_hook_before_send */
 				/* end_block */
 				response[this.__exec__]();
 				/* before_hook_after_send */
 				/* end_block */
-				await this.hooks.launchAfterSend(request, response);
+				${hasHookAfterSend ? "await this.hooks.launchAfterSend(request, response);" : ""}
 				/* after_hook_after_send */
 				/* end_block */
 			}
@@ -910,11 +937,11 @@ ${drop}
 /* end_block */
 `;
 
-const hookBody = () => /* js */`
+const hookBody = (hasHookBeforeParsingBody: boolean) => /* js */`
 if(request.body === undefined){
 	/* before_hook_before_parsing_body */
 	/* end_block */
-	await this.hooks.launchBeforeParsingBody(request, response);
+	${hasHookBeforeParsingBody ? "await this.hooks.launchBeforeParsingBody(request, response);" : ""}
 	/* after_hook_before_parsing_body */
 	/* end_block */
 	if(request.body === undefined)await this.parseContentTypeBody(request);
