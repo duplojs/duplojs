@@ -11,12 +11,6 @@ import {AbstractRoutes} from "./abstractRoute.ts";
 import {deepFreeze} from "./utility.ts";
 import {deleteDescriptions} from "./description.ts";
 
-declare module "http"{
-	interface IncomingMessage{
-		params: Record<string, string>
-	}
-}
-
 export interface DuploConfig{
 	port: number,
 	host: string,
@@ -24,9 +18,11 @@ export interface DuploConfig{
 	onClose?: () => void;
 	prefix?: string;
 	keepDescriptions?: boolean;
+	env?: "DEV" | "PROD"
 }
 
-export type Plugins = Record<string, {version: string, data: any}>;
+export interface Plugins {}
+
 export interface DuploInstance<duploConfig extends DuploConfig> {
 	Request: typeof Request;
 	Response: typeof Response;
@@ -78,10 +74,9 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 	const server = http.createServer( 
 		async(serverRequest, serverResponse) => {
 			try {
-				const {routeFunction, params} = findRoute(serverRequest.method as Request["method"], serverRequest.url as string);
+				const {routeFunction, params, matchedPath} = findRoute(serverRequest.method as Request["method"], serverRequest.url as string);
 
-				serverRequest.params = params;
-				await routeFunction(new Request(serverRequest, config), new Response(serverResponse, config));
+				await routeFunction(new Request(serverRequest, params, matchedPath), new Response(serverResponse));
 			}
 			catch (error){
 				serverHooksLifeCycle.onServerError.launchSubscriber(error as Error);
@@ -104,10 +99,10 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 			serverHooksLifeCycle.beforeBuildRouter.syncLaunchSubscriber();
 			
 			if(config.keepDescriptions !== true) deleteDescriptions(routes,	checkers, processes, abstractRoutes);
-			deepFreeze(routes);
+			deepFreeze(routes, 3);
 			deepFreeze(checkers);
-			deepFreeze(processes);
-			deepFreeze(abstractRoutes);
+			deepFreeze(processes, 2);
+			deepFreeze(abstractRoutes, 2);
 			
 			buildRouter();
 			buildContentTypeBody();

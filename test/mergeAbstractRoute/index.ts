@@ -1,6 +1,6 @@
-import {test} from "../testing";
+import {workerTesting} from "@duplojs/worker-testing";
 
-export default test(
+export default workerTesting(
 	__dirname + "/route.ts",
 	[
 		{

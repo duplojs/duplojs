@@ -36,8 +36,11 @@ export interface AbstractRoute<
 	descs: DescriptionAll[];
 	extends: Record<string, any>;
 	stringFunction: string;
-	build: (customStringFunction?: string) => void;
+	editingFunctions: EditingFunctionAbstractRoute[];
+	build: () => void;
 }
+
+export type EditingFunctionAbstractRoute = (abstractRoute: AbstractRoute) => void;
 
 export type ErrorExtractAbstractRouteFunction<response extends Response> = (response: response, type: keyof RouteExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
 
@@ -600,14 +603,15 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				descs,
 				extends: {},
 				stringFunction: "",
-				build: (customStringFunction) => {
+				editingFunctions: [], 
+				build: () => {
 					abstractRoute.fullPrefix = (abstractRoute.parentAbstractRoute?.fullPrefix || "") + correctPath(declareParams?.prefix || "");
 					
 					abstractRoute.steps.forEach(value => 
 						value.type === "checker" || value.type === "process" ? value.build() : undefined
 					);
 					
-					abstractRoute.stringFunction = customStringFunction || abstractRoute.stringFunction || abstractRouteFunctionString(
+					abstractRoute.stringFunction = abstractRouteFunctionString(
 						!!abstractRoute.options,
 						exitProcessTry(
 							!!abstractRoute.allowExitProcess,
@@ -698,6 +702,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 						),
 						drop || []
 					);
+
+					abstractRoute.editingFunctions.forEach(editingFunction => editingFunction(abstractRoute));
 
 					abstractRoute.abstractRouteFunction = eval(abstractRoute.stringFunction).bind({
 						parentAbstractRoute: abstractRoute.parentAbstractRoute,

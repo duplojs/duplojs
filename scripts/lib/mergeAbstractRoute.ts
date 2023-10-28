@@ -65,8 +65,9 @@ export default function makeMergeAbstractRoutesSystem(
 			descs: [{type: "first", descStep: desc}],
 			extends: {},
 			stringFunction: "",
-			build: (customStringFunction) => {
-				abstractRoute.stringFunction = customStringFunction || abstractRoute.stringFunction || mergeAbstractRouteFunctionString(
+			editingFunctions: [],
+			build: () => {
+				abstractRoute.stringFunction = mergeAbstractRouteFunctionString(
 					mapped(
 						abstractRouteInstances, 
 						(value, index) => abstractRoutesString(
@@ -81,6 +82,8 @@ export default function makeMergeAbstractRoutesSystem(
 					pickup
 				);
 		
+				abstractRoute.editingFunctions.forEach(editingFunction => editingFunction(abstractRoute));
+
 				abstractRoute.abstractRouteFunction = eval(abstractRoute.stringFunction).bind({
 					abstractRoutes: abstractRoute.mergeAbstractRoute,
 					extends: abstractRoute.extends,
