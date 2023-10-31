@@ -13,18 +13,18 @@ duplo.declareRoute("GET", "/checker/test/1")
 		skip: zod.literal("true").optional(),
 	}
 })
-.check<typeof isOdd, "result", "odd">(
+.check(
 	isOdd,
 	{
 		input: p => p("number"),
-		validate: i => i === "odd",
+		result: "odd",
 		catch: (res, i) => res.info(i).code(400).send("wrong"),
-		output: (d, i, da) => d("result", da),
+		indexing: "result",
 		skip: p => p("skip") === "true",
 	}
 )
 .cut(({pickup: p}, res) => {
-	if(p("skip") === "true" && p("result") === undefined){
+	if(p("result") === undefined){
 		parentPort?.postMessage("skip test");
 		res.info("skipTest").code(204).send();
 	}
@@ -32,14 +32,13 @@ duplo.declareRoute("GET", "/checker/test/1")
 .handler(({pickup: p}, res) => res.info("odd").code(200).send(p("result")));
 
 duplo.declareRoute("GET", "/checker/test/2")
-.custom(() => parentPort?.postMessage("custom step"))
-.check<typeof isOdd, "result", "odd">(
+.check(
 	isOdd,
 	{
 		input: p => 2,
-		validate: i => i === "odd",
+		result: "odd",
 		catch: (res, i) => res.info(i).code(400).send("wrong"),
-		output: (d, i, da) => d("result", da),
+		indexing: "result",
 		options: {
 			result: 55,
 		}
@@ -53,13 +52,13 @@ duplo.declareRoute("GET", "/checker/test/3")
 		number: zod.coerce.number(),
 	}
 })
-.check<typeof isOdd, "result", "odd">(
+.check(
 	isOdd,
 	{
 		input: p => 2,
-		validate: i => i === "odd",
+		result: "odd",
 		catch: (res, i) => res.info(i).code(400).send("wrong"),
-		output: (d, i, da) => d("result", da),
+		indexing: "result",
 		options: p => ({
 			result: p("number"),
 		})

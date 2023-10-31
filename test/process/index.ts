@@ -20,7 +20,6 @@ export default workerTesting(
 			headers: {admin: true},
 			output: [
 				"checker result odd",
-				"process test custom",
 				"process options1 1",
 				"process options2 2",
 				"process input 30",
@@ -79,7 +78,6 @@ export default workerTesting(
 			method: "GET",
 			output: [
 				"checker result odd",
-				"process test custom",
 				"process options1 1",
 				"process options2 2",
 				"process input 30",
@@ -95,7 +93,6 @@ export default workerTesting(
 			method: "GET",
 			query: {number: 35},
 			output: [
-				"process test custom",
 				"process options1 1",
 				"process options2 2",
 				"process input 35",
@@ -111,7 +108,6 @@ export default workerTesting(
 			method: "GET",
 			output: [
 				"process options 14",
-				"process test custom",
 				"process options1 1",
 				"process options2 222",
 				"process input 30",
@@ -128,7 +124,6 @@ export default workerTesting(
 			query: {number: 2},
 			output: [
 				"process options 2",
-				"process test custom",
 				"process options1 1",
 				"process options2 7",
 				"process input 30",

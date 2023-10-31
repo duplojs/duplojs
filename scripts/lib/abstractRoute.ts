@@ -3,11 +3,11 @@ import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker"
 import makeFloor, {Floor} from "./floor";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {PickupDropProcess, ProcessExport, ProcessFunction, ProcessHandlerFunction, __exitProcess__} from "./process";
-import {DeclareRoute, RouteExtractObj, RouteProcessAccessParams, RouteProcessParams, condition, mapped, spread} from "./route";
+import {DeclareRoute, RouteExtractObj, RouteProcessAccessParams, RouteProcessParams, RouteStepParamsSkip, condition, mapped, spread} from "./route";
 import correctPath from "./correctPath";
 import {Response} from "./response";
 import {Request} from "./request";
-import {DescriptionAll, FlatExtract, PromiseOrNot, StepChecker, StepCustom, StepCut, StepProcess} from "./utility";
+import {AnyFunction, DescriptionAll, FlatExtract, PromiseOrNot, StepChecker, StepCut, StepProcess} from "./utility";
 import makeMergeAbstractRoutesSystem from "./mergeAbstractRoute";
 
 export const __abstractRoute__ = Symbol("abstractRoute");
@@ -29,7 +29,7 @@ export interface AbstractRoute<
 	access?: AbstractRouteShortAccess<any, any, any, any> | Omit<StepProcess, "type" | "skip">;
 	extracted: RouteExtractObj;
 	errorExtract: ErrorExtractAbstractRouteFunction<any>;
-	steps: (StepChecker | StepProcess | StepCut | StepCustom)[];
+	steps: (StepChecker | StepProcess | StepCut)[];
 	handlerFunction?: AbstractRouteHandlerFunction<any, any>;
 	abstractRouteFunction: AbstractRouteFunction;
 	params: AbstractRouteParams<any, any, any>;
@@ -90,30 +90,24 @@ export type AbstractRouteHandlerFunction<
 > = (floor: Floor<floor>, response: response, exitProcess: () => never) => void;
 
 export type AbstractRouteShort<
-	response extends Response,
-	returnFloor extends {},
-	floor extends {},
-> = (floor: Floor<floor>, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
-
-export type AbstractRouteCustom<
 	request extends Request, 
 	response extends Response,
 	returnFloor extends {},
 	floor extends {},
-> = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
+> = (floor: Floor<floor>, response: response, request: request, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
 
 export interface AbstractRouteCheckerParams<
 	checkerExport extends CheckerExport, 
 	response extends Response,
 	floor extends {},
 	info extends string,
+	index extends string,
 >{
 	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	validate(info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>): boolean;
-	catch(response: response, info: checkerExport["outputInfo"][number], data: ReturnCheckerType<checkerExport>, exitProcess: () => never): void;
-	output?: (drop: Floor<floor>["drop"], info: info, data: ReturnCheckerType<checkerExport, info>) => void;
+	result?: info & checkerExport["outputInfo"][number];
+	indexing?: index & string;
+	catch(response: response, info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): void;
 	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
-	skip?: (pickup: Floor<floor>["pickup"]) => boolean;
 }
 
 const noneKey = Symbol("none");
@@ -221,16 +215,12 @@ export interface BuilderPatternAbstractRoute<
 
 	check<
 		checkerExport extends CheckerExport,
+		info extends string,
+		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
 		index extends string = never,
-		info extends keyof MapReturnCheckerType<checkerExport> = string,
 	>(
 		checker: checkerExport, 
-		params: AbstractRouteCheckerParams<
-			checkerExport, 
-			response,
-			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>},
-			info
-		>, 
+		params: AbstractRouteCheckerParams<checkerExport, response, floor, info, index> & skipObj, 
 		...desc: any[]
 	): Omit<
 		BuilderPatternAbstractRoute<
@@ -238,7 +228,11 @@ export interface BuilderPatternAbstractRoute<
 			response, 
 			extractObj, 
 			options, 
-			floor & {[Property in index]: ReturnCheckerType<checkerExport, info>}
+			floor & {
+				[Property in index]: skipObj["skip"] extends AnyFunction ? 
+					ReturnCheckerType<checkerExport, info> | undefined : 
+					ReturnCheckerType<checkerExport, info>
+			}
 		>, 
 		"hook" | "extract" | "access"
 	>;
@@ -246,9 +240,10 @@ export interface BuilderPatternAbstractRoute<
 	process<
 		processExport extends ProcessExport,
 		pickup extends string,
+		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
 	>(
 		process: processExport, 
-		params?: RouteProcessParams<processExport, pickup, floor>, 
+		params?: RouteProcessParams<processExport, pickup, floor> & skipObj, 
 		...desc: any[]
 	): Omit<
 		BuilderPatternAbstractRoute<
@@ -256,20 +251,29 @@ export interface BuilderPatternAbstractRoute<
 			response, 
 			extractObj, 
 			options, 
-			floor & PickupDropProcess<processExport, pickup>
+			floor & (
+				skipObj["skip"] extends AnyFunction ? 
+					Partial<PickupDropProcess<processExport, pickup>> :
+					PickupDropProcess<processExport, pickup>
+			)
 		>, 
 		"hook" | "extract" | "access"
 	>;
 
-	cut<localFloor extends {}>(
-		short: AbstractRouteShort<response, localFloor, floor>, 
+	cut<localFloor extends {}, drop extends string>(
+		short: AbstractRouteShort<request, response, localFloor, floor>,
+		drop?: drop[] & Extract<keyof localFloor, string>[],
 		...desc: any[]
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
-
-	custom<localFloor extends {}>(
-		customFunction: AbstractRouteCustom<request, response, localFloor, floor>, 
-		...desc: any[]
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
+	): Omit<
+		BuilderPatternAbstractRoute<
+			request, 
+			response, 
+			extractObj, 
+			options, 
+			floor & Pick<localFloor, drop extends keyof localFloor ? drop : never>
+		>, 
+		"hook" | "extract" | "access"
+	>;
 
 	handler(
 		handlerFunction: AbstractRouteHandlerFunction<response, floor>, 
@@ -317,7 +321,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				cut,
 				handler,
 				build,
-				custom,
 			};
 		};
 
@@ -375,7 +378,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
-				custom,
 			};
 		};
 
@@ -400,11 +402,10 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
-				custom,
 			};
 		};
 
-		const steps: (StepChecker | StepProcess | StepCut | StepCustom)[] = [];
+		const steps: (StepChecker | StepProcess | StepCut)[] = [];
 		const process: BuilderPatternAbstractRoute<any, any, any, any, any>["process"] = (processExport, params, ...desc) => {
 			const step: StepProcess = {
 				type: "process",
@@ -460,7 +461,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				handler,
 				cut,
 				build,
-				custom,
 			};
 		};
 
@@ -471,10 +471,10 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				handler: () => {},
 				options: undefined,
 				input: () => {},
-				validate: () => {},
 				catch: () => {},
-				output: undefined,
 				skip: undefined,
+				result: undefined,
+				indexing: undefined,
 				params: params || {},
 				build: () => {
 					if(
@@ -492,10 +492,10 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 					}
 					else step.options = step.params.options || checker?.options;
 
+					step.result = step.params.result;
+					step.indexing = step.params.indexing;
 					step.input = step.params.input;
-					step.validate = step.params.validate;
 					step.catch = step.params.catch;
-					step.output = step.params.output;
 					step.skip = step.params.skip;
 					step.handler = checker.handler;
 				},
@@ -515,14 +515,14 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
-				custom,
 			};
 		};
 
-		const cut: BuilderPatternAbstractRoute<any, any, any, any, any>["cut"] = (short, ...desc) => {
+		const cut: BuilderPatternAbstractRoute<any, any, any, any, any>["cut"] = (short, drop, ...desc) => {
 			steps.push({
 				type: "cut",
 				cutFunction: short,
+				drop: drop || [],
 			});
 
 			if(desc.length !== 0)descs.push({
@@ -537,29 +537,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				process,
 				cut,
 				build,
-				custom,
-			};
-		};
-
-		const custom: BuilderPatternAbstractRoute<any, any, any, any, any>["custom"] = (customFunction, ...desc) => {
-			steps.push({
-				customFunction,
-				type: "custom"
-			});
-
-			if(desc.length !== 0)descs.push({
-				type: "custom", 
-				descStep: desc,
-				index: steps.length - 1
-			});
-
-			return {
-				check,
-				handler,
-				build,
-				process,
-				cut,
-				custom,
 			};
 		};
 
@@ -658,37 +635,40 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 									() => mapped(
 										abstractRoute.steps,
 										(step, index) => step.type === "cut" ?
-											cutStep((step.cutFunction as () => {}).constructor.name === "AsyncFunction", index) :
-											step.type === "custom" ?
-												cutsomStep(
-													(step.customFunction as () => {}).constructor.name === "AsyncFunction",
-													index
+											cutStep(
+												(step.cutFunction as () => {}).constructor.name === "AsyncFunction", 
+												index,
+												mapped(
+													step.drop,
+													value => processDrop(value)
+												)
+											) :
+											step.type === "checker" ?
+												skipStep(
+													!!step.skip,
+													index,
+													checkerStep(
+														step.handler.constructor.name === "AsyncFunction",
+														index,
+														!!step.result,
+														!!step.indexing,
+														typeof step.options === "function",
+													)
 												) :
-												step.type === "checker" ?
-													skipStep(
-														!!step.skip,
+												skipStep(
+													!!step.skip,
+													index,
+													processStep(
+														step.processFunction.constructor.name === "AsyncFunction",
 														index,
-														checkerStep(
-															step.handler.constructor.name === "AsyncFunction",
-															index,
-															!!step.output,
-															typeof step.options === "function",
-														)
-													) :
-													skipStep(
-														!!step.skip,
-														index,
-														processStep(
-															step.processFunction.constructor.name === "AsyncFunction",
-															index,
-															!!step.input,
-															typeof step.options === "function",
-															mapped(
-																step?.pickup || [],
-																(value) => processDrop(value)
-															)
+														!!step.input,
+														typeof step.options === "function",
+														mapped(
+															step?.pickup || [],
+															(value) => processDrop(value)
 														)
 													)
+												)
 									)
 									
 								),
@@ -763,7 +743,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			cut,
 			handler,
 			build,
-			custom,
 		};
 	};
 
@@ -923,29 +902,18 @@ floor.drop(
 /* end_block */
 `;
 
-const cutStep = (async: boolean, index: number) => /* js */`
+const cutStep = (async: boolean, index: number, block: string) => /* js */`
 /* before_step_[${index}] */
 /* end_block */
-result = ${async ? "await " : ""}this.steps[${index}].cutFunction(floor, response, this.exitProcess);
+result = ${async ? "await " : ""}this.steps[${index}].cutFunction(floor, response, request, this.exitProcess);
 /* after_step_[${index}] */
 /* end_block */
-if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
+${block}
 /* after_drop_step_[${index}] */
 /* end_block */
 `;
 
-const cutsomStep = (async: boolean, index: number) => /* js */`
-/* before_step_[${index}] */
-/* end_block */
-result = ${async ? "await " : ""}this.steps[${index}].customFunction(floor, request, response, this.exitProcess);
-/* after_step_[${index}] */
-/* end_block */
-if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
-/* after_drop_step_[${index}] */
-/* end_block */
-`;
-
-const checkerStep = (async: boolean, index: number, hasOutput: boolean, optionsIsFunction: boolean) => /* js */`
+const checkerStep = (async: boolean, index: number, hasResult: boolean, hasIndexing: boolean, optionsIsFunction: boolean) => /* js */`
 /* before_step_[${index}] */
 /* end_block */
 result = ${async ? "await " : ""}this.steps[${index}].handler(
@@ -955,14 +923,9 @@ result = ${async ? "await " : ""}this.steps[${index}].handler(
 );
 /* after_step_[${index}] */
 /* end_block */
-if(!this.steps[${index}].validate(result.info, result.data))this.steps[${index}].catch(
-	response, 
-	result.info, 
-	result.data,
-	this.exitProcess
-);
+${hasResult ? /* js */`if(this.steps[${index}].result !== result.info)this.steps[${index}].catch(response, result.info, result.data, this.exitProcess);` : ""}
 
-${hasOutput ? /* js */`this.steps[${index}].output(floor.drop, result.info, result.data);` : ""}
+${hasIndexing ? /* js */`floor.drop(this.steps[${index}].indexing, result.data)` : ""}
 /* after_drop_step_[${index}] */
 /* end_block */
 `;

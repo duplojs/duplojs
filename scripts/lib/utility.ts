@@ -32,13 +32,15 @@ export type StepChecker = {
 	handler: AnyFunction,
 	options?: Record<string, any>,
 	input: AnyFunction,
-	validate: AnyFunction,
 	catch: AnyFunction,
-	output?: AnyFunction,
 	skip?: AnyFunction,
-	params: RouteCheckerParams<any, any, any, any> | 
-		ProcessCheckerParams<any, any, any, any> | 
-		AbstractRouteCheckerParams<any, any, any, any>,
+	result?: string,
+	indexing?: string,
+	params: (
+		RouteCheckerParams<any, any, any, any, any>  | 
+		ProcessCheckerParams<any, any, any, any, any> | 
+		AbstractRouteCheckerParams<any, any, any, any, any>
+	) & {skip?: AnyFunction},
 	build: () => void,
 }
 
@@ -50,18 +52,17 @@ export type StepProcess = {
 	processFunction: AnyFunction,
 	pickup?: string[],
 	skip?: AnyFunction,
-	params: RouteProcessParams<any, any, any> | ProcessProcessParams<any, any, any>,
+	params: (
+		RouteProcessParams<any, any, any> | 
+		ProcessProcessParams<any, any, any>
+	) & {skip?: AnyFunction},
 	build: () => void,
 }
 
 export type StepCut = {
 	type: "cut",
 	cutFunction: AnyFunction,
-}
-
-export type StepCustom = {
-	type: "custom",
-	customFunction: AnyFunction,
+	drop: string[],
 }
 
 export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
@@ -83,7 +84,7 @@ export interface DescriptionExtracted{
 }
 
 export interface DescriptionStep{
-	type: "checker" | "process" | "cut" | "custom",
+	type: "checker" | "process" | "cut",
 	index: number,
 	descStep: any[],
 }
