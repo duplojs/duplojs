@@ -44,4 +44,10 @@ duplo.declareRoute("GET", "/test/6")
 	throw new Error("my error");
 });
 
+duplo.declareRoute("GET", "/test/7")
+.cut(() => ({test: 15}), ["test"])
+.handler(({pickup}, res) => {
+	res.code(200).info("s").send(pickup("test"));
+});
+
 duplo.launch(() => parentPort?.postMessage("ready"));

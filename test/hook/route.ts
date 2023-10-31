@@ -66,7 +66,7 @@ mergeAbstractRoute1
 .hook("beforeSend", () => {parentPort?.postMessage("local beforeSend");})
 .hook("afterSend", () => {parentPort?.postMessage("local afterSend");})
 .hook("onError", () => {parentPort?.postMessage("local onError");})
-.extract({body: zod.undefined()})
+.extract({body: {}})
 .process(process1)
 .handler(({}, res) => {throw new Error("fake error");});
 

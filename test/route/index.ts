@@ -37,7 +37,7 @@ export default workerTesting(
 			}
 		},
 		{
-			title: "not found custom",
+			title: "custom handler not found",
 			url: "http://localhost:1506/route",
 			method: "GET",
 			output: ["matched path null"],
@@ -80,13 +80,24 @@ export default workerTesting(
 			}
 		},
 		{
-			title: "custom error",
+			title: "custom handler error",
 			url: "http://localhost:1506/route/test/6",
 			method: "GET",
 			output: ["error message my error"],
 			response: {
 				code: 500,
 				info: "error",
+			}
+		},
+		{
+			title: "cut drop",
+			url: "http://localhost:1506/route/test/7",
+			method: "GET",
+			output: [],
+			response: {
+				code: 200,
+				info: "s",
+				body: zod.literal("15"),
 			}
 		},
 	]
