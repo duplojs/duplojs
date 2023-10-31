@@ -52,7 +52,7 @@ export default workerTesting(
 			title: "Checker custom options",
 			url: "http://localhost:1506/checker/test/2",
 			method: "GET",
-			output: ["custom step", "checker result odd"],
+			output: ["checker result odd"],
 			response: {
 				code: 200,
 				info: "odd",

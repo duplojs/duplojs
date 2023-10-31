@@ -9,7 +9,6 @@ export default workerTesting(
 			method: "GET",
 			output: [
 				"deepAbstract pickup test 57",
-				"deepAbstract pickup test1 test",
 				"mergeAbstract pickup test 57",
 				"mergeAbstract pickup yyy 1"
 			],
@@ -25,7 +24,6 @@ export default workerTesting(
 			output: [
 				"checker result odd",
 				"abstract result 22",
-				"process test custom",
 				"process options1 40",
 				"process options2 2",
 				"process input 22",

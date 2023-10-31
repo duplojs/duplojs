@@ -20,7 +20,6 @@ export default workerTesting(
 			query: {number: 2},
 			output: [
 				"checker result odd",
-				"process test custom",
 				"process options1 1",
 				"process options2 2",
 				"process input 30",
@@ -51,7 +50,6 @@ export default workerTesting(
 			output: [
 				"checker result odd",
 				"abstract result 22",
-				"process test custom",
 				"process options1 40",
 				"process options2 2",
 				"process input 22",
@@ -71,7 +69,6 @@ export default workerTesting(
 			output: [
 				"checker result odd",
 				"abstract result 480",
-				"process test custom",
 				"process options1 480",
 				"process options2 2",
 				"process input 30",
@@ -112,13 +109,10 @@ export default workerTesting(
 			}
 		},
 		{
-			title: "abstract exit",
+			title: "deepAbstract pickup value",
 			url: "http://localhost:1506/abstract/test/6",
 			method: "GET",
-			output: [
-				"deepAbstract pickup test 57",
-				"deepAbstract pickup test1 test",
-			],
+			output: ["deepAbstract pickup test 57"],
 			response: {
 				code: 204,
 				info: "result"

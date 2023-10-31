@@ -21,13 +21,13 @@ export const IsAdmin = (duplo: DuploInstance<DuploConfig>) => {
 			admin: zod.literal("true"),
 		}, 
 	})
-	.check<typeof isOdd, "result", "odd">(
+	.check(
 		isOdd,
 		{
 			input: p => p("input"),
-			validate: i => i === "odd",
+			result: "odd",
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
-			output: (d, i, da) => d("result", da),
+			indexing: "result",
 			options: {
 				result: 55,
 			}
@@ -49,9 +49,9 @@ export const IsAdmin = (duplo: DuploInstance<DuploConfig>) => {
 				result: p("result"),
 				admin: p("admin"),
 				right: p("right"),
-			}
+			},
 		};
-	})
+	}, ["pick"])
 	.build(["pick"]);
 };
 
@@ -74,13 +74,13 @@ export const IsManager = (duplo: DuploInstance<DuploConfig>) => {
 			skip: zod.literal("true").optional()
 		}
 	})
-	.check<typeof isOdd, "result", "odd">(
+	.check(
 		isOdd,
 		{
 			input: p => p("input"),
-			validate: i => i === "odd",
+			result: "odd",
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
-			output: (d, i, da) => d("result", da),
+			indexing: "result",
 			skip: p => p("skip") === "true",
 		}
 	)
@@ -159,13 +159,13 @@ export const IsUser = (duplo: DuploInstance<DuploConfig>) => {
 			}),
 		}
 	)
-	.check<typeof isOdd, "result", "odd">(
+	.check(
 		isOdd,
 		{
 			input: p => 2,
-			validate: i => i === "odd",
+			result: "odd",
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
-			output: (d, i, da) => d("result", da),
+			indexing: "result",
 			options: p => ({
 				result: p("options").option1
 			}),
@@ -187,8 +187,7 @@ export const HasRight = (duplo: DuploInstance<DuploConfig>) => duplo.createProce
 		input: () => 30
 	}
 )
-.custom(({pickup: p}) => {
-	parentPort?.postMessage("process test custom");
+.cut(({pickup: p}) => {
 	parentPort?.postMessage("process options1 " + p("options").option1);
 	parentPort?.postMessage("process options2 " + p("options").option2);
 	parentPort?.postMessage("process input " + p("input"));
@@ -196,7 +195,7 @@ export const HasRight = (duplo: DuploInstance<DuploConfig>) => duplo.createProce
 	return {
 		right: true,
 	};
-})
+}, ["right"])
 .build(["right"]);
 
 export const ProcessExit = (duplo: DuploInstance<DuploConfig>) => duplo.createProcess(
@@ -205,7 +204,7 @@ export const ProcessExit = (duplo: DuploInstance<DuploConfig>) => duplo.createPr
 		allowExitProcess: true
 	}
 )
-.cut(({}, res, exit) => {
+.cut(({}, res, req, exit) => {
 	exit();
 	parentPort?.postMessage("no exit");
 })

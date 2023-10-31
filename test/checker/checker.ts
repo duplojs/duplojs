@@ -11,7 +11,7 @@ export const IsOdd = (duplo: DuploInstance<DuploConfig>) => duplo.createChecker(
 			}
 			else {
 				parentPort?.postMessage("checker result not odd");
-				return output("notOdd", options.result);
+				return output("notOdd", null);
 			}
 		},
 		outputInfo: ["odd", "notOdd"],

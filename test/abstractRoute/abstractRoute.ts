@@ -15,13 +15,13 @@ export const Abstract1 = (duplo: DuploInstance<DuploConfig>) => {
 			number: zod.coerce.number()
 		}
 	})
-	.check<typeof isOdd, "result", "odd">(
+	.check(
 		isOdd,
 		{
 			input: p => p("number"),
-			validate: i => i === "odd",
+			result: "odd",
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
-			output: (d, i, da) => d("result", da),
+			indexing: "result",
 		}
 	)
 	.process(
@@ -46,13 +46,13 @@ export const Abstract2 = (duplo: DuploInstance<DuploConfig>) => {
 			}
 		}
 	)
-	.check<typeof isOdd, "result", "odd">(
+	.check(
 		isOdd,
 		{
 			input: p => 2,
-			validate: i => i === "odd",
+			result: "odd",
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
-			output: (d, i, da) => d("result", da),
+			indexing: "result",
 			options: {
 				result: 22
 			}
@@ -70,7 +70,7 @@ export const Abstract2 = (duplo: DuploInstance<DuploConfig>) => {
 			input: p => p("result"),
 		}
 	)
-	.custom(({pickup: p}) => {
+	.cut(({pickup: p}) => {
 		parentPort?.postMessage("abstract options test1 " + p("options").test1);
 		parentPort?.postMessage("abstract options test2 " + p("options").test2);
 	})
@@ -89,13 +89,13 @@ export const Abstract3 = (duplo: DuploInstance<DuploConfig>) => {
 			number: zod.coerce.number()
 		}
 	})
-	.check<typeof isOdd, "result", "odd">(
+	.check(
 		isOdd,
 		{
 			input: p => 2,
-			validate: i => i === "odd",
+			result: "odd",
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
-			output: (d, i, da) => d("result", da),
+			indexing: "result",
 			options: p => ({
 				result: p("number")
 			})
@@ -129,7 +129,7 @@ export const Abstract5 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbs
 		allowExitProcess: true,
 	}
 )
-.cut(({}, res, exit) => {
+.cut(({}, res, req, exit) => {
 	exit();
 	parentPort?.postMessage("no exit");
 })
@@ -137,23 +137,20 @@ export const Abstract5 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbs
 
 export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 .declareAbstractRoute("abstract5.5")
-.cut(({}, res) => {
-	return {
-		test: 57
-	};
-})
-.custom(() => {
-	return {
-		test1: "test"
-	};
-})
-.build(["test", "test1"])({pickup: ["test", "test1"]})
+.cut(
+	({}, res) => {
+		return {
+			test: 57
+		};
+	}, 
+	["test"]
+)
+.build(["test"])({pickup: ["test"]})
 .declareAbstractRoute("abstract6")
 .cut(({pickup: p}) => {
 	parentPort?.postMessage("deepAbstract pickup test " + p("test"));
-	parentPort?.postMessage("deepAbstract pickup test1 " + p("test1"));
 })
-.build(["test", "test1"]);
+.build(["test"]);
 
 export const Abstract7 = (duplo: DuploInstance<DuploConfig>) => Abstract4(duplo)({ignorePrefix: true}).declareAbstractRoute(
 	"abstract7",
@@ -172,6 +169,6 @@ export const Abstract8 = (duplo: DuploInstance<DuploConfig>) => Abstract4(duplo)
 .build();
 
 export const Abstract9 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute("abstract8")
-.cut(() => ({yyy: 1}))
+.cut(() => ({yyy: 1}), ["yyy"])
 .build(["yyy"]);
 
