@@ -110,8 +110,6 @@ export interface AbstractRouteCheckerParams<
 	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
 }
 
-const noneKey = Symbol("none");
-
 export interface AbstractRouteUseFunction<
 	request extends Request,
 	response extends Response,
@@ -125,7 +123,7 @@ export interface AbstractRouteUseFunction<
 		response,
 		extractObj,
 		options,
-		Pick<floor & {[noneKey]?: undefined}, pickup extends keyof floor? pickup : typeof noneKey>
+		Pick<floor & {[-1]?: undefined}, pickup extends keyof floor? pickup : -1>
 	>;
 }
 
