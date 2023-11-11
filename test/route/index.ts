@@ -1,3 +1,4 @@
+import {readFileSync} from "fs";
 import {zod} from "../../scripts";
 import {workerTesting} from "@duplojs/worker-testing";
 
@@ -98,6 +99,47 @@ export default workerTesting(
 				code: 200,
 				info: "s",
 				body: zod.literal("15"),
+			}
+		},
+		{
+			title: "send file",
+			url: "http://localhost:1506/route/test/8",
+			method: "GET",
+			output: [],
+			response: {
+				code: 200,
+				info: "s",
+				body: zod.literal(readFileSync(__dirname + "/../../CONTRIBUTING.md", "utf-8")),
+			}
+		},
+		{
+			title: "send not found file",
+			url: "http://localhost:1506/route/test/9",
+			method: "GET",
+			output: [],
+			response: {
+				code: 404,
+				info: "FILE.NOTFOUND",
+			}
+		},
+		{
+			title: "async send",
+			url: "http://localhost:1506/route/test/10",
+			method: "GET",
+			output: [],
+			response: {
+				code: 503,
+				info: "NO_RESPONSE_SENT",
+			}
+		},
+		{
+			title: "send at wrong point",
+			url: "http://localhost:1506/route/test/11",
+			method: "GET",
+			output: [],
+			response: {
+				code: 500,
+				body: zod.literal("Error: There was a problem related to a response made outside the recommended context")
 			}
 		},
 	]
