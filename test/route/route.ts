@@ -50,4 +50,25 @@ duplo.declareRoute("GET", "/test/7")
 	res.code(200).info("s").send(pickup("test"));
 });
 
+duplo.declareRoute("GET", "/test/8")
+.handler(({}, res) => {
+	res.code(200).info("s").sendFile(__dirname + "/../../CONTRIBUTING.md");
+});
+
+duplo.declareRoute("GET", "/test/9")
+.handler(({}, res) => {
+	res.code(200).info("s").sendFile("none");
+});
+
+duplo.declareRoute("GET", "/test/10")
+.handler(({}, res) => {
+	new Promise(res => setTimeout(res, 500)).then(() => res.code(200).info("s").send());
+});
+
+duplo.declareRoute("GET", "/test/11")
+.hook("onConstructResponse", (res) => res.send())
+.handler(({}, res) => {
+	
+});
+
 duplo.launch(() => parentPort?.postMessage("ready"));

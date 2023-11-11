@@ -5,6 +5,7 @@ import {Request} from "./request";
 import {Response} from "./response";
 import {Route} from "./route";
 import {PromiseOrNot} from "./utility";
+import {IncomingMessage, ServerResponse} from "http";
 
 export type HooksLifeCycle<
 	request extends Request = Request, 
@@ -99,7 +100,7 @@ export function makeServerHooksLifeCycle(){
 		onCreateProcess: makeHook<((process: ProcessExport) => PromiseOrNot<true | void>)>(1),
 		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onClose: makeHook<(() => PromiseOrNot<true | void>)>(0),
-		onServerError: makeHook<((error: Error) => PromiseOrNot<true | void>)>(1),
+		onServerError: makeHook<((serverRequest: IncomingMessage, serverResponse: ServerResponse, error: Error) => PromiseOrNot<true | void>)>(3),
 		beforeBuildRouter: makeHook<(() => true | void)>(0),
 	};
 }

@@ -27,37 +27,30 @@ export class Response{
 	information?: string;
 
 	send(data?: any){
-		if(this.isSend === true){
-			console.error(new Error("A response has already been sent."));
-			return;
-		}
-
+		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
+		
 		this.data = data;
 		throw this;
 	}
 
 	sendFile(path: string){
-		if(this.isSend === true){
-			console.error(new Error("A response has already been sent."));
-			return;
-		}
+		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
+
+		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 
-		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 		this.#file = path;
 		this.headers["content-type"] = mime.getType(path) || "text/plain; charset=utf-8";
 		throw this;
 	}
 
 	download(path: string, name?: string){
-		if(this.isSend === true){
-			console.error(new Error("A response has already been sent."));
-			return;
-		}
+		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
+
+		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 
-		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 		this.#file = path;
 		this.headers["content-type"] = "application/octet-stream";
 		this.headers["Content-Disposition"] = "attachment; filename=" + (name || basename(path));
@@ -65,10 +58,7 @@ export class Response{
 	}
 
 	redirect(path: string){
-		if(this.isSend === true){
-			console.error(new Error("A response has already been sent."));
-			return;
-		}
+		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 
 		this.headers["Location"] = path;
@@ -122,4 +112,12 @@ export class Response{
 			this.rawResponse.end();
 		}
 	}
+}
+
+export class SentError{
+	constructor(message = "There was a problem related to a response made outside the recommended context"){
+		this.error = new Error(message);
+	}
+
+	error: Error;
 }
