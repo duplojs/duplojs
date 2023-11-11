@@ -1,4 +1,4 @@
-import {ZodType, ZodError} from "zod";
+import {ZodType, ZodError, string} from "zod";
 import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker";
 import makeFloor, {Floor} from "./floor";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
@@ -79,7 +79,7 @@ export interface AbstractRouteParams<
 	pickup extends string, 
 	options extends any,
 >{
-	pickup?: drop[] & pickup[]; 
+	pickup?: [drop, ...drop[]] & [pickup, ...pickup[]]; 
 	options?: Partial<options>;
 	ignorePrefix?: boolean;
 }

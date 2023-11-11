@@ -140,17 +140,18 @@ export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 .cut(
 	({}, res) => {
 		return {
-			test: 57
+			test: 57,
+			toto: "test"
 		};
 	}, 
-	["test"]
+	["test", "toto"]
 )
-.build(["test"])({pickup: ["test"]})
+.build(["test", "toto"])({pickup: ["test", "toto"]})
 .declareAbstractRoute("abstract6")
 .cut(({pickup: p}) => {
 	parentPort?.postMessage("deepAbstract pickup test " + p("test"));
 })
-.build(["test"]);
+.build(["test", "toto"]);
 
 export const Abstract7 = (duplo: DuploInstance<DuploConfig>) => Abstract4(duplo)({ignorePrefix: true}).declareAbstractRoute(
 	"abstract7",

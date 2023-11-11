@@ -8,7 +8,7 @@ export const MergeAbstractRoute1 = (duplo: DuploInstance<DuploConfig>) => {
 	const abstract9 = Abstract9(duplo);
 
 	return duplo.mergeAbstractRoute([
-		abstract6({pickup: ["test"]}),
+		abstract6({pickup: ["test", "toto"]}),
 		abstract9({pickup: ["yyy"]}),
 		abstract5(),
 	]);

@@ -1,7 +1,7 @@
 import http from "http";
 import {AddHooksLifeCycle, AddServerHooksLifeCycle, makeHooksLifeCycle, makeServerHooksLifeCycle} from "./hook.ts";
 import {Request} from "./request.ts";
-import {__exec__, Response} from "./response.ts";
+import {__exec__, Response, SentError} from "./response.ts";
 import makeRoutesSystem, {RoutesObject} from "./route.ts";
 import makeCheckerSystem, {Checkers} from "./checker.ts";
 import correctPath from "./correctPath.ts";
@@ -79,7 +79,14 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 				await routeFunction(new Request(serverRequest, params, matchedPath), new Response(serverResponse));
 			}
 			catch (error){
-				serverHooksLifeCycle.onServerError.launchSubscriber(error as Error);
+				if(error instanceof Response) error = new SentError();
+				if(error instanceof SentError) error = error.error;
+				await serverHooksLifeCycle.onServerError.launchSubscriber(serverRequest, serverResponse, error as Error);
+				if(!serverResponse.headersSent){
+					serverResponse.writeHead(500, {"content-type": "text/plain"});
+					serverResponse.write(error?.toString?.() || "");
+					serverResponse.end();
+				}
 			}
 		}
 	);
@@ -107,8 +114,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 			buildRouter();
 			buildContentTypeBody();
 
-			serverHooksLifeCycle.onServerError.addSubscriber((error) => console.error(error));
-			server.on("error", serverHooksLifeCycle.onServerError.launchSubscriber);
+			serverHooksLifeCycle.onServerError.addSubscriber((serverRequest, serverResponse, error) => console.error(error));
 
 			const onReady = serverHooksLifeCycle.onReady.build();
 			server.on("listening", onReady);
@@ -120,6 +126,16 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 			if(config.onClose)server.on("close", config.onClose);
 
 			server.listen(config.port, config.host);
+
+			process.on("uncaughtException", (error: any, origin) => {
+				if(error instanceof Response) error = new SentError();
+				if(error instanceof SentError) console.error(error.error, origin);
+				else {
+					console.error(error, origin);
+					process.exit(1);
+				}
+			});
+
 			return server;
 		},
 		addHook,
