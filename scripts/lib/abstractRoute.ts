@@ -118,7 +118,7 @@ export interface AbstractRouteUseFunction<
 	floor extends {},
 	drop extends string,
 >{
-	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>): AbstractRouteInstance<
+	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>, ...desc: any[]): AbstractRouteInstance<
 		request,
 		response,
 		extractObj,
@@ -706,13 +706,14 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			abstractRoutes[name] = abstractRoute;
 			serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(abstractRoute);
 
-			return (params) => {
+			return (params, ...desc) => {
 				const subAbstractRoute: AbstractRoute = {
 					...abstractRoute,
 					params: params || {},
+					descs: desc.length !== 0 ? [{type: "abstract", descStep: desc}] : [],
 					build: () => {
 						Object.entries(abstractRoute).forEach(([key, value]) => 
-							["params"].includes(key) || ((subAbstractRoute as any)[key] = value)
+							["params", "descs"].includes(key) || ((subAbstractRoute as any)[key] = value)
 						);
 						subAbstractRoute.fullPrefix = subAbstractRoute.params.ignorePrefix ? "" : abstractRoute.fullPrefix;
 						subAbstractRoute.pickup = subAbstractRoute.params?.pickup || [];
