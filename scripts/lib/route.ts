@@ -280,6 +280,7 @@ export default function makeRoutesSystem(
 
 	const declareRoute: DeclareRoute = (method, path, abstractRoute, ...desc) => {
 		const descs: DescriptionAll[] = [];
+		if(abstractRoute)descs.push(...abstractRoute.descs);
 		if(desc.length !== 0)descs.push({type: "first", descStep: desc});
 
 		const hooksLifeCyle = makeHooksLifeCycle();
