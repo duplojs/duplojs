@@ -1,6 +1,6 @@
 import {ZodType} from "zod";
-import {ProcessCheckerParams, ProcessExport, ProcessExtractObj, ProcessProcessParams} from "./process";
-import {RouteCheckerParams, RouteExtractObj, RouteProcessAccessParams, RouteProcessParams} from "./route";
+import {ProcessCheckerParams, ProcessExtractObj, ProcessProcessParams} from "./process";
+import {RouteCheckerParams, RouteExtractObj, RouteProcessParams, RoutesObject} from "./route";
 import {AbstractRouteCheckerParams} from "./abstractRoute";
 
 export type PromiseOrNot<T> = T | Promise<T>;
@@ -16,8 +16,8 @@ type ToPaths<T, P extends string = ""> = T extends Record<number, unknown>
         [K in keyof T]: ToPaths<T[K], `${K & string}`>
     }[keyof T]
     : { 
-        path: P extends `${infer P}` ? P : never; 
-        type: T 
+        path: P, 
+        type: T,
     }
 
 type FromPaths<T extends { path: string; type: unknown }> = {
@@ -67,6 +67,11 @@ export type StepCut = {
 
 export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
 
+export interface DescriptionAbstract{
+	type: "abstract",
+	descStep: any[],
+}
+
 export interface DescriptionFirst{
 	type: "first",
 	descStep: any[],
@@ -99,8 +104,7 @@ export interface DescriptionBuild{
 	descStep: any[],
 }
 
-export type DescriptionAll = DescriptionFirst | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild
-
+export type DescriptionAll = DescriptionFirst | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild | DescriptionAbstract;
 
 export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): void => {
 	deep === 0 ||
@@ -109,5 +113,13 @@ export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): v
 			typeof object !== "object" ||
 			object === null || 
 			deepFreeze(object, deep - 1)
+	);
+};
+
+export const rebuildRoutes = (routes: RoutesObject) => {
+	Object.values(routes).forEach(m => 
+		Object.values(m).forEach(r => 
+			r.build()
+		)
 	);
 };
