@@ -142,5 +142,76 @@ export default workerTesting(
 				body: zod.literal("Error: There was a problem related to a response made outside the recommended context")
 			}
 		},
+		{
+			title: "hook onConstructRequest",
+			url: "http://localhost:1506/route/test/hook/onConstructRequest",
+			method: "GET",
+			output: ["hook onConstructRequest"],
+			response: {
+				code: 200,
+				info: "s",
+			}
+		},
+		{
+			title: "hook onConstructResponse",
+			url: "http://localhost:1506/route/test/hook/onConstructResponse",
+			method: "GET",
+			output: ["hook onConstructResponse"],
+			response: {
+				code: 200,
+				info: "s",
+			}
+		},
+		{
+			title: "hook beforeRouteExecution",
+			url: "http://localhost:1506/route/test/hook/beforeRouteExecution",
+			method: "GET",
+			output: ["hook beforeRouteExecution"],
+			response: {
+				code: 200,
+				info: "s",
+			}
+		},
+		{
+			title: "hook beforeParsingBody",
+			url: "http://localhost:1506/route/test/hook/beforeParsingBody",
+			method: "GET",
+			output: ["hook beforeParsingBody"],
+			response: {
+				code: 200,
+				info: "s",
+			}
+		},
+		{
+			title: "hook beforeSend",
+			url: "http://localhost:1506/route/test/hook/beforeSend",
+			method: "GET",
+			output: ["hook beforeSend"],
+			response: {
+				code: 200,
+				info: "s",
+			}
+		},
+		{
+			title: "hook afterSend",
+			url: "http://localhost:1506/route/test/hook/afterSend",
+			method: "GET",
+			output: ["hook afterSend"],
+			sleepAfterRequest: 100,
+			response: {
+				code: 200,
+				info: "s",
+			},
+		},
+		{
+			title: "hook onError",
+			url: "http://localhost:1506/route/test/hook/onError",
+			method: "GET",
+			output: ["hook onError", "error message test"],
+			response: {
+				code: 500,
+				info: "error",
+			}
+		},
 	]
 );

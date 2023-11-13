@@ -67,8 +67,35 @@ duplo.declareRoute("GET", "/test/10")
 
 duplo.declareRoute("GET", "/test/11")
 .hook("onConstructResponse", (res) => res.send())
-.handler(({}, res) => {
-	
-});
+.handler(({}, res) => {});
+
+duplo.declareRoute("GET", "/test/hook/onConstructRequest")
+.hook("onConstructRequest", (res) => parentPort?.postMessage("hook onConstructRequest"))
+.handler(({}, res) => {res.code(200).info("s").send();});
+
+duplo.declareRoute("GET", "/test/hook/onConstructResponse")
+.hook("onConstructResponse", (res) => parentPort?.postMessage("hook onConstructResponse"))
+.handler(({}, res) => {res.code(200).info("s").send();});
+
+duplo.declareRoute("GET", "/test/hook/beforeRouteExecution")
+.hook("beforeRouteExecution", (res) => parentPort?.postMessage("hook beforeRouteExecution"))
+.handler(({}, res) => {res.code(200).info("s").send();});
+
+duplo.declareRoute("GET", "/test/hook/beforeParsingBody")
+.hook("beforeParsingBody", (res) => parentPort?.postMessage("hook beforeParsingBody"))
+.extract({body: zod.undefined()})
+.handler(({}, res) => {res.code(200).info("s").send();});
+
+duplo.declareRoute("GET", "/test/hook/beforeSend")
+.hook("beforeSend", (res) => parentPort?.postMessage("hook beforeSend"))
+.handler(({}, res) => {res.code(200).info("s").send();});
+
+duplo.declareRoute("GET", "/test/hook/afterSend")
+.hook("afterSend", (res) => parentPort?.postMessage("hook afterSend"))
+.handler(({}, res) => {res.code(200).info("s").send();});
+
+duplo.declareRoute("GET", "/test/hook/onError")
+.hook("onError", (res) => parentPort?.postMessage("hook onError"))
+.handler(({}, res) => {throw new Error("test");});
 
 duplo.launch(() => parentPort?.postMessage("ready"));
