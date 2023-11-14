@@ -1,38 +1,20 @@
 # DuploJS
 DuploJS est un framework TypeScript/JavaScript back-end orienter fonctionnel simple d'utilisation qui pourrait même être compris pars des développeurs front-end ;).
 
-Pour faire simple vos routes sont une succession de test unitaire avec au bout une action : 
-```
-___________________________
-|                         |
-|      un client beau     |
-|    et plein d'argent    |<-------\
-|_________________________|        |
-    /|\      |                     |
-     |       | request http        |
-     |       | GET /user/{id}      |
-     |       |                     | negative response 
-     |      \|/                    |
-     |    Duplojs                  |
-     |       |                     |
-     |       |_____________________| 403 
-     |       | has autorization    |
-     |       |                     |
-     |       |_____________________| 400
-     |       | params id is number |
-     |       |                     |
-     |       |_____________________| 404
-     |       | user exist
-     |       |
- 200 |_______|
-      response 
-    containing user 
-```
-
-Cela ressemble au chemin d'une request lambda que vous auriez pu faire simplement avec express ou fastify mais **DuploJS** se différencie pars ça définition des routes et son organisation a suivre.
+## Sommaire
+- [Instalation](#instalation)
+- [Premier pas](#premier-pas)
+- [Route](./docs/Route.md)
+- [Request](./docs/Request.md)
+- [Response](./docs/Response.md)
+- [Checker](./docs/Checker.md)
+- [Process](./docs/Process.md)
+- [Abstract Route](./docs/AbstractRoute.md)
+- [Content Type Parser](./docs/ContentTypeParser.md)
+- [Hook](./docs/Hook.md)
+- [Plugins](./docs/Plugins.md)
 
 ## Instalation
-
 ```
 npm i @duplojs/duplojs
 ```
@@ -123,12 +105,14 @@ const userExist = duplo.createChecker(
             else return output("user.exist", user);
         },
         outputInfo: ["user.exist", "user.notexist"], // différentes informations de sortie possible
-        options: {type: "id" as "id" | "firstname"}, // valeur par défaut des options
+        options: { // valeur par défaut des options
+			type: "id" as "id" | "firstname" 
+		}, 
     }
 );
 ```
 
-Un checker est un test unitaire, il prend en entrée une valeur et doit toujours ressortir une information et peut renvoyer une donnés. Leur but est d'être le plus flexible, plus vos checker feront des actions précises plus vos déclarations de route seront simples et rapides. Dans l'exemple ci-dessus, le checker indique prendre en entrée un nombre ou une string, il autorise comme informations de sortie: "user.exist", "user.notexist" et propose une option "type" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. 
+Un checker est un test unitaire, il prend en entrée une valeur et doit toujours ressortir une information et peut renvoyer une donnés. leur but est d'effectuer une vérification. Dans l'exemple ci-dessus, le checker indique prendre en entrée un nombre ou une string, il autorise comme informations de sortie: "user.exist", "user.notexist" et propose une option "type" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. 
 
 ### Implémenter un checker
 ```ts
@@ -146,9 +130,9 @@ duplo
     userExist,
     {
         input: (pickup) => pickup("id"), // valeur d'entrée
-        validate: (info) => info === "user.exist", // conditions de poursuite de la request
-        catch: (response, info) => response.code(404).info(info).send(), //action lorsque la condition renvoie false
-        output: (drop, info, data) => drop("user", data), // fonction appelée après la validation si l'exécution n'a pas été stoppé par une réponse ou autre
+        result: "user.exist", // info attendu pour continuer
+        catch: (response, info) => response.code(404).info(info).send(), // action effectuer si l'info n'est pas c'elle attendu
+        indexing: "user", // index de drop du resulta
         options: {type: "id"} // option utiliser
     }
 )
@@ -157,7 +141,7 @@ duplo
 });
 ```
 
-Ici le checker prend comme valeur d'entrée l'id qui a été précédemment drop au sol lors de l'extraction, puis il vérifie si la valeur de sortie est égal à "user.exist", si true il continue l'exécution et lance la fonction output puis le handler, si false il lance la fonction catch qui va renvoyer une erreur 404.
+Ici le checker prend comme valeur d'entrée l'id qui a été précédemment drop au sol lors de l'extraction, puis il vérifie si la valeur de sortie est égal à "user.exist", si oui il continue l'exécution et index la data de sortie a "user", si non il lance la fonction catch qui va renvoyer une erreur 404.
 
 ### Utiliser un cut
 ```ts
@@ -178,9 +162,9 @@ duplo
     userExist,
     {
         input: (pickup) => pickup("id"),
-        validate: (info) => info === "user.exist",
+        result: "user.exist",
         catch: (response, info) => response.code(404).info(info).send(),
-        output: (drop, info, data) => drop("user", data),
+        indexing: "user",
         options: {type: "id"}
     }
 )
@@ -188,9 +172,9 @@ duplo
     response.code(200).info("quoicoubeh").send(floor.pickup("user"));
 });
 ```
-Les checkers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique qui ne se retrouvera que a un endroit, c'est pour ça que les cuts ont été créés.
+Les checkers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique, c'est pour ça que les cuts ont été créés.
 
-**/!\ Attention à ne pas abuser des cut sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable. /!\\**
+**⚠️ Attention à ne pas abuser des cuts sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable. ⚠️**
 
 ### Respecter l'exécution linéaire
 
@@ -235,165 +219,4 @@ duplo
 });
 ```
 
-## Construction d'une route
-
-Il faut savoir que la déclaration d'une route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité après l'écriture des routes. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
-
-```ts
-duplo.declareRoute("GET", "/")
-.hook(/* ... */) // vous pouvez ajouter autant de Hook que vous souhaitez.
-.access(/* ... */) // vous ne pouvez avoir qu'un seul access
-.extract(/* ... */) // vous ne pouvez avoir qu'un seul extract
-.process(/* ... */) // vous pouvez avoir autant de process que vous souhaitez
-.check(/* ... */) // vous pouvez avoir autant de check que vous souhaitez
-.cut(/* ... */) // vous pouvez avoir autant de cut que vous souhaitez
-.handler(/* ... */)
-```
-
-Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour check, process et cut qui n'empêche pas de se rappeler entre eux):
-
-```ts
-duplo.declareRoute("GET", "/")
-
-.hook(/* ... */) // vous pouvez ajouter autant de Hook que vous 
-.access(/* ... */) // vous ne pouvez avoir qu'un seul access
-// hook et access ne sont plus disponibles
-.extract(/* ... */) // vous ne pouvez avoir qu'un seul extract
-// hook, access et extract ne sont plus disponibles
-
-.check(/* ... */) 
-.process(/* ... */)
-.process(/* ... */) // vous pouvez avoir autant de process, check et cut que vous voulez et dans l'ordre que vous voulez.
-.cut(/* ... */) 
-.check(/* ... */)
-
-.handler(/* ... */)
-```
-l'ordre des process, check et cut que vous définirez sera l'ordre d'exécution des la request.
-
-### .hook(name, function)
-
-Les hook sont des fonctions qui sont exécutées à des moments précis du cycle de vie d'une request ou du serveur. Si les hook sont déclarés au sein d'une route il affecteront que celle-ci. Les hooks disponibles ici sont les suivants :
-- **onConstructRequest**
-- **onConstructResponse**
-- **beforeParsingBody**
-- **onError**
-- **beforeSend**
-- **afterSend**
-
-**/!\ Les hooks ne sont pas fait pour répondre à une request. Si vous le faites cela provoquera une erreur. /!\\**
-
-```ts
-duplo
-.declareRoute("GET", "/")
-.hook("onConstructRequest", (request) => {/* ... */})
-.hook("onConstructResponse", (response) => {/* ... */})
-.hook("beforeSend", (request, response) => {/* ... */})
-.hook("onConstructResponse", (response) => {/* ... */})
-.handler((floor, response) => {
-    response.code(200).info("feur").send();
-});
-```
-
-### .access(function | process, {}?)
-
-Un access accepte soit une fonction soit un process, l'acces est la pour organiser la déclaration des routes et vérifier en avant le parsing du body si la request est autorisé à être traité.
-
-```ts
-duplo
-.declareRoute("POST", "/user")
-.access(
-    mustBeAdmin,
-    {
-        pickup: ["user"] // récupère la valeur user
-    }
-)
-.handler((floor, response) => {
-    response.code(200).info("pépite de chocolat").send();
-});
-
-duplo
-.declareRoute("POST", "/user")
-.access((floor, request, response) => {
-    if(request.header.role !== "admin") response.code(403).info("for biden").send()
-})
-.handler((floor, response) => {
-    response.code(200).info("Ancilla Domini").send();
-});
-```
-
-### .extract({}, function?)
-Cette fonction permet d'extraire et de vérifier des valeurs qu'on souhaite utiliser pour le traitement de la request, 4 type sont disponibles: 
-- params
-- body
-- query
-- body
-
-```ts
-duplo
-.declareRoute("GET", "/user/{id}")
-.access(
-    mustBeAdmin,
-    {
-        pickup: ["user"] // récupère la valeur user
-    }
-)
-.extract(
-    {
-        params: {
-            id: zod.coerce.number()
-        }
-    },
-    (response, type, index, err) => response.code(400).info("you shall not pass").send()
-)
-.handler((floor, response) => {
-    response.code(200).info("(╯°□°）╯︵ ┻━┻").send();
-});
-```
-### .process(process, {}?)
-Cette fonction permet d'intégrer un process dans une request.
-
-```ts
-duplo
-.declareRoute("GET", "/")
-.extract(
-    {
-        params: {
-            id: zod.coerce.number()
-        }
-    },
-    (response, type, index, err) => response.code(400).info("you shall not pass").send()
-)
-.process(
-    getUser,
-    {
-        pickup: ["user"], // récupère la valeur user
-        input: (pickup) => pickup("id")
-    }
-)
-.handler((floor, response) => {
-    response.code(200).info("(╯°□°）╯︵ ┻━┻").send();
-});
-```
-
-## Road Map
-- [x] systéme de route
-- [x] class pour resquest et response
-- [x] ajout des checkers
-- [x] déclaration des route
-- [x] ajout des process 
-- [x] hook sur le cycle de vie d'une request
-- [x] définir des hook spécifique a une route
-- [x] définir des hook spécifique a un process
-- [x] content type parser avec une possibiliter de personalisation
-- [x] ajout des access sur les route
-- [x] ajout des route abstraite
-- [x] définir des hook spécifique a une route abstraite
-- [x] hook sur le cycle de vie de duplojs
-- [x] ajout d'une fonction input pour faciliter le devlopement de plugins
-- [ ] ajout de function "OR" et "AND" pour combiner des checker 
-- [ ] unit testing mode sur les checker
-- [ ] unit testing mode sur les process
-- [ ] unit testing mode sur les routes
-- [ ] unit testing mode sur les route abstraite
-    
+#### Retour vers le [Sommaire](#sommaire).
