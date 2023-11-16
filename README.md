@@ -1,5 +1,7 @@
 # DuploJS
-DuploJS est un framework TypeScript/JavaScript back-end orienter fonctionnel simple d'utilisation qui pourrait même être compris pars des développeurs front-end ;).
+DuploJS est un framework TypeScript/JavaScript back-end orienter fonctionnel simple d'utilisation qui pourrait même être compris pars des développeurs front-end ;). 
+
+Duplojs est conçu pour les développeurs qui accordent de l'importance à la clarté. Le framework a été pensé pour rendre toutes les opérations de vérification d'une route explicites, sans pour autant être trop "verbeux". Duplojs encourage la segmentation et la flexibilité afin que vos routes ne soient plus qu'un assemblage de briques. Chaque route deviendra une belle monade qui vous racontera une histoire sans erreurs et où chaque personnage joue correctement et successivement son rôle.
 
 ## Sommaire
 - [Instalation](#instalation)
@@ -41,7 +43,7 @@ duplo
 });
 ```
 
-Comme vous pouvez le voir vous n'avez pas accès directement à la request et **TANT MIEUX** car tel que je vous connais (bande de sagouin) vous auriez fait ça n'importe comment.
+Comme vous pouvez le voir, vous n'avez pas un accès direct à la requête, et TANT MIEUX, car tel que je vous connais (bande de sagouin), vous auriez fait ça n'importe comment.
 
 ### Comment accéder aux valeurs de la request
 ```ts
@@ -60,9 +62,9 @@ duplo
 });
 ```
 
-Grâce à la fonction extracte vous pouvez à l'aide de zod extraire ce que vous souhaitez de la request et garantir le type des variables:
-- le paramètre id n'acceptera qu'un nombre ou une chaîne de caractère contenant un nombre
-- le champ role du headers n'acceptera qu'une string ayant entre 2 et 15 caractères
+Grâce à la fonction extracte, vous pouvez, à l'aide de zod, extraire ce que vous souhaitez de la requête et garantir le type des variables :
+- Le paramètre "id" n'acceptera qu'un nombre ou une chaîne de caractères contenant un nombre.
+- Le champ "role" des headers n'acceptera qu'une chaîne de caractères ayant entre 2 et 15 caractères.
 
 ### Comment accéder au valeurs
 ```ts
@@ -84,7 +86,7 @@ duplo
 });
 ```
 
-L'objet "floor" qui représente le sol de votre chambre. Tout comme les gros nerd que nous sommes, quand on a besoin de ranger quelque chose on le jette par terre: ``floor.drop("caleçons", "sale")``, puis tu les ramasse plus tard : ``floor.pickup("caleçons")`` (c'est juste un Map qui se balade à travers toutes les fonctions d'une route). Toutes les valeurs vérifiées dans l'extract sont automatiquement "drop" sur votre sol.
+L'objet "floor" représente le sol de votre chambre. Tout comme les gros nerds que nous sommes, quand on a besoin de ranger quelque chose, on le jette par terre ``floor.drop("caleçons", "sale")``, puis on les ramasse plus tard avec ``floor.pickup("caleçons")`` (c'est juste un Map qui se balade à travers toutes les fonctions d'une route). Toutes les valeurs vérifiées dans l'extract sont automatiquement "drop" sur votre sol.
 
 ### Comment faire plus de vérification
 Vous êtes peut-être tenté de faire toutes les vérifications dans le handler mais il faut que vous gardiez une chose en tête ! Le handler correspond à l'action finale, une fois arrivé ici en théorie il n'y a plus aucune vérification à faire. 
@@ -95,12 +97,7 @@ const userExist = duplo.createChecker(
     "userExist", // le nom du checker
     {
         async handler(value: number | string, output, options){
-            let search: {index: string, value: number | string} = {
-                index: options.type, 
-                value
-            };
-            
-            const user = await MySuperDataBase(search);
+            const user = await MySuperDataBase({[options.type]: value});
             if(!user) return output("user.notexist");
             else return output("user.exist", user);
         },
@@ -112,7 +109,7 @@ const userExist = duplo.createChecker(
 );
 ```
 
-Un checker est un test unitaire, il prend en entrée une valeur et doit toujours ressortir une information et peut renvoyer une donnés. leur but est d'effectuer une vérification. Dans l'exemple ci-dessus, le checker indique prendre en entrée un nombre ou une string, il autorise comme informations de sortie: "user.exist", "user.notexist" et propose une option "type" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. 
+Un checker est un test unitaire qui prend en entrée une valeur et doit toujours renvoyer une information, pouvant éventuellement retourner des données. Son but est d'effectuer une vérification. Dans l'exemple ci-dessus, le checker indique prendre en entrée un nombre ou une chaîne de caractères. Il autorise comme informations de sortie : "user.exist", "user.notexist" et propose une option "type" qui, dans notre cas, permet de définir par quelle clé on cherche un utilisateur.
 
 ### Implémenter un checker
 ```ts
@@ -141,7 +138,7 @@ duplo
 });
 ```
 
-Ici le checker prend comme valeur d'entrée l'id qui a été précédemment drop au sol lors de l'extraction, puis il vérifie si la valeur de sortie est égal à "user.exist", si oui il continue l'exécution et index la data de sortie a "user", si non il lance la fonction catch qui va renvoyer une erreur 404.
+Ici, le checker prend comme valeur d'entrée l'ID qui a été précédemment "drop" au sol lors de l'extraction. Ensuite, il vérifie si la valeur de sortie est égale à "user.exist". Si c'est le cas, il continue l'exécution et indexe les données de sortie à "user". Sinon, il lance la fonction "catch" qui va renvoyer une erreur 404.
 
 ### Utiliser un cut
 ```ts
@@ -172,13 +169,13 @@ duplo
     response.code(200).info("quoicoubeh").send(floor.pickup("user"));
 });
 ```
-Les checkers sont faits pour être utilisé à plein d'endroits mais il peut arriver d'avoir quelque chose de très spécifique, c'est pour ça que les cuts ont été créés.
+Les checkers sont conçus pour être utilisés à de nombreux endroits, mais il peut arriver d'avoir quelque chose de très spécifique. C'est pour cela que les cuts ont été créés.
 
-**⚠️ Attention à ne pas abuser des cuts sinon vous vous éloignerez de de l'utilité première qui est la construction de code à base de brique réutilisable. ⚠️**
+**⚠️ Attention à ne pas abuser des cuts, sinon vous vous éloignerez de l'utilité première, qui est la construction de code à base de briques réutilisables. ⚠️**
 
 ### Respecter l'exécution linéaire
 
-Pour que Duplojs puisse fonctionner correctement, il faut respecter son exécution, une request a un chemin synchronisé et des étapes à franchir. si vous souhaitez utiliser une réponse après une promesse, il vous faudra toujours `await` cette promesse pour que l'exécution se fasse de manière linéaire.
+Pour que Duplojs fonctionne correctement, il faut respecter son exécution. Une request a un chemin synchronisé et des étapes à franchir. Si vous souhaitez utiliser une réponse après une promesse, il vous faudra toujours utiliser await pour que l'exécution se fasse de manière linéaire.
 
 ```ts
 duplo
@@ -199,7 +196,7 @@ duplo
 ```
 
 ### Répondre est une erreur
-Quand les function send, sendFile et download sont appelés elles crée une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
+Quand les fonctions send, sendFile et download sont appelées, elles créent une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant, cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
 
 ```ts
 duplo
