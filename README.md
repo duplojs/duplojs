@@ -6,6 +6,7 @@ Duplojs est conçu pour les développeurs qui accordent de l'importance à la cl
 ## Sommaire
 - [Instalation](#instalation)
 - [Premier pas](#premier-pas)
+- [Duplo instance](./docs/DuploInstance.md)
 - [Route](./docs/Route.md)
 - [Request](./docs/Request.md)
 - [Response](./docs/Response.md)

@@ -1,6 +1,7 @@
 # Route
 
 ## Sommaire
+- [Déclarer une route](#déclarer-une-route)
 - [Construction d'une route](#construction-dune-route)
 - [Cycle d'exécution](#cycle-dexécution)
 - [Handler](#handlerfunction-any)
@@ -9,6 +10,16 @@
 - [Cut](#cutfunction-array-any)
 - [Process](#processobject-object-any)
 - [Hook](#hookstring-function)
+
+### Déclarer une route
+Une route peut étre déclaré a partire de deux chose, sois depuis la `DuploInstance`, sois depuis une `AbstractRouteInstance`.
+
+```ts
+duplo.declareRoute("GET", "/")//...
+//or
+duplo.declareRoute("POST", ["/user", "/post"])//...
+```
+Le premier argument est une `string` qui représente la method de la route, les seule valeur possible sont `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` ou `HEAD`. Le second argument est sois une `string` sois une `Array<string>`, il représente tout les path qui seront accosier a la route.
 
 ### Construction d'une route
 Il faut savoir que la déclaration d'une route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité après l'écriture des routes. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
@@ -142,7 +153,7 @@ duplo
 La fonction en second paramètre prend 4 argument, l'object [Response](./Response.md), la clé de premier niveau (type), la clé de second niveau (index) et l'erreur zod. 
 
 ### .check(object, object, ...any?)
-La method check permet d'implémenter un [checker](./Checker.md) dans une route. Elle prends 2 arguments, le premier est de type `checkerExport` et le second est un objet qui permet de configuré le checker implémenter.
+La method check permet d'implémenter un [checker](./Checker.md) dans une route. Elle prends 2 arguments, le premier est de type `CheckerExport` et le second est un objet qui permet de configuré le checker implémenter.
 
 ```ts
 duplo
@@ -175,11 +186,19 @@ duplo
 });
 ```
 
-Les propriéter `input` et `options` ce ressemble, elle serve toute les deux a envoyer des donnés pour l'exécution du checker. Cependant `input` doit obligatoirment étre défini contrairement aux `options` qui ont des valeurs par défaut. La propriété `result` représente l'information attendue, si le checker renvoie une autre information la fonction de la propriété `catch` sera lancée ce qui interrompera la requête. La propriété indexing représente la clé d'indexation dans floor de la data résultante du checker.
+Les propriéter `input` et `options` ce ressemble, elle serve toute les deux a envoyer des donnés pour l'exécution du checker. Cependant `input` doit obligatoirment étre défini contrairement aux `options` qui ont des valeurs par défaut. La propriété `result` représente l'information attendue, si le checker renvoie une autre information la fonction de la propriété `catch` sera lancée ce qui interrompera la requête. La propriété `indexing` représente la clé d'indexation dans floor de la data résultante du checker.
+
+propriétés|valeur|definition
+---|---|---
+input|`function`|Fonction qui permet d'envoyer une valeur au checker.
+result|`string` ou `string[]` ou `undefined`|Information attendu pour continuer la requéte.
+catch|`function`|Function appler si le resulta ne convient pas.
+indexing|`string` ou `undefined`|Propriété qui représente l'index dans le [floor](./Floor.md) des data renvoyées par le checker en cas de resultat satisfaisant.
+options|`function` ou `objet` ou `undefined`|Options du checker.
+skip|`function` ou `undefined`|Propriété de sauter un checker sous certaine condition.
 
 ### .cut(function, array?, ...any?)
-La fonction cut est conseiller d'étre utiliser dans deux cas. Si vous avez une vérification unique qui ne sera utile que sur une seul route ou si vous avez besoin de manipuler l'objet [Request](./Request.md).
-La method cut prend 2 arguments, le premier est une fonction et le second argument est une array. L'array correspond explicitement au clé de l'objet renvoyer par la fonction.
+La fonction cut est conseiller d'étre utiliser dans deux cas. Si vous avez une vérification unique qui ne sera utile que sur une seul route ou si vous avez besoin de manipuler l'objet [Request](./Request.md). La method cut prend 2 arguments, le premier est une fonction et le second argument est une array. L'array correspond explicitement au clé de l'objet renvoyer par la fonction.
 
 ```ts
 duplo
@@ -231,47 +250,65 @@ duplo
 La fonction sera appler avec 3 argument, le premier c'est le [floor](./Floor.md) de la requête, le second c'est l'objet [Response](./Response.md) et le troisiéme c'est l'objet [Request](./Request.md).
 
 ### .process(object, object, ...any?)
+La fonction process permet d'implémenter un process dans une route. Cette method prend 2 argument, le premier est de type `ProcessExport` et le second est un objet qui permet de configuré le process implémenter.
+
 ```ts
 duplo
-.declareRoute("PATCH", "/organization/{organizationId}/post/{postId}")
+.declareRoute("PATCH", "/article/{articleId}")
 .extract({
 	params: {
-		organizationId: zod.coerce.number(),
-		postId: zod.coerce.number(),
+		articleId: zod.coerce.number(),
 	},
 	body: {
-		title: zod.string().max(120).min(5),
-		subTitle: zod.string().max(240).min(5),
-		content: zod.string().max(1500).min(1),
+		title: zod.string().max(120).min(5).optinal(),
+		subTitle: zod.string().max(240).min(5).optinal(),
+		content: zod.string().max(1500).min(1).optinal(),
 	}
 })
+.check(
+	articleExist,
+	{
+		input: (pickup) => pickup("articleId"),
+		result: "article.exist",
+		catch: (response, info) => response.code(404).info(info).send(),
+		indexing: "article",
+	}
+)
 .process(
 	userHasRightInOrganization,
 	{
-		input: (pickup) => pickup("organizationId"),
-		pickup: ["currentUser", "organization"], // valeur récupérer du process
+		input: (pickup) => pickup("article").organization_id,
+		pickup: ["currentUser"], // valeur récupérer du process
 
 		options: { // option static
-			right: "publish_post"
+			right: "edit_post"
 		}
 		// or
 		options: (pickup) => ({ // option dynamique
-			right: "publish_post"
+			right: "edit_post"
 		})
 	}
 )
 .handler(async ({pickup}, response) => {
-	const result = await myDataBase.post.inserte({
-		organization_id: pickup("organizationId"),
-		author_id: pickup("currentUser").id
+	const result = await myDataBase.article.update({
+		id: pickup("articleId"),
 		title: pickup("title"),
 		subTitle: pickup("subTitle"),
 		content: pickup("content"),
-		date: new Date(),
+		editer_id: pickup("currentUser").id
 	});
 
     response.send(result);
 });
 ```
+Les propriétés `input` et `options` permettent de passer des données pour l'éxécution du process, mais elles ne sont pas obligatoires. La propriété `pickup` permet de récupérer des valeurs du [floor](./Process.md) du process.
+
+propriétés|valeur|definition
+---|---|---
+input|`function` ou `undefined`|Fonction qui permet d'envoyer une valeur au process.
+pickup|`string[]` ou `undefined`|Cette propriété représente des clé du [floor](./Floor.md) du process qui on êtais drop, cela permet d'importer leur valeur dans la route.
+options|`function` ou `objet` ou `undefined`|Options du process.
+skip|`function` ou `undefined`|Propriété de sauter un process sous certaine condition.
 
 ### .hook(string, function)
+la function hook permet d'ajouter des [hooks](./Hook.md) localment a une route.
