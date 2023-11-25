@@ -22,7 +22,7 @@ duplo.declareRoute("POST", ["/user", "/post"])//...
 Le premier argument est une `string` qui représente la method de la route, les seule valeur possible sont `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` ou `HEAD`. Le second argument est sois une `string` sois une `Array<string>`, il représente tout les path qui seront accosier a la route.
 
 ### Construction d'une route
-Il faut savoir que la déclaration d'une route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité après l'écriture des routes. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
+La déclaration d'une route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
 
 ```ts
 duplo
@@ -68,7 +68,7 @@ Ordres d'appel des fonctions:
 - [Content type Parser](./ContentTypeParser.md)
 - [Extract](#extractobject-function-any)
 - [Process](./Process.md), [Checker](./Checker.md) ou [cut](#cutfunction-array-any)
-- [Handler](#handlerfunction)
+- [Handler](#handlerfunction-any)
 
 Comme dit plus haut la fonction est sur mesure donc tout ne vas pas forcément s'exécuter mais tout s'executera dans cette ordre.
 
@@ -311,4 +311,28 @@ options|`function` ou `objet` ou `undefined`|Options du process.
 skip|`function` ou `undefined`|Propriété de sauter un process sous certaine condition.
 
 ### .hook(string, function)
-la function hook permet d'ajouter des [hooks](./Hook.md) localment a une route.
+La function hook permet d'ajouter des [hooks](./Hook.md) localment a une route.
+
+```ts
+duplo
+.declareRoute("GET", "/")
+.hook("onConstructRequest", (request) => {/* ... */})
+.hook("beforeParsingBody", (request, response) => {/* ... */})
+.hook("onError", (request, response, error) => {/* ... */})
+.hook("beforeParsingBody", (request, response) => {/* ... */})
+.handler(/* ... */);
+```
+
+hook|arguments|definition
+---|---|---
+onConstructRequest|`(Request) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Request](./Request.md).
+onConstructResponse|`(Response) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Response](./Response.md).
+beforeRouteExecution|`(Request, Response) => {/* */}`|Ce lance avant l'éxécution des opération de la route.
+beforeParsingBody|`(Request, Response) => {/* */}`|Ce lance avant le [content type parser](./ContentTypeParser.md) dans le cas ou la clés "body" est dans l'[extract](#extractobject-function-any).
+onError|`(Request, Response, Error) => {/* */}`|Ce lance si une erreur est catch pendant l'execution des opération de la route.
+beforeSend|`(Request, Response) => {/* */}`|Ce lance avant avant l'envois d'un réponse.
+afterSend|`(Request, Response) => {/* */}`|Ce lance aprés l'envois d'un réponse.
+
+Vous pouvez avoir plus de detaile avec le [cycle d'exécution](#cycle-dexécution) ou sur la page [Hook](./Hook.md).
+
+#### Retour vers le [Sommaire](#sommaire).
