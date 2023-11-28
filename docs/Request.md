@@ -12,6 +12,6 @@ host|`string`|Host de la requéte actuel.
 origin|`string`|Origin de la requéte actuel.
 path|`string`|Path de la requéte actuel.
 params|`Record<string, string>`|Paramétre éxtrai du path de la requéte actuel.
-query|`Record<string, string | string[]>`|Query de la requéte actuel.
+query|`Record<string, string \| string[]>`|Query de la requéte actuel.
 matchedPath|`string` \| `null`|Path qui a machté avec la requéte actuel. Exemple: path === "/user/953" donc matchedPath === "/user/{userId}". si aucune route n'est trouvé, alors la valeur sera a null.
 body|`unknown`|Body de la requéte actuel.
