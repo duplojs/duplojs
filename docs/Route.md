@@ -87,7 +87,7 @@ Ordres d'appel des fonctions:
 - Make[Floor](./Floor.md)
 - [AbstractRoute](./AbstractRoute.md)
 - [Hook](./Hook.md) "beforeParsingBody"
-- [Content type Parser](./ContentTypeParser.md)
+- [Content Type Parser](./ContentTypeParser.md)
 - [Extract](#extractobject-function-any)
 - [Process](./Process.md), [Checker](./Checker.md) ou [cut](#cutfunction-array-any)
 - [Handler](#handlerfunction-any)
@@ -96,6 +96,57 @@ Ordres d'appel des fonctions:
 - [Hook](./Hook.md) "afterSend"
 
 Comme dit plus haut la fonction est sur mesure donc tout ne vas pas forcément s'exécuter mais tout s'executera dans cette ordre.
+
+Il n'est pas possible d'envoyer une réponse a n'importe qu'elle moment du cycle, le "code" si dessous montre de manier plus technique le cycle d'exécution.
+
+```
+// try serveur
+try{
+	@ touve une route qui match
+	@ lance le hook onConstructRequest
+	@ lance le hook onConstructResponse
+
+	// try response
+	try{
+		// try erreur
+		try{
+			@ lance le hook beforeRouteExecution
+			@ exécute abstract route
+			@ lance le hook beforeParsingBody
+			@ lance le content type parser
+			@ exécute extract, checker, cut, process, handler
+		}
+		// catch error
+		catch(exception) {
+			if(exception === Error){
+				@ lance le hook OnError
+				@ execute error handler
+			}
+			else {
+				@ throw exception;
+			}
+		}
+	}
+	// catch response
+	catch(exception) {
+		if(exception === Reponse){
+			@ lance le hook beforeSend
+			@ envoi la Reponse au client
+			@ lance le hook afterSend
+		}
+		else {
+			@ throw exception;
+		}
+	}
+}
+// catch serveur
+catch(exception) {
+	@ lance le hook onServerError
+	@ envoi une Erreur 500 au client
+}
+
+```
+Les différent trycatch serve de "goto" (d'ou l'exuction linéaire), cela permet d'intérompre l'éxécution du code de pandent les opération de la route. Cependent si une réponse est envoyer depuis le try serveur ou le catch reponse ça provoquera une erreur.
 
 ### .handler(function, ...any?)
 ```ts
