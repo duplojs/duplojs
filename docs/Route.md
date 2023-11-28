@@ -3,6 +3,7 @@
 ## Sommaire
 - [Déclarer une route](#déclarer-une-route)
 - [Construction d'une route](#construction-dune-route)
+- [Exécution linéaire](#exécution-linéaire)
 - [Cycle d'exécution](#cycle-dexécution)
 - [Handler](#handlerfunction-any)
 - [Extract](#extractobject-function-any)
@@ -55,6 +56,27 @@ duplo
 ```
 L'ordre des process, check et cut que vous définirez sera l'ordre d'exécution de la request.
 
+### Exécution linéaire
+Pour que Duplojs fonctionne correctement, il faut respecter son exécution. Une request a un chemin synchronisé et des étapes à franchir. Si vous souhaitez utiliser une réponse après une promesse, il vous faudra toujours utiliser await pour que l'exécution se fasse de manière linéaire.
+
+```ts
+duplo
+.declareRoute("GET", "/user/{id}")
+// hook, extract, process, checker, cut...
+.handler(async (floor, response) => {
+
+    // ✖ ne fonctionne pas
+    // cela provoquera une erreur qui indiquera que rien n'a été envoyé
+    new Promise(resolve => setTimeout(resolve, 1000))
+    .then(() => response.code(200).info("j'effectue le dab").send());
+
+    // ✔ fonctionne correctement
+    // l'exécution est en linéaire donc cela ne posera aucun problème
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    response.code(200).info("il est mort pioupiou").send();
+});
+```
+
 ### Cycle d'exécution
 Les route de duplojs son grosomodo des succesion d'execution de function ([Hook](./Hook.md), [AbstractRoute](./AbstractRoute.md), [Process](./Process.md), [Checker](./Checker.md), ...). Pour optimiser le raccord des différente fonction, duplojs fabrique une fonction surmesure. C'est donc cette fonction qui determine le cycle d'exécution.
 
@@ -69,6 +91,9 @@ Ordres d'appel des fonctions:
 - [Extract](#extractobject-function-any)
 - [Process](./Process.md), [Checker](./Checker.md) ou [cut](#cutfunction-array-any)
 - [Handler](#handlerfunction-any)
+- [Hook](./Hook.md) "beforeSend"
+- Envoi de la réponse
+- [Hook](./Hook.md) "afterSend"
 
 Comme dit plus haut la fonction est sur mesure donc tout ne vas pas forcément s'exécuter mais tout s'executera dans cette ordre.
 

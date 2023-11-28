@@ -177,13 +177,12 @@ Les [checkers](./docs/Checker.md) sont conçus pour être utilisés à de nombre
 **⚠️ Attention à ne pas abuser des [cuts](./docs/Route.md#cutfunction-array-any), sinon vous vous éloignerez de l'utilité première, qui est la construction de code à base de briques réutilisables. ⚠️**
 
 ### Respecter l'exécution linéaire
-
 Pour que Duplojs fonctionne correctement, il faut respecter son exécution. Une request a un chemin synchronisé et des étapes à franchir. Si vous souhaitez utiliser une réponse après une promesse, il vous faudra toujours utiliser await pour que l'exécution se fasse de manière linéaire.
 
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
-// hook, access, extract, process, checker, cut...
+// hook, extract, process, checker, cut...
 .handler(async (floor, response) => {
 
     // ✖ ne fonctionne pas (ti é con ou koi ?)
@@ -199,12 +198,12 @@ duplo
 ```
 
 ### Répondre est une erreur
-Quand les fonctions send, sendFile et download sont appelées, elles créent une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant, cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
+Quand les fonctions send, sendFile, redirect et download sont appelées, elles créent une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant, cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
 
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
-// hook, access, extract, process, checker, cut...
+// hook, extract, process, checker, cut...
 .handler((floor, response) => {
     try{
         response.code(200).info("bien se passé").send();
