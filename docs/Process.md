@@ -90,16 +90,21 @@ Cette method permet de cloturé la création d'un process. Elle prend en premier
 **⚠️ Si la fonction build n'est pas appler le process n'est pas utilisable. ⚠️**
 
 ### .extract(object, function?, ...any?)
-Cette fonction est exactement pareil que la methods [extract des route](./Route.md#extractobject-function-any).
+Cette fonction est exactement pareil que la methode [extract des route](./Route.md#extractobject-function-any).
 
 ### .check(object, object, ...any?)
-Cette fonction est exactement pareil que la methods [check des route](./Route.md#checkobject-object-any).
+Cette fonction est exactement pareil que la methode [check des route](./Route.md#checkobject-object-any).
 
 ### .cut(function, array?, ...any?)
-Cette fonction est exactement pareil que la methods [cut des route](./Route.md#cutfunction-array-any).
+Cette fonction est exactement pareil que la methode [cut des route](./Route.md#cutfunction-array-any).
 
 ### .process(object, object, ...any?)
-Cette fonction est exactement pareil que la methods [process des route](./Route.md#cutfunction-array-any).
+Cette fonction est exactement pareil que la methode [process des route](./Route.md#cutfunction-array-any).
 
 ### .handler(function, ...any?)
-Cette fonction est exactement pareil que la methods [handler des route](./Route.md#handlerfunction-any) sauf qu'elle n'est pas obligatoire.
+Cette fonction est exactement pareil que la methode [handler des route](./Route.md#handlerfunction-any) sauf qu'elle n'est pas obligatoire.
+
+### .hook(string, function)
+cette methode permet d'ajouter des [hooks](./Hook.md) au process. C'est hook seront transmit au route, au abstract route et au process qui implémente ce le process. Son utilisation est exactement pareille que la methode [hook des route](./Route.md#hookstring-function).
+
+#### Retour vers le [Sommaire](#sommaire).
