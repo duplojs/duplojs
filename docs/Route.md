@@ -387,7 +387,7 @@ options|`function` ou `objet` ou `undefined`|Options du process.
 skip|`function` ou `undefined`|Propriété de sauter un process sous certaine condition.
 
 ### .hook(string, function)
-La function hook permet d'ajouter des [hooks](./Hook.md) localment a une route.
+La fonction hook permet d'ajouter des [hooks](./Hook.md) localment a une route.
 
 ```ts
 duplo
