@@ -40,4 +40,18 @@ options|`Record<string, any>` \| `undefined`|Options pars défaut du checker.
 ### Implémenter un checker
 Les checker s'utilise uniquement avec la method `check` des route, process et abstractRoute.
 
+```ts
+// route, process ou abstractRoute
+.check(
+	userExist,
+	{
+		input: (pickup) => pickup("id"), // valeur d'entrée
+        result: "user.exist", // info attendu pour continuer
+        catch: (response, info) => response.code(404).info(info).send(), // action effectuer si l'info n'est pas c'elle attendu
+        indexing: "user", // index de drop du resulta
+	}
+)
+// suite
+```
+
 #### Retour vers le [Sommaire](#sommaire).
