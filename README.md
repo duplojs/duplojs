@@ -13,7 +13,6 @@ Duplojs est conçu pour les développeurs qui accordent de l'importance à la cl
 - [Checker](./docs/Checker.md)
 - [Process](./docs/Process.md)
 - [Abstract Route](./docs/AbstractRoute.md)
-- [Exemple](./docs/Exemple.md)
 - [Content Type Parser](./docs/ContentTypeParser.md)
 - [Hook](./docs/Hook.md)
 - [Plugins](./docs/Plugins.md)

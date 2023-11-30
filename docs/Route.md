@@ -156,7 +156,7 @@ duplo
 	response.send("fait le mou, fait le mou");
 });
 ```
-La fonction handler est la fonction qui cloture la définition d'une route. Elle prend en argument une fonction. Cette fonction est appler avec 2 arguments, le [floor](./Floor.md) de la requête et l'objet [Response](./Response.md). Cette fonction est la dernierre action de la route, en théoris une fois arriver ici il n'y a plus rien a vérifier ! 
+La fonction handler est la fonction qui cloture la définition d'une route. Elle prend en argument une fonction. Cette fonction est appler avec 2 arguments, le floor de la requête et l'objet [Response](./Response.md). Cette fonction est la dernierre action de la route, en théoris une fois arriver ici il n'y a plus rien a vérifier ! 
 
 **⚠️ Si la fonction handler n'est pas appler la route n'est pas déclaré. ⚠️**
 
@@ -269,7 +269,7 @@ propriétés|valeur|definition
 input|`function`|Fonction qui permet d'envoyer une valeur au checker.
 result|`string` ou `string[]` ou `undefined`|Information attendu pour continuer la requéte.
 catch|`function`|Function appler si le resulta ne convient pas.
-indexing|`string` ou `undefined`|Propriété qui représente l'index dans le [floor](./Floor.md) des data renvoyées par le checker en cas de resultat satisfaisant.
+indexing|`string` ou `undefined`|Propriété qui représente l'index dans le floor des data renvoyées par le checker en cas de resultat satisfaisant.
 options|`function` ou `objet` ou `undefined`|Options du checker.
 skip|`function` ou `undefined`|Propriété de sauter un checker sous certaine condition.
 
@@ -323,7 +323,7 @@ duplo
     response.send(result);
 });
 ```
-La fonction sera appler avec 3 argument, le premier c'est le [floor](./Floor.md) de la requête, le second c'est l'objet [Response](./Response.md) et le troisiéme c'est l'objet [Request](./Request.md).
+La fonction sera appler avec 3 argument, le premier c'est le floor de la requête, le second c'est l'objet [Response](./Response.md) et le troisiéme c'est l'objet [Request](./Request.md).
 
 ### .process(object, object, ...any?)
 La fonction process permet d'implémenter un process dans une route. Cette method prend 2 argument, le premier est de type `ProcessExport` et le second est un objet qui permet de configuré le process implémenter.
@@ -382,7 +382,7 @@ Les propriétés `input` et `options` permettent de passer des données pour l'�
 propriétés|valeur|definition
 ---|---|---
 input|`function` ou `undefined`|Fonction qui permet d'envoyer une valeur au process.
-pickup|`string[]` ou `undefined`|Cette propriété représente des clé du [floor](./Floor.md) du process qui on êtais drop, cela permet d'importer leur valeur dans la route.
+pickup|`string[]` ou `undefined`|Cette propriété représente des clé du floor du process qui on êtais drop, cela permet d'importer leur valeur dans la route.
 options|`function` ou `objet` ou `undefined`|Options du process.
 skip|`function` ou `undefined`|Propriété de sauter un process sous certaine condition.
 
