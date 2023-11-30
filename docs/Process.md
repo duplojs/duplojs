@@ -30,8 +30,8 @@ duplo.createProcess(
 ### Propriétés du processParams
 propriétés|type|definition
 ---|---|---
-options|`Record<string, any>`|Permet de définir les options par défaut.
-input|`() => any`|Permet de définir l'input pars défaut.
+options|`Record<string, any>`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
+input|`() => any`|Permet de définir l'input pars défaut. Vous pouvez y accéder a traver le floor.
 allowExitProcess|`boolean` \| `undefined`|Permet d'activer la prise en charge de la fonction ExitProcess.
 
 ### Construction d'un process
