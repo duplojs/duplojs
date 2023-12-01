@@ -14,6 +14,7 @@ Les abstract route sont faite sois pour créée des systéme d'autentification, 
 - [Hook](#hookstring-function)
 - [Utiliser une abstract route](#utiliser-une-abstract-route)
 - [Propriétés du useAbstractRouteParams](#propriétés-du-useabstractrouteparams)
+- [Merge des abstract route](#merge-des-abstract-route)
 
 ### Déclarer une abstract route
 Une route peut étre déclaré a partire de deux chose, sois depuis la `DuploInstance`, sois depuis une `AbstractRouteInstance`.
@@ -100,7 +101,7 @@ Cette fonction est exactement pareil que la methode [check des route](./Route.md
 Cette fonction est exactement pareil que la methode [cut des route](./Route.md#cutfunction-array-any).
 
 ### .process(object, object, ...any?)
-Cette fonction est exactement pareil que la methode [process des route](./Route.md#cutfunction-array-any).
+Cette fonction est exactement pareil que la methode [process des route](./Route.md#processobject-object-any).
 
 ### .handler(function, ...any?)
 Cette fonction est exactement pareil que la methode [handler des route](./Route.md#handlerfunction-any) sauf qu'elle n'est pas obligatoire.
@@ -111,22 +112,22 @@ Cette methode permet d'ajouter des [hooks](./Hook.md) a l'abstract route. C'est 
 ### Utiliser une abstract route
 ```ts
 mustBeConnected({
-	pickup: ["value"],
-	options: { role: "manager" },
-	ignorePrefix: true,
+    pickup: ["value"],
+    options: { role: "manager" },
+    ignorePrefix: true,
 })
 .declareRoute("PATCH", "/user/{id}")
 .extract({
-	params: {
+    params: {
         id: zod.number(),
     },
-	/* ... */
+    /* ... */
 })
 .handler(({pickup}) => {
-	pickup("value");
-	pickup("id");
+    pickup("value");
+    pickup("id");
 
-	/* ... */
+    /* ... */
 });
 ```
 
@@ -137,7 +138,31 @@ propriétés|type|definition
 ---|---|---
 options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
 pickup|`string[]` \| `undefined`|Permet d'importerles les valeur du floor de l'abstract route.
-ignorePrefix|`true` \| `undefined`|Si true, cela n'appliquera pas le prefix de
-l'abstract route.
+ignorePrefix|`true` \| `undefined`|Si true, cela n'appliquera pas le prefix de l'abstract route.
+
+### Merge des abstract route
+```ts
+const baseAbstractRoute = duplo.mergeAbstractRoute([
+    abstractCookie,// abstract route issue d'un plugins
+    abstractCors, // abstract route issue d'un plugins
+]);
+
+baseAbstractRoute.declareAbstractRoute(
+    "MustBeConnected", 
+    {
+        options: { role: "admin" as "manager" | "admin" }, 
+        prefix: "/dashboard",
+    }
+)
+.cut(
+    () => ({ value: 25 }),
+    ["value"]
+)
+.build(["value"]);
+```
+
+Certain plugins peuve fournir des abstract route pour effectuer des action en local. Dans l'exemple au dessus nous pouvons imaginer que les abstract route fourni server a lire les cookie et a ajouter les entéte cors. Grasse a la method `mergeAbstractRoute` vous pouvez combiner les deux pour obtenir une nouvel abstract route.
+
+**⚠️ Cette methode a étais créer dans le bute de fusioner des abstract route que n'avez pas créer, favorisé la création d'abstract route a partire d'une autre plutot que de les merge. ⚠️**
 
 #### Retour vers le [Sommaire](#sommaire).
