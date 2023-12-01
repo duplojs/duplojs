@@ -19,11 +19,11 @@ Un process doit étre déclaré a partire de la `DuploInstance`.
 
 ```ts
 duplo.createProcess(
-	"UserHasRight", 
-	{
-		options: { right: "write" as "write" | "read" }, 
-		input: () => false as false | number
-	}
+    "UserHasRight", 
+    {
+        options: { right: "write" as "write" | "read" }, 
+        input: () => false as false | number
+    }
 )//...
 ```
 
@@ -73,15 +73,15 @@ L'ordre des process, check et cut que vous définirez sera l'ordre d'exécution.
 ### .build(string[], ...any?)
 ```ts
 const userHasRight = duplo.createProcess(
-	"userHasRight", 
-	{
-		options: { right: "write" as "write" | "read" }, 
-		input: () => false as false | number
-	}
+    "userHasRight", 
+    {
+        options: { right: "write" as "write" | "read" }, 
+        input: () => false as false | number
+    }
 )
 .cut(
-	() => ({ value: 25 }),
-	["value"]
+    () => ({ value: 25 }),
+    ["value"]
 )
 .build(["value"]);
 ```
@@ -105,6 +105,6 @@ Cette fonction est exactement pareil que la methode [process des route](./Route.
 Cette fonction est exactement pareil que la methode [handler des route](./Route.md#handlerfunction-any) sauf qu'elle n'est pas obligatoire.
 
 ### .hook(string, function)
-cette methode permet d'ajouter des [hooks](./Hook.md) au process. C'est hook seront transmit au route, au abstract route et au process qui implémente ce le process. Son utilisation est exactement pareille que la methode [hook des route](./Route.md#hookstring-function).
+Cette methode permet d'ajouter des [hooks](./Hook.md) au process. C'est hook seront transmit au route, au abstract route et au process qui implémente ce le process. Son utilisation est exactement pareille que la methode [hook des route](./Route.md#hookstring-function).
 
 #### Retour vers le [Sommaire](#sommaire).

@@ -102,47 +102,47 @@ Il n'est pas possible d'envoyer une réponse a n'importe qu'elle moment du cycle
 ```
 // try serveur
 try{
-	@ touve une route qui match
-	@ lance le hook onConstructRequest
-	@ lance le hook onConstructResponse
+    @ touve une route qui match
+    @ lance le hook onConstructRequest
+    @ lance le hook onConstructResponse
 
-	// try response
-	try{
-		// try erreur
-		try{
-			@ lance le hook beforeRouteExecution
-			@ exécute abstract route
-			@ lance le hook beforeParsingBody
-			@ lance le content type parser
-			@ exécute extract, checker, cut, process, handler
-		}
-		// catch error
-		catch(exception) {
-			if(exception === Error){
-				@ lance le hook OnError
-				@ execute error handler
-			}
-			else {
-				@ throw exception;
-			}
-		}
-	}
-	// catch response
-	catch(exception) {
-		if(exception === Reponse){
-			@ lance le hook beforeSend
-			@ envoi la Reponse au client
-			@ lance le hook afterSend
-		}
-		else {
-			@ throw exception;
-		}
-	}
+    // try response
+    try{
+        // try erreur
+        try{
+            @ lance le hook beforeRouteExecution
+            @ exécute abstract route
+            @ lance le hook beforeParsingBody
+            @ lance le content type parser
+            @ exécute extract, checker, cut, process, handler
+        }
+        // catch error
+        catch(exception) {
+            if(exception === Error){
+                @ lance le hook OnError
+                @ execute error handler
+            }
+            else {
+                @ throw exception;
+            }
+        }
+    }
+    // catch response
+    catch(exception) {
+        if(exception === Reponse){
+            @ lance le hook beforeSend
+            @ envoi la Reponse au client
+            @ lance le hook afterSend
+        }
+        else {
+            @ throw exception;
+        }
+    }
 }
 // catch serveur
 catch(exception) {
-	@ lance le hook onServerError
-	@ envoi une Erreur 500 au client
+    @ lance le hook onServerError
+    @ envoi une Erreur 500 au client
 }
 
 ```
@@ -153,7 +153,7 @@ Les différent trycatch serve de "goto" (d'ou l'exuction linéaire), cela permet
 duplo
 .declareRoute("GET", "/")
 .handler((floor, response) => {
-	response.send("fait le mou, fait le mou");
+    response.send("fait le mou, fait le mou");
 });
 ```
 La fonction handler est la fonction qui cloture la définition d'une route. Elle prend en argument une fonction. Cette fonction est appler avec 2 arguments, le floor de la requête et l'objet [Response](./Response.md). Cette fonction est la dernierre action de la route, en théoris une fois arriver ici il n'y a plus rien a vérifier ! 
@@ -167,20 +167,20 @@ La fonction extract permet de récupéret et typés des valeurs dans l'objet [Re
 duplo
 .declareRoute("PATCH", "/post/{id}")
 .extract({
-	params: {
-		id: zod.number(), // max deep
-	},
-	body: zod.object({ // min deep
-		title: zod.string().max(10).min(2).optinal(),
-		subtitle: zod.string().max(150).optinal(),
-		text: zod.string().max(1500).optinal(),
-	})
+    params: {
+        id: zod.number(), // max deep
+    },
+    body: zod.object({ // min deep
+        title: zod.string().max(10).min(2).optinal(),
+        subtitle: zod.string().max(150).optinal(),
+        text: zod.string().max(1500).optinal(),
+    })
 })
 .handler(({pickup}) => {
-	pickup("id"); // id en paramétre
-	pickup("body"); // body de la request
+    pickup("id"); // id en paramétre
+    pickup("body"); // body de la request
 
-	//...
+    //...
 });
 
 // equal to
@@ -188,22 +188,22 @@ duplo
 duplo
 .declareRoute("PATCH", "/post/{id}")
 .extract({
-	params: {
-		id: zod.coerce.number(),
-	},
-	body: {
-		title: zod.string().max(10).min(2).optinal(),
-		subtitle: zod.string().max(150).optinal(),
-		text: zod.string().max(1500).optinal(),
-	},
+    params: {
+        id: zod.coerce.number(),
+    },
+    body: {
+        title: zod.string().max(10).min(2).optinal(),
+        subtitle: zod.string().max(150).optinal(),
+        text: zod.string().max(1500).optinal(),
+    },
 })
 .handler(({pickup}) => {
-	pickup("id"); // id en paramétre
-	pickup("title"); // title du body de la request
-	pickup("subtitle"); // subtitle du body de la request
-	pickup("text"); // text du body de la request
+    pickup("id"); // id en paramétre
+    pickup("title"); // title du body de la request
+    pickup("subtitle"); // subtitle du body de la request
+    pickup("text"); // text du body de la request
 
-	//...
+    //...
 });
 ```
 
@@ -213,16 +213,16 @@ En cas d'erreur de type une réponse est directement envoyée et l'exécution du
 duplo
 .declareRoute("PATCH", "/post/{id}")
 .extract(
-	{
-		params: {
-			id: zod.coerce.number(),
-		},
-	},
-	(response, type, index, error) => 
-		response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send(),
+    {
+        params: {
+            id: zod.coerce.number(),
+        },
+    },
+    (response, type, index, error) => 
+        response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send(),
 )
 .handler(({pickup}) => {
-	//...
+    //...
 });
 ```
 
@@ -238,9 +238,9 @@ duplo
     params: {
         id: zod.coerce.number()
     },
-	query: {
-		type: zod.enum(["id", "firstname"]).optional()
-	}
+    query: {
+        type: zod.enum(["id", "firstname"]).optional()
+    }
 })
 .check(
     userExist,
@@ -251,10 +251,10 @@ duplo
         indexing: "user", // index de drop du resulta
 
         options: {type: "id"} // option static
-		// or
-		options: (pickup) => ({ // option dynamique
-			type: pickup("type")
-		})
+        // or
+        options: (pickup) => ({ // option dynamique
+            type: pickup("type")
+        })
     }
 )
 .handler(({pickup}, response) => {
@@ -280,12 +280,12 @@ La fonction cut est conseiller d'étre utiliser dans deux cas. Si vous avez une 
 duplo
 .declareRoute("POST", "/video/{id}/comment")
 .extract({
-	params: {
-		id: zod.coerce.number(),
-	},
-	body: {
-		content: zod.string().max(240).min(1),
-	}
+    params: {
+        id: zod.coerce.number(),
+    },
+    body: {
+        content: zod.string().max(240).min(1),
+    }
 })
 .check(
     videoExist,
@@ -297,28 +297,28 @@ duplo
     }
 )
 .cut(
-	({pickup}, response, request) => {
-		const dateVideo = pickup("video").date;
-		const dateComment = new Date();
-		
-		const fiveDayInMilisecond = 432000000;
+    ({pickup}, response, request) => {
+        const dateVideo = pickup("video").date;
+        const dateComment = new Date();
+        
+        const fiveDayInMilisecond = 432000000;
 
-		if(dateComment.getTime() - dateVideo.getTime() > fiveDayInMilisecond) {
-			response.code(400).send();
-		}
+        if(dateComment.getTime() - dateVideo.getTime() > fiveDayInMilisecond) {
+            response.code(400).send();
+        }
 
-		return {
-			dateComment
-		}
-	}, 
-	["dateComment"]
+        return {
+            dateComment
+        }
+    }, 
+    ["dateComment"]
 )
 .handler(async ({pickup}, response) => {
-	const result = await myDataBase.comment.inserte({
-		video_id: pickup("id"),
-		date: pickup("dateComment"),
-		content: pickup("content")
-	});
+    const result = await myDataBase.comment.inserte({
+        video_id: pickup("id"),
+        date: pickup("dateComment"),
+        content: pickup("content")
+    });
 
     response.send(result);
 });
@@ -332,47 +332,47 @@ La fonction process permet d'implémenter un process dans une route. Cette metho
 duplo
 .declareRoute("PATCH", "/article/{articleId}")
 .extract({
-	params: {
-		articleId: zod.coerce.number(),
-	},
-	body: {
-		title: zod.string().max(120).min(5).optinal(),
-		subTitle: zod.string().max(240).min(5).optinal(),
-		content: zod.string().max(1500).min(1).optinal(),
-	}
+    params: {
+        articleId: zod.coerce.number(),
+    },
+    body: {
+        title: zod.string().max(120).min(5).optinal(),
+        subTitle: zod.string().max(240).min(5).optinal(),
+        content: zod.string().max(1500).min(1).optinal(),
+    }
 })
 .check(
-	articleExist,
-	{
-		input: (pickup) => pickup("articleId"),
-		result: "article.exist",
-		catch: (response, info) => response.code(404).info(info).send(),
-		indexing: "article",
-	}
+    articleExist,
+    {
+        input: (pickup) => pickup("articleId"),
+        result: "article.exist",
+        catch: (response, info) => response.code(404).info(info).send(),
+        indexing: "article",
+    }
 )
 .process(
-	userHasRightInOrganization,
-	{
-		input: (pickup) => pickup("article").organization_id,
-		pickup: ["currentUser"], // valeur récupérer du process
+    userHasRightInOrganization,
+    {
+        input: (pickup) => pickup("article").organization_id,
+        pickup: ["currentUser"], // valeur récupérer du process
 
-		options: { // option static
-			right: "edit_post"
-		}
-		// or
-		options: (pickup) => ({ // option dynamique
-			right: "edit_post"
-		})
-	}
+        options: { // option static
+            right: "edit_post"
+        }
+        // or
+        options: (pickup) => ({ // option dynamique
+            right: "edit_post"
+        })
+    }
 )
 .handler(async ({pickup}, response) => {
-	const result = await myDataBase.article.update({
-		id: pickup("articleId"),
-		title: pickup("title"),
-		subTitle: pickup("subTitle"),
-		content: pickup("content"),
-		editer_id: pickup("currentUser").id
-	});
+    const result = await myDataBase.article.update({
+        id: pickup("articleId"),
+        title: pickup("title"),
+        subTitle: pickup("subTitle"),
+        content: pickup("content"),
+        editer_id: pickup("currentUser").id
+    });
 
     response.send(result);
 });

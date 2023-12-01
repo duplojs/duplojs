@@ -99,15 +99,15 @@ const userExist = duplo.createChecker(
     {
         async handler(value: number | string, output, options){
             const user = await myDataBase.user.findOne({
-				[options.type]: value
-			});
+                [options.type]: value
+            });
             if(!user) return output("user.notexist");
             else return output("user.exist", user);
         },
         outputInfo: ["user.exist", "user.notexist"], // différentes informations de sortie possible
         options: { // valeur par défaut des options
-			type: "id" as "id" | "firstname" 
-		}, 
+            type: "id" as "id" | "firstname" 
+        }, 
     }
 );
 ```
