@@ -6,12 +6,14 @@ Les abstract route sont faite sois pour créée des systéme d'autentification, 
 - [Propriétés du abstractRouteParams](#propriétés-du-abstractrouteparams)
 - [Construction d'une abstract route](#construction-dune-abstract-route)
 - [Build](#buildstring-any)
-- [Extract]()
-- [Check]()
-- [Cut]()
-- [Process]()
-- [Handler]()
-- [Hook]()
+- [Extract](#extractobject-function-any)
+- [Check](#checkobject-object-any)
+- [Cut](#cutfunction-array-any)
+- [Process](#processobject-object-any)
+- [Handler](#handlerfunction-any)
+- [Hook](#hookstring-function)
+- [Utiliser une abstract route](#utiliser-une-abstract-route)
+- [Propriétés du useAbstractRouteParams](#propriétés-du-useabstractrouteparams)
 
 ### Déclarer une abstract route
 Une route peut étre déclaré a partire de deux chose, sois depuis la `DuploInstance`, sois depuis une `AbstractRouteInstance`.
@@ -29,8 +31,8 @@ duplo.declareAbstractRoute(
 ### Propriétés du abstractRouteParams
 propriétés|type|definition
 ---|---|---
-options|`Record<string, any>`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
-prefix|`string`|Définit un préfix pour les route qui seront déclarer avec l'abstract route.
+options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
+prefix|`string` \| `undefined`|Définit un préfix pour les route qui seront déclarer avec l'abstract route.
 allowExitProcess|`boolean` \| `undefined`|Permet d'activer la prise en charge de la fonction ExitProcess.
 
 ### Construction d'une abstract route
@@ -84,7 +86,7 @@ const mustBeConnected = duplo.declareAbstractRoute(
 )
 .build(["value"]);
 ```
-Cette method permet de cloturé la déclaration des abstract route. Elle prend en premiere argument un tableau des clés du floor de l'abstract route, cela permet de rendre c'est valeur accessible lors de son implémentation.
+Cette method permet de cloturé la déclaration des abstract route. Elle prend en premiere argument un tableau des clés du floor de l'abstract route, cela permet de rendre c'est valeur accessible lors de son utilisation.
 
 **⚠️ Si la fonction build n'est pas appler l'abstract route n'est pas utilisable. ⚠️**
 
@@ -105,5 +107,37 @@ Cette fonction est exactement pareil que la methode [handler des route](./Route.
 
 ### .hook(string, function)
 Cette methode permet d'ajouter des [hooks](./Hook.md) a l'abstract route. C'est hook seront transmit au route, au abstract route qui utiliseront cette abstract route. Son utilisation est exactement pareille que la methode [hook des route](./Route.md#hookstring-function).
+
+### Utiliser une abstract route
+```ts
+mustBeConnected({
+	pickup: ["value"],
+	options: { role: "manager" },
+	ignorePrefix: true,
+})
+.declareRoute("PATCH", "/user/{id}")
+.extract({
+	params: {
+        id: zod.number(),
+    },
+	/* ... */
+})
+.handler(({pickup}) => {
+	pickup("value");
+	pickup("id");
+
+	/* ... */
+});
+```
+
+Aprés avoir build votre abstract route vous obtenez une fonction. Cette fonction vous renvoi les methodes `declareRoute` et `declareAbstractRoute` quand vous l'appelez. La fonction peux prendre en argument un objet qui permet de personalisé l'utilisation de l'abstract route.
+
+### Propriétés du useAbstractRouteParams
+propriétés|type|definition
+---|---|---
+options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
+pickup|`string[]` \| `undefined`|Permet d'importerles les valeur du floor de l'abstract route.
+ignorePrefix|`true` \| `undefined`|Si true, cela n'appliquera pas le prefix de
+l'abstract route.
 
 #### Retour vers le [Sommaire](#sommaire).
