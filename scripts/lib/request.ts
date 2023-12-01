@@ -36,7 +36,7 @@ export class Request{
 
 	params: Record<string, string>;
 
-	query: Record<string, string>;
+	query: Record<string, string | string[]>;
 
 	matchedPath: string | null;
 

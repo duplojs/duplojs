@@ -71,5 +71,16 @@ export default workerTesting(
 				body: zod.literal("67"),
 			}
 		},
+		{
+			title: "Checker multie result",
+			url: "http://localhost:1506/checker/test/4",
+			method: "GET",
+			output: ["checker result odd"],
+			response: {
+				code: 200,
+				info: "odd",
+				body: zod.literal("0"),
+			}
+		},
 	]
 );
