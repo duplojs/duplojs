@@ -66,17 +66,17 @@ export class Response{
 		throw this;
 	}
 
-	setHeaders(headers: Record<string, string>){
+	setHeaders(headers: Record<string, string | string[]>){
 		this.headers = {...this.headers, ...headers};
 		return this;
 	}
 
-	setHeader(index: string, value: string){
+	setHeader(index: string, value: string | string[]){
 		this.headers[index.toLowerCase()] = value;
 		return this;
 	}
 
-	headers: Record<string, string> = {};
+	headers: Record<string, string | string[]> = {};
 
 	data: unknown;
 
@@ -87,7 +87,7 @@ export class Response{
 	[__exec__](){
 		if(this.information) this.headers.info = this.information;
 		if(this.data !== undefined){
-			const contentType = this.headers["content-type"];
+			const contentType = this.headers["content-type"] as string;
 			const hasContentType = contentType !== undefined;
 			
 			if(hasContentType === false && (typeof this.data === "string" || typeof this.data === "number")){
