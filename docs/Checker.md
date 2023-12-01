@@ -13,17 +13,17 @@ const userExist = duplo.createChecker(
     {
         async handler(value: number | string, output, options){
             const user = await myDataBase.user.findOne({
-				[options.type]: value
-			});
+                [options.type]: value
+            });
             if(!user) return output("user.notexist");
             else return output("user.exist", user);
         },
-		// différentes informations de sortie possible
+        // différentes informations de sortie possible
         outputInfo: ["user.exist", "user.notexist"],
-		// valeur par défaut des options
+        // valeur par défaut des options
         options: { 
-			type: "id" as "id" | "firstname" 
-		}, 
+            type: "id" as "id" | "firstname" 
+        }, 
     }
 );
 ```
@@ -43,13 +43,13 @@ Les checker s'utilise uniquement avec la method `check` des route, process et ab
 ```ts
 // route, process ou abstractRoute
 .check(
-	userExist,
-	{
-		input: (pickup) => pickup("id"), // valeur d'entrée
+    userExist,
+    {
+        input: (pickup) => pickup("id"), // valeur d'entrée
         result: "user.exist", // info attendu pour continuer
         catch: (response, info) => response.code(404).info(info).send(), // action effectuer si l'info n'est pas c'elle attendu
         indexing: "user", // index de drop du resulta
-	}
+    }
 )
 // suite
 ```
