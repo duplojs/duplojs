@@ -186,6 +186,10 @@ export default function makeRoutesSystem(
 		HEAD: {}, 
 	};
 
+	let defaultErrorExtract: ErrorExtractFunction<Response> = (response, type, index, err) => {
+		response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
+	};
+
 	const buildedRoutes: Record<string, (path: string) => {routeFunction: RouteFunction, params: Record<string, string>, matchedPath: string}> = {};
 
 	let notfoundHandlerFunction: RouteNotfoundHandlerFunction = (request, response) => response.code(404).info("NOTFOUND").send(`${request.method}:${request.path} not found`);
@@ -284,9 +288,8 @@ export default function makeRoutesSystem(
 		};
 
 		const extracted: RouteExtractObj = {};
-		let errorExtract: ErrorExtractFunction<Response> = (response, type, index, err) => {
-			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
-		};
+		let errorExtract = defaultErrorExtract;
+
 		const extract: BuilderPatternRoute["extract"] = (extractObj, error, ...desc) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
 				extracted[index as keyof RouteExtractObj] = value;
@@ -614,6 +617,9 @@ export default function makeRoutesSystem(
 		},
 		setErrorHandler(errorFunction: RouteErrorHandlerFunction){
 			errorHandlerFunction = errorFunction;
+		},
+		setDefaultErrorExtract(errorExtract: ErrorExtractFunction<Response>){
+			defaultErrorExtract = errorExtract;
 		},
 		buildRouter(){
 			buildNotfoundHandler();

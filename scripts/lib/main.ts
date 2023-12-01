@@ -38,6 +38,7 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
 	declareAbstractRoute: ReturnType<typeof makeRoutesSystem>["declareAbstractRoute"];
 	mergeAbstractRoute: ReturnType<typeof makeRoutesSystem>["mergeAbstractRoute"];
+	setDefaultErrorExtract: ReturnType<typeof makeRoutesSystem>["setDefaultErrorExtract"];
 	use<
 		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
@@ -66,6 +67,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		setErrorHandler, 
 		declareAbstractRoute,
 		mergeAbstractRoute,
+		setDefaultErrorExtract,
 		routes, 
 		abstractRoutes
 	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
@@ -147,6 +149,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		addContentTypeParsers,
 		declareAbstractRoute,
 		mergeAbstractRoute,
+		setDefaultErrorExtract,
 		use: (input, options) => input(duploInstance, options),
 		routes,
 		checkers,

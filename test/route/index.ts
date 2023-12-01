@@ -213,5 +213,14 @@ export default workerTesting(
 				info: "error",
 			}
 		},
+		{
+			title: "set default error extract",
+			url: "http://localhost:1506/route/test/12/error",
+			method: "GET",
+			response: {
+				code: 400,
+				body: zod.literal("error extract"),
+			}
+		},
 	]
 );
