@@ -12,6 +12,7 @@ Les process peveut-étre utilisais pour créer une routine de vérification en y
 - [Process](#processobject-object-any)
 - [Handler](#handlerfunction-any)
 - [Hook](#hookstring-function)
+- [Implémenter un process](#implémenter-un-process)
 
 
 ### Créer un process
@@ -30,8 +31,8 @@ duplo.createProcess(
 ### Propriétés du processParams
 propriétés|type|definition
 ---|---|---
-options|`Record<string, any>`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
-input|`() => any`|Permet de définir l'input pars défaut. Vous pouvez y accéder a traver le floor.
+options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
+input|`() => any` \| `undefined`|Permet de définir l'input pars défaut. Vous pouvez y accéder a traver le floor.
 allowExitProcess|`boolean` \| `undefined`|Permet d'activer la prise en charge de la fonction ExitProcess.
 
 ### Construction d'un process
@@ -99,12 +100,15 @@ Cette fonction est exactement pareil que la methode [check des route](./Route.md
 Cette fonction est exactement pareil que la methode [cut des route](./Route.md#cutfunction-array-any).
 
 ### .process(object, object, ...any?)
-Cette fonction est exactement pareil que la methode [process des route](./Route.md#cutfunction-array-any).
+Cette fonction est exactement pareil que la methode [process des route](./Route.md#processobject-object-any).
 
 ### .handler(function, ...any?)
 Cette fonction est exactement pareil que la methode [handler des route](./Route.md#handlerfunction-any) sauf qu'elle n'est pas obligatoire.
 
 ### .hook(string, function)
 Cette methode permet d'ajouter des [hooks](./Hook.md) au process. C'est hook seront transmit au route, au abstract route et au process qui implémente ce le process. Son utilisation est exactement pareille que la methode [hook des route](./Route.md#hookstring-function).
+
+### Implémenter un process
+l'explication d'implémentation est résumer avec la methode [process des route](./Route.md#processobject-object-any).
 
 #### Retour vers le [Sommaire](#sommaire).
