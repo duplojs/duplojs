@@ -750,7 +750,7 @@ const routeFunctionString = (
 				${hasHookBeforeSend ? "await this.hooks.launchBeforeSend(request, response);" : ""}
 				/* after_hook_before_send */
 				/* end_block */
-				response[this.__exec__]();
+				await response[this.__exec__]();
 				/* before_hook_after_send */
 				/* end_block */
 				${hasHookAfterSend ? "await this.hooks.launchAfterSend(request, response);" : ""}

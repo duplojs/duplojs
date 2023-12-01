@@ -1,7 +1,7 @@
 import {ServerResponse} from "http";
 import {createReadStream, existsSync,} from "fs";
 import mime from "mime";
-import {basename} from "path";
+import {basename, resolve} from "path";
 
 export const __exec__ = Symbol("exec");
 
@@ -40,7 +40,7 @@ export class Response{
 		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 
-		this.#file = path;
+		this.file = path;
 		this.headers["content-type"] = mime.getType(path) || "text/plain; charset=utf-8";
 		throw this;
 	}
@@ -51,7 +51,7 @@ export class Response{
 		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 
-		this.#file = path;
+		this.file = path;
 		this.headers["content-type"] = "application/octet-stream";
 		this.headers["Content-Disposition"] = "attachment; filename=" + (name || basename(path));
 		throw this;
@@ -80,7 +80,7 @@ export class Response{
 
 	data: unknown;
 
-	#file?: string;
+	file?: string;
 
 	isSend = false;
 
@@ -103,13 +103,26 @@ export class Response{
 			this.rawResponse.write(this.data);
 			this.rawResponse.end();
 		}
-		else if(this.#file){
+		else if(this.file){
 			this.rawResponse.writeHead(this.status, this.headers);
-			createReadStream(this.#file).pipe(this.rawResponse);
+			return new Promise((resolve, reject) => {
+				createReadStream(this.file as string)
+				.pipe(
+					this.rawResponse
+					.once("error", reject)
+					.once("close", resolve)
+				);
+			});
 		}
 		else {
 			this.rawResponse.writeHead(this.status, this.headers);
-			this.rawResponse.end();
+			return new Promise((resolve, reject) => {
+				this.rawResponse
+				.once("error", reject)
+				.once("close", resolve)
+				.end();
+			});
+			
 		}
 	}
 }
