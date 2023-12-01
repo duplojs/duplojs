@@ -23,7 +23,6 @@ export interface Route{
 	method: string;
 	abstractRoute?: AbstractRoute;
 	hooksLifeCyle: HooksLifeCycle;
-	access?: RouteShortAccess<any, any, any, any> | Omit<StepProcess, "type" | "skip">;
 	extracted: RouteExtractObj;
 	errorExtract: ErrorExtractFunction<any>;
 	steps: (StepChecker | StepProcess | StepCut)[];
@@ -59,13 +58,6 @@ export type RoutehandlerFunction<
 export type RouteNotfoundHandlerFunction = (request: Request, response: Response) => PromiseOrNot<void>;
 export type RouteErrorHandlerFunction = (request: Request, response: Response, error: Error) => PromiseOrNot<void>;
 
-export type RouteShortAccess<
-	request extends Request, 
-	response extends Response, 
-	returnFloor extends {},
-	floor extends {},
-> = (floor: Floor<floor>, request: request, response: response) => PromiseOrNot<returnFloor | undefined | void>;
-
 export type RouteShort<
 	request extends Request, 
 	response extends Response,
@@ -99,16 +91,6 @@ export interface RouteProcessParams<
 	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<processExport["input"], undefined>>;
 }
 
-export interface RouteProcessAccessParams<
-	processExport extends ProcessExport, 
-	pickup extends string,
-	floor extends {},
->{
-	options?: Partial<processExport["options"]>;
-	pickup?: processExport["drop"] & pickup[];
-	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<processExport["input"], undefined>>;
-}
-
 export interface BuilderPatternRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
@@ -117,33 +99,6 @@ export interface BuilderPatternRoute<
 >{
 	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj, floor>, request, response>["addHook"];
 
-	access<
-		localFloor extends {},
-		processExport extends ProcessExport,
-		pickup extends string,
-	>(
-		process: processExport, 
-		params?: RouteProcessAccessParams<processExport, pickup, floor>,
-		...desc: any[]
-	): Omit<
-		BuilderPatternRoute<
-			request, 
-			response, 
-			extractObj, 
-			floor & PickupDropProcess<processExport, pickup>
-		>, 
-		"hook" | "access"
-	>;
-
-	access<
-		localFloor extends {},
-		processExport extends ProcessExport,
-		pickup extends string,
-	>(
-		process: RouteShortAccess<request, response, localFloor, floor>, 
-		...desc: any[]
-	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "access">;
-
 	extract<
 		localeExtractObj extends extractObj,
 		localFloor extends FlatExtract<localeExtractObj>
@@ -151,7 +106,7 @@ export interface BuilderPatternRoute<
 		extractObj: localeExtractObj, 
 		error?: ErrorExtractFunction<response>,
 		...desc: any[]
-	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract" | "access">;
+	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract">;
 
 	check<
 		checkerExport extends CheckerExport,
@@ -173,7 +128,7 @@ export interface BuilderPatternRoute<
 					ReturnCheckerType<checkerExport, info>
 			}
 		>, 
-		"hook" | "extract" | "access"
+		"hook" | "extract"
 	>;
 
 	process<
@@ -195,7 +150,7 @@ export interface BuilderPatternRoute<
 					PickupDropProcess<processExport, pickup>
 			)
 		>, 
-		"hook" | "extract" | "access"
+		"hook" | "extract"
 	>;
 
 	cut<localFloor extends {}, drop extends string>(
@@ -209,7 +164,7 @@ export interface BuilderPatternRoute<
 			extractObj, 
 			floor & Pick<localFloor, drop extends keyof localFloor ? drop : never>
 		>, 
-		"hook" | "extract" | "access"
+		"hook" | "extract"
 	>;
 
 	handler(handlerFunction: RoutehandlerFunction<response, floor>, ...desc: any[]): Route;
@@ -320,63 +275,6 @@ export default function makeRoutesSystem(
 
 			return {
 				hook,
-				extract,
-				handler,
-				check,
-				process,
-				cut,
-				access,
-			};
-		};
-		
-		let grapAccess: Omit<StepProcess, "type" | "skip"> | RouteShortAccess<any, any, any, any> | undefined;
-		const access: BuilderPatternRoute["access"] = (processExport, ...desc) => {
-			if(typeof processExport === "function"){
-				grapAccess = processExport;
-				if(desc.length !== 0)descs.push({
-					type: "access", 
-					descStep: desc, 
-					isShort: true
-				});
-			}
-			else {
-				hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
-				hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
-				hooksLifeCyle.beforeRouteExecution.copySubscriber(processExport.hooksLifeCyle.beforeRouteExecution.subscribers);
-				hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
-				hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
-				hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
-				hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
-				
-				const params: RouteProcessAccessParams<any, any, any> = desc.shift() || {};
-
-				grapAccess = {
-					name: processExport.name,
-					options: undefined,
-					input: undefined,
-					processFunction: () => {},
-					pickup: undefined,
-					params,
-					build: () => {
-						grapAccess = grapAccess as Omit<StepProcess, "type" | "skip">;
-						grapAccess.options = {
-							...processExport?.options,
-							...grapAccess.params.options
-						};
-						grapAccess.pickup = grapAccess.params.pickup;
-						grapAccess.input = grapAccess.params.input || processExport?.input;
-						grapAccess.processFunction = processExport.processFunction;
-					}
-				};
-
-				if(desc.length !== 0)descs.push({
-					type: "access", 
-					descStep: desc, 
-					isShort: false,
-				});
-			}
-
-			return {
 				extract,
 				handler,
 				check,
@@ -551,7 +449,6 @@ export default function makeRoutesSystem(
 				method,
 				abstractRoute,
 				hooksLifeCyle,
-				access: grapAccess,
 				extracted,
 				errorExtract: errorExtract,
 				steps,
@@ -564,8 +461,6 @@ export default function makeRoutesSystem(
 				build: () => {
 					if(path instanceof Array)route.path = path.map((p) => config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(p));
 					else route.path = [config.prefix + (route.abstractRoute?.fullPrefix || "") + correctPath(path)];
-
-					if(route.access && typeof route.access !== "function")route.access.build();
 
 					route.steps.forEach(value => 
 						value.type === "checker" || value.type === "process" ? value.build() : undefined
@@ -589,19 +484,6 @@ export default function makeRoutesSystem(
 										(value) => processDrop(value)
 									)
 								)
-							),
-							condition(
-								!!route.access,
-								() => typeof route.access === "function" ?
-									accessFunctionString(route.access.constructor.name === "AsyncFunction") :
-									accessProcessString(
-										route.access?.processFunction.constructor.name === "AsyncFunction",
-										!!route.access?.input,
-										mapped(
-											route.access?.pickup || [],
-											(value) => processDrop(value)
-										)
-									)
 							),
 							condition(
 								!!route.extracted.body,
@@ -670,7 +552,6 @@ export default function makeRoutesSystem(
 
 					route.routeFunction = eval(route.stringFunction).bind({
 						abstractRoute: route.abstractRoute,
-						access: route.access,
 						extracted: route.extracted, 
 						errorExtract: route.errorExtract,
 						steps: route.steps, 
@@ -710,7 +591,6 @@ export default function makeRoutesSystem(
 
 		return {
 			hook,
-			access,
 			extract,
 			check,
 			process,
@@ -889,33 +769,6 @@ result = ${async ? "await " : ""}this.abstractRoute.abstractRouteFunction(
 /* end_block */
 ${drop}
 /* after_drop_abstract_route */
-/* end_block */
-`;
-
-const accessFunctionString = (async: boolean) => /* js */`
-/* before_access */
-/* end_block */
-result = ${async ? "await " : ""}this.access(floor, request, response);
-/* after_access */
-/* end_block */
-if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
-/* after_drop_access */
-/* end_block */
-`;
-
-const accessProcessString = (async: boolean, hasInput: boolean, drop: string) => /* js */`
-/* before_access */
-/* end_block */
-result = ${async ? "await " : ""}this.access.processFunction(
-	request, 
-	response, 
-	this.access.options,
-	${hasInput ? "this.access.input(floor.pickup)" : ""}
-);
-/* after_access */
-/* end_block */
-${drop}
-/* after_drop_access */
 /* end_block */
 `;
 

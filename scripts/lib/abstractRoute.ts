@@ -1,9 +1,9 @@
-import {ZodType, ZodError, string} from "zod";
-import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker";
+import {ZodType, ZodError} from "zod";
+import {CheckerExport, ReturnCheckerType} from "./checker";
 import makeFloor, {Floor} from "./floor";
-import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
-import {PickupDropProcess, ProcessExport, ProcessFunction, ProcessHandlerFunction, __exitProcess__} from "./process";
-import {DeclareRoute, RouteExtractObj, RouteProcessAccessParams, RouteProcessParams, RouteStepParamsSkip, condition, mapped, spread} from "./route";
+import {AddHooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
+import {PickupDropProcess, ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
+import {DeclareRoute, RouteExtractObj, RouteProcessParams, RouteStepParamsSkip, condition, mapped, spread} from "./route";
 import correctPath from "./correctPath";
 import {Response} from "./response";
 import {Request} from "./request";
@@ -26,7 +26,6 @@ export interface AbstractRoute<
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
 	mergeAbstractRoute?: AbstractRoute[];
 	parentAbstractRoute?: AbstractRoute;
-	access?: AbstractRouteShortAccess<any, any, any, any> | Omit<StepProcess, "type" | "skip">;
 	extracted: RouteExtractObj;
 	errorExtract: ErrorExtractAbstractRouteFunction<any>;
 	steps: (StepChecker | StepProcess | StepCut)[];
@@ -60,13 +59,6 @@ export interface DeclareAbstractRoute<
 		...desc: any[]
 	): BuilderPatternAbstractRoute<request, response, extractObj, options, floor>;
 }
-
-export type AbstractRouteShortAccess<
-	request extends Request, 
-	response extends Response,
-	returnFloor extends {},
-	floor extends {},
-> = (floor: Floor<floor>, request: request, response: response, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
 
 export interface  DeclareAbstractRouteParams<options extends {}>{
 	options?: options;
@@ -174,34 +166,6 @@ export interface BuilderPatternAbstractRoute<
 >{
 	hook: AddHooksLifeCycle<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, request, response>["addHook"];
 
-	access<
-		localFloor extends {},
-		processExport extends ProcessExport,
-		pickup extends string,
-	>(
-		process: processExport, 
-		params?: RouteProcessAccessParams<processExport, pickup, floor>, 
-		...desc: any[]
-	): Omit<
-		BuilderPatternAbstractRoute<
-		request, 
-		response, 
-		extractObj, 
-		options, 
-		floor & PickupDropProcess<processExport, pickup>
-		>, 
-		"hook" | "access"
-	>;
-
-	access<
-		localFloor extends {},
-		processExport extends ProcessExport,
-		pickup extends string,
-	>(
-		process: AbstractRouteShortAccess<request, response, localFloor, floor>, 
-		...desc: any[]
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "access">;
-
 	extract<
 		localeExtractObj extends Omit<extractObj, "body">,
 		localFloor extends FlatExtract<localeExtractObj>
@@ -209,7 +173,7 @@ export interface BuilderPatternAbstractRoute<
 		extractObj: localeExtractObj,
 		error?: ErrorExtractAbstractRouteFunction<response>, 
 		...desc: any[]
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract" | "access">;
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract">;
 
 	check<
 		checkerExport extends CheckerExport,
@@ -232,7 +196,7 @@ export interface BuilderPatternAbstractRoute<
 					ReturnCheckerType<checkerExport, info>
 			}
 		>, 
-		"hook" | "extract" | "access"
+		"hook" | "extract"
 	>;
 
 	process<
@@ -255,7 +219,7 @@ export interface BuilderPatternAbstractRoute<
 					PickupDropProcess<processExport, pickup>
 			)
 		>, 
-		"hook" | "extract" | "access"
+		"hook" | "extract"
 	>;
 
 	cut<localFloor extends {}, drop extends string>(
@@ -270,7 +234,7 @@ export interface BuilderPatternAbstractRoute<
 			options, 
 			floor & Pick<localFloor, drop extends keyof localFloor ? drop : never>
 		>, 
-		"hook" | "extract" | "access"
+		"hook" | "extract"
 	>;
 
 	handler(
@@ -312,69 +276,11 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 
 			return {
 				hook,
-				access,
 				extract,
 				check,
 				process,
 				cut,
 				handler,
-				build,
-			};
-		};
-
-		let grapAccess: Omit<StepProcess, "type" | "skip"> | AbstractRouteShortAccess<any, any, any, any> | undefined;
-		const access: BuilderPatternAbstractRoute["access"] = (processExport, ...desc) => {
-			if(typeof processExport === "function"){
-				grapAccess = processExport;
-				if(desc.length !== 0)descs.push({
-					type: "access", 
-					descStep: desc, 
-					isShort: true,
-				});
-			}
-			else {
-				hooksLifeCyle.onConstructRequest.copySubscriber(processExport.hooksLifeCyle.onConstructRequest.subscribers);
-				hooksLifeCyle.onConstructResponse.copySubscriber(processExport.hooksLifeCyle.onConstructResponse.subscribers);
-				hooksLifeCyle.beforeRouteExecution.copySubscriber(processExport.hooksLifeCyle.beforeRouteExecution.subscribers);
-				hooksLifeCyle.beforeParsingBody.copySubscriber(processExport.hooksLifeCyle.beforeParsingBody.subscribers);
-				hooksLifeCyle.onError.copySubscriber(processExport.hooksLifeCyle.onError.subscribers);
-				hooksLifeCyle.beforeSend.copySubscriber(processExport.hooksLifeCyle.beforeSend.subscribers);
-				hooksLifeCyle.afterSend.copySubscriber(processExport.hooksLifeCyle.afterSend.subscribers);
-
-				const params: RouteProcessAccessParams<any, any, any> = desc.shift() || {};
-
-				grapAccess = {
-					name: processExport.name,
-					options: undefined,
-					input: undefined,
-					processFunction: () => {},
-					pickup: undefined,
-					params,
-					build: () => {
-						grapAccess = grapAccess as Omit<StepProcess, "type" | "skip">;
-						grapAccess.options = {
-							...processExport?.options,
-							...grapAccess.params.options
-						};
-						grapAccess.pickup = grapAccess.params.pickup;
-						grapAccess.input = grapAccess.params.input || processExport?.input;
-						grapAccess.processFunction = processExport.processFunction;
-					}
-				};
-
-				if(desc.length !== 0)descs.push({
-					type: "access", 
-					descStep: desc, 
-					isShort: false,
-				});
-			}
-
-			return {
-				extract,
-				handler,
-				check,
-				process,
-				cut,
 				build,
 			};
 		};
@@ -568,7 +474,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				allowExitProcess: !!declareParams?.allowExitProcess,
 				hooksLifeCyle,
 				parentAbstractRoute,
-				access: grapAccess,
 				extracted,
 				errorExtract,
 				steps,
@@ -600,19 +505,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 											(value) => processDrop(value)
 										)
 									)
-								),
-								condition(
-									!!abstractRoute.access,
-									() => typeof abstractRoute.access === "function" ?
-										accessFunctionString(abstractRoute.access.constructor.name === "AsyncFunction") :
-										accessProcessString(
-											abstractRoute.access?.processFunction.constructor.name === "AsyncFunction",
-											!!abstractRoute.access?.input,
-											mapped(
-												abstractRoute.access?.pickup || [],
-												(value) => processDrop(value)
-											)
-										)
 								),
 								condition(
 									Object.keys(abstractRoute.extracted).length !== 0,
@@ -686,7 +578,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 
 					abstractRoute.abstractRouteFunction = eval(abstractRoute.stringFunction).bind({
 						parentAbstractRoute: abstractRoute.parentAbstractRoute,
-						access: abstractRoute.access,
 						extracted: abstractRoute.extracted,
 						errorExtract: abstractRoute.errorExtract,
 						steps: abstractRoute.steps,
@@ -736,7 +627,6 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 
 		return {
 			hook,
-			access,
 			extract,
 			check,
 			process,
@@ -819,33 +709,6 @@ result = ${async ? "await " : ""}this.parentAbstractRoute.abstractRouteFunction(
 /* end_block */
 ${drop}
 /* after_drop_abstract_route */
-/* end_block */
-`;
-
-const accessFunctionString = (async: boolean) => /* js */`
-/* before_access */
-/* end_block */
-result = ${async ? "await " : ""}this.access(floor, request, response);
-/* after_access */
-/* end_block */
-if(result) Object.entries(result).forEach(([index, value]) => floor.drop(index, value));
-/* after_drop_access */
-/* end_block */
-`;
-
-const accessProcessString = (async: boolean, hasInput: boolean, drop: string) => /* js */`
-/* before_access */
-/* end_block */
-result = ${async ? "await " : ""}this.access.processFunction(
-	request, 
-	response, 
-	this.access.options,
-	${hasInput ? /* js */"this.access.input(floor.pickup)" : ""}
-);
-/* after_access */
-/* end_block */
-${drop}
-/* after_drop_access */
 /* end_block */
 `;
 

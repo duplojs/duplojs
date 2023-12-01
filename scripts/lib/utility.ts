@@ -78,12 +78,6 @@ export interface DescriptionFirst{
 	descStep: any[],
 }
 
-export interface DescriptionAccess{
-	type: "access",
-	isShort: boolean,
-	descStep: any[],
-}
-
 export interface DescriptionExtracted{
 	type: "extracted",
 	descStep: any[],
@@ -105,7 +99,7 @@ export interface DescriptionBuild{
 	descStep: any[],
 }
 
-export type DescriptionAll = DescriptionFirst | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild | DescriptionAbstract;
+export type DescriptionAll = DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild | DescriptionAbstract;
 
 export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): void => {
 	deep === 0 ||
