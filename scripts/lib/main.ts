@@ -17,7 +17,7 @@ export interface DuploConfig{
 	onClose?: () => void;
 	prefix?: string;
 	keepDescriptions?: boolean;
-	env?: "DEV" | "PROD";
+	environment?: "DEV" | "PROD";
 	rebuildRoutes?: boolean;
 }
 
