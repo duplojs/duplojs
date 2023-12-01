@@ -8,8 +8,7 @@ import correctPath from "./correctPath.ts";
 import makeProcessSystem, {Processes} from "./process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
 import {AbstractRoutes} from "./abstractRoute.ts";
-import {deepFreeze, rebuildRoutes} from "./utility.ts";
-import {deleteDescriptions} from "./description.ts";
+import {deepFreeze, deleteDescriptions, rebuildRoutes} from "./utility.ts";
 
 export interface DuploConfig{
 	port: number,

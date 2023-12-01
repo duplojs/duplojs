@@ -50,7 +50,7 @@ export const Abstract2 = (duplo: DuploInstance<DuploConfig>) => {
 		isOdd,
 		{
 			input: p => 2,
-			result: "odd",
+			result: ["odd"],
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
 			indexing: "result",
 			options: {

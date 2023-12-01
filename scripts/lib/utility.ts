@@ -1,7 +1,8 @@
 import {ZodType} from "zod";
-import {ProcessCheckerParams, ProcessExtractObj, ProcessProcessParams} from "./process";
+import {ProcessCheckerParams, ProcessExtractObj, ProcessProcessParams, Processes} from "./process";
 import {RouteCheckerParams, RouteExtractObj, RouteProcessParams, RoutesObject} from "./route";
-import {AbstractRouteCheckerParams} from "./abstractRoute";
+import {AbstractRouteCheckerParams, AbstractRoutes} from "./abstractRoute";
+import {Checkers} from "./checker";
 
 export type PromiseOrNot<T> = T | Promise<T>;
 
@@ -34,7 +35,7 @@ export type StepChecker = {
 	input: AnyFunction,
 	catch: AnyFunction,
 	skip?: AnyFunction,
-	result?: string,
+	result?: string | string[],
 	indexing?: string,
 	params: (
 		RouteCheckerParams<any, any, any, any, any>  | 
@@ -123,3 +124,28 @@ export const rebuildRoutes = (routes: RoutesObject) => {
 		)
 	);
 };
+
+export function deleteDescriptions(
+	routes: RoutesObject,
+	checkers: Checkers,
+	processes: Processes,
+	abstractRoutes: AbstractRoutes,
+){
+	Object.values(routes).forEach(
+		method => Object.values(method).forEach(
+			route => route.descs = []
+		)
+	);
+
+	Object.values(checkers).forEach(
+		checker => checker.desc = []
+	);
+
+	Object.values(processes).forEach(
+		process => process.descs = []
+	);
+
+	Object.values(abstractRoutes).forEach(
+		abstractRoute => abstractRoute.descs = []
+	);
+}

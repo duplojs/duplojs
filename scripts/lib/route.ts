@@ -83,7 +83,7 @@ export interface RouteCheckerParams<
 	index extends string,
 >{
 	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	result?: info & checkerExport["outputInfo"][number];
+	result?: (info & checkerExport["outputInfo"][number]) | (info[] & checkerExport["outputInfo"]);
 	indexing?: index & string;
 	catch(response: response, info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): void;
 	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
@@ -642,6 +642,7 @@ export default function makeRoutesSystem(
 													step.handler.constructor.name === "AsyncFunction",
 													index,
 													!!step.result,
+													Array.isArray(step.result),
 													!!step.indexing,
 													typeof step.options === "function",
 												)
@@ -994,7 +995,7 @@ ${block}
 /* end_block */
 `;
 
-const checkerStep = (async: boolean, index: number, hasResult: boolean, hasIndexing: boolean, optionsIsFunction: boolean) => /* js */`
+const checkerStep = (async: boolean, index: number, hasResult: boolean, resultIsArray: boolean, hasIndexing: boolean, optionsIsFunction: boolean) => /* js */`
 /* before_step_[${index}] */
 /* end_block */
 result = ${async ? "await " : ""}this.steps[${index}].handler(
@@ -1004,7 +1005,8 @@ result = ${async ? "await " : ""}this.steps[${index}].handler(
 );
 /* after_step_[${index}] */
 /* end_block */
-${hasResult ? /* js */`if(this.steps[${index}].result !== result.info)this.steps[${index}].catch(response, result.info, result.data);` : ""}
+${hasResult && !resultIsArray ? /* js */`if(this.steps[${index}].result !== result.info)this.steps[${index}].catch(response, result.info, result.data);` : ""}
+${hasResult && resultIsArray ? /* js */`if(!this.steps[${index}].result.includes(result.info))this.steps[${index}].catch(response, result.info, result.data);` : ""}
 
 ${hasIndexing ? /* js */`floor.drop(this.steps[${index}].indexing, result.data)` : ""}
 /* after_drop_step_[${index}] */
