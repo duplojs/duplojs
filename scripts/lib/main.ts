@@ -36,7 +36,6 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	setErrorHandler: ReturnType<typeof makeRoutesSystem>["setErrorHandler"];
 	createProcess: ReturnType<typeof makeProcessSystem>["createProcess"];
 	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
-	buildContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["buildContentTypeBody"]
 	declareAbstractRoute: ReturnType<typeof makeRoutesSystem>["declareAbstractRoute"];
 	mergeAbstractRoute: ReturnType<typeof makeRoutesSystem>["mergeAbstractRoute"];
 	use<
@@ -146,7 +145,6 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		setErrorHandler,
 		createProcess,
 		addContentTypeParsers,
-		buildContentTypeBody,
 		declareAbstractRoute,
 		mergeAbstractRoute,
 		use: (input, options) => input(duploInstance, options),
