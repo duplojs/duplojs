@@ -398,17 +398,7 @@ duplo
 .hook("beforeParsingBody", (request, response) => {/* ... */})
 .handler(/* ... */);
 ```
+Tout les hook disponible pour les route son [ici](./Hook.md#hook-de-route) !
 
-hook|arguments|definition
----|---|---
-onConstructRequest|`(Request) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Request](./Request.md).
-onConstructResponse|`(Response) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Response](./Response.md).
-beforeRouteExecution|`(Request, Response) => {/* */}`|Ce lance avant l'éxécution des opération de la route.
-beforeParsingBody|`(Request, Response) => {/* */}`|Ce lance avant le [content type parser](./ContentTypeParser.md) dans le cas ou la clés "body" est dans l'[extract](#extractobject-function-any).
-onError|`(Request, Response, Error) => {/* */}`|Ce lance si une erreur est catch pendant l'execution des opération de la route.
-beforeSend|`(Request, Response) => {/* */}`|Ce lance avant avant l'envois d'un réponse.
-afterSend|`(Request, Response) => {/* */}`|Ce lance aprés l'envois d'un réponse.
-
-Vous pouvez avoir plus de detaile avec le [cycle d'exécution](#cycle-dexécution) ou sur la page [Hook](./Hook.md).
 
 #### Retour vers le [Sommaire](#sommaire).
