@@ -8,7 +8,7 @@ import correctPath from "./correctPath.ts";
 import makeProcessSystem, {Processes} from "./process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
 import {AbstractRoutes} from "./abstractRoute.ts";
-import {deepFreeze, deleteDescriptions, rebuildRoutes} from "./utility.ts";
+import {deepFreeze, deleteDescriptions, rebuildAbstractRoutes, rebuildProcesses, rebuildRoutes} from "./utility.ts";
 
 export interface DuploConfig{
 	port: number,
@@ -19,6 +19,8 @@ export interface DuploConfig{
 	keepDescriptions?: boolean;
 	environment?: "DEV" | "PROD";
 	rebuildRoutes?: boolean;
+	rebuildAbstractRoutes?: boolean;
+	rebuildProcess?: boolean;
 }
 
 export interface Plugins {}
@@ -106,7 +108,10 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		launch(onLaunch = () => console.log("Ready !")){
 			serverHooksLifeCycle.beforeBuildRouter.syncLaunchSubscriber();
 			
+			if(config.rebuildProcess === true) rebuildProcesses(processes);
+			if(config.rebuildAbstractRoutes === true) rebuildAbstractRoutes(abstractRoutes);
 			if(config.rebuildRoutes === true) rebuildRoutes(routes);
+			
 			if(config.keepDescriptions !== true) deleteDescriptions(routes,	checkers, processes, abstractRoutes);
 			deepFreeze(routes, 3);
 			deepFreeze(checkers);

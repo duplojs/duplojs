@@ -119,6 +119,14 @@ export const rebuildRoutes = (routes: RoutesObject) => {
 	);
 };
 
+export const rebuildAbstractRoutes = (abstractRoutes: AbstractRoutes) => {
+	Object.values(abstractRoutes).forEach(m => m.build());
+};
+
+export const rebuildProcesses = (processes: Processes) => {
+	Object.values(processes).forEach(m => m.build());
+};
+
 export function deleteDescriptions(
 	routes: RoutesObject,
 	checkers: Checkers,

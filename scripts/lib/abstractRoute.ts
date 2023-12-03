@@ -36,6 +36,7 @@ export interface AbstractRoute<
 	extends: Record<string, any>;
 	stringFunction: string;
 	editingFunctions: EditingFunctionAbstractRoute[];
+	children: AbstractRoute[];
 	build: () => void;
 }
 
@@ -483,7 +484,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				descs,
 				extends: {},
 				stringFunction: "",
-				editingFunctions: [], 
+				editingFunctions: [],
+				children: [],
 				build: () => {
 					abstractRoute.fullPrefix = (abstractRoute.parentAbstractRoute?.fullPrefix || "") + correctPath(declareParams?.prefix || "");
 					
@@ -591,6 +593,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 							() => {throw __exitProcess__;} :
 							() => {throw new Error("ExitProcess function is call in abstractRoute who has not 'allowExitProcess' define on true");}
 					}); 
+
+					abstractRoute.children.forEach(child => child.build());
 				}
 			};
 
@@ -603,9 +607,12 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 					...abstractRoute,
 					params: params || {},
 					descs: desc.length !== 0 ? [{type: "abstract", descStep: desc}] : [],
+					children: [],
 					build: () => {
 						Object.entries(abstractRoute).forEach(([key, value]) => 
-							["params", "descs"].includes(key) || ((subAbstractRoute as any)[key] = value)
+							[
+								"params", "descs", "build", "children"
+							].includes(key) || ((subAbstractRoute as any)[key] = value)
 						);
 						subAbstractRoute.fullPrefix = subAbstractRoute.params.ignorePrefix ? "" : abstractRoute.fullPrefix;
 						subAbstractRoute.pickup = subAbstractRoute.params?.pickup || [];
@@ -615,6 +622,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 						};
 					}
 				};
+				abstractRoute.children.push(subAbstractRoute);
 				subAbstractRoute.build();
 
 				return {
