@@ -20,7 +20,11 @@ export const Abstract1 = (duplo: DuploInstance<DuploConfig>) => {
 		{
 			input: p => p("number"),
 			result: "odd",
-			catch: (res, i) => res.info(i).code(400).send("wrong"),
+			catch: (res, i, d, p) => {
+				parentPort?.postMessage("result " + d);
+				parentPort?.postMessage("pickup number " + p("number"));
+				res.info(i).code(400).send("wrong");
+			},
 			indexing: "result",
 		}
 	)
@@ -87,7 +91,7 @@ export const Abstract3 = (duplo: DuploInstance<DuploConfig>) => {
 	.extract({
 		query: {
 			number: zod.coerce.number()
-		}
+		},
 	})
 	.check(
 		isOdd,

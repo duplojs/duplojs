@@ -41,6 +41,19 @@ export default workerTesting(
 			}
 		},
 		{
+			title: "Process error checker",
+			url: "http://localhost:1506/process/test/1",
+			method: "GET",
+			headers: {admin: true},
+			query: {number: 3},
+			output: ["checker result not odd", "result null", "pickup number 3"],
+			response: {
+				code: 400,
+				info: "notOdd",
+				body: zod.literal("wrong"),
+			}
+		},
+		{
 			title: "Route skip process",
 			url: "http://localhost:1506/process/test/2",
 			method: "GET",
