@@ -18,7 +18,7 @@ export default workerTesting(
 			url: "http://localhost:1506/checker/test/1",
 			method: "GET",
 			query: {number: 1},
-			output: ["checker result not odd"],
+			output: ["checker result not odd", "result null", "pickup number 1"],
 			response: {
 				code: 400,
 				info: "notOdd",

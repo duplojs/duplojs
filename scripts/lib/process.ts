@@ -1,7 +1,7 @@
 import {ZodError, ZodType} from "zod";
 import {RouteStepParamsSkip, condition, mapped, spread} from "./route";
-import {CheckerExport, MapReturnCheckerType, ReturnCheckerType} from "./checker";
-import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
+import {CheckerExport, GetReturnCheckerType, ReturnCheckerType} from "./checker";
+import {AddHooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import makeFloor, {Floor} from "./floor";
 import {Request} from "./request";
 import {Response} from "./response";
@@ -56,7 +56,13 @@ export interface ProcessCheckerParams<
 	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
 	result?: (info & checkerExport["outputInfo"][number]) | (info[] & checkerExport["outputInfo"]);
 	indexing?: index & string;
-	catch(response: response, info: checkerExport["outputInfo"][number], data?: ReturnCheckerType<checkerExport>): void;
+	catch(
+		response: response, 
+		info: Exclude<checkerExport["outputInfo"][number], info>, 
+		data: Exclude<GetReturnCheckerType<checkerExport>, {info: info}>["data"],
+		pickup: Floor<floor>["pickup"], 
+		exitProcess: () => never
+	): void;
 	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
 }
 
@@ -675,8 +681,26 @@ result = ${async ? "await " : ""}this.steps[${index}].handler(
 );
 /* after_step_[${index}] */
 /* end_block */
-${hasResult && !resultIsArray ? /* js */`if(this.steps[${index}].result !== result.info)this.steps[${index}].catch(response, result.info, result.data, this.exitProcess);` : ""}
-${hasResult && resultIsArray ? /* js */`if(!this.steps[${index}].result.includes(result.info))this.steps[${index}].catch(response, result.info, result.data, this.exitProcess);` : ""}
+${hasResult && !resultIsArray ? /* js */`
+if(this.steps[${index}].result !== result.info){
+	this.steps[${index}].catch(
+		response, 
+		result.info, 
+		result.data, 
+		floor.pickup,
+		this.exitProcess
+	);
+}` : ""}
+${hasResult && resultIsArray ? /* js */`
+if(!this.steps[${index}].result.includes(result.info)){
+	this.steps[${index}].catch(
+		response, 
+		result.info, 
+		result.data, 
+		floor.pickup,
+		this.exitProcess
+	);
+}` : ""}
 
 ${hasIndexing ? /* js */`floor.drop(this.steps[${index}].indexing, result.data)` : ""}
 /* after_drop_step_[${index}] */
