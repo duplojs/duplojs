@@ -3,7 +3,7 @@ import {CheckerExport, GetReturnCheckerType, ReturnCheckerType} from "./checker"
 import makeFloor, {Floor} from "./floor";
 import {AddHooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {PickupDropProcess, ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
-import {DeclareRoute, RouteProcessParams, RouteStepParamsSkip, condition, mapped, spread} from "./route";
+import {DeclareRoute, RouteExtractObj, RouteProcessParams, RouteStepParamsSkip, condition, mapped, spread} from "./route";
 import correctPath from "./correctPath";
 import {Response} from "./response";
 import {Request} from "./request";
@@ -26,7 +26,7 @@ export interface AbstractRoute<
 	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
 	mergeAbstractRoute?: AbstractRoute[];
 	parentAbstractRoute?: AbstractRoute;
-	extracted: AbstractRouteExtractObj;
+	extracted: RouteExtractObj;
 	errorExtract: ErrorExtractAbstractRouteFunction<any>;
 	steps: (StepChecker | StepProcess | StepCut)[];
 	handlerFunction?: AbstractRouteHandlerFunction<any, any>;
@@ -42,14 +42,14 @@ export interface AbstractRoute<
 
 export type EditingFunctionAbstractRoute = (abstractRoute: AbstractRoute) => void;
 
-export type ErrorExtractAbstractRouteFunction<response extends Response> = (response: response, type: keyof AbstractRouteExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
+export type ErrorExtractAbstractRouteFunction<response extends Response> = (response: response, type: keyof RouteExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
 
 export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
 export interface DeclareAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
-	extractObj extends AbstractRouteExtractObj = AbstractRouteExtractObj,
+	extractObj extends RouteExtractObj = RouteExtractObj,
 	options extends {} = {},
 	floor extends {} = {},
 >{
@@ -109,21 +109,18 @@ export interface AbstractRouteCheckerParams<
 	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
 }
 
-export interface AbstractRouteExtractObj{
-	params?: Record<string, ZodType> | ZodType,
-	query?: Record<string, ZodType> | ZodType,
-	headers?: Record<string, ZodType> | ZodType,
-}
-
 export interface AbstractRouteUseFunction<
 	request extends Request,
 	response extends Response,
-	extractObj extends AbstractRouteExtractObj,
+	extractObj extends RouteExtractObj,
 	options extends {},
 	floor extends {},
 	drop extends string,
 >{
-	<pickup extends string>(params?: AbstractRouteParams<drop, pickup, options>, ...desc: any[]): AbstractRouteInstance<
+	<pickup extends string>(
+		params?: AbstractRouteParams<drop, pickup, options>, 
+		...desc: any[]
+	): AbstractRouteInstance<
 		request,
 		response,
 		extractObj,
@@ -135,14 +132,14 @@ export interface AbstractRouteUseFunction<
 export interface AbstractRouteInstance<
 	request extends Request = Request,
 	response extends Response = Response,
-	extractObj extends AbstractRouteExtractObj = AbstractRouteExtractObj,
+	extractObj extends RouteExtractObj = RouteExtractObj,
 	options extends {} = {},
 	floor extends {} = {},
 >{
 	declareRoute<
 		req extends Request = request, 
 		res extends Response = response,
-		extObj extends AbstractRouteExtractObj = AbstractRouteExtractObj,
+		extObj extends RouteExtractObj = RouteExtractObj,
 	>(method: Request["method"], path: string | string[], ...desc: any[]): ReturnType<
 		DeclareRoute<
 			request & req, 
@@ -155,7 +152,7 @@ export interface AbstractRouteInstance<
 	declareAbstractRoute<
 		req extends Request = request, 
 		res extends Response = response,
-		extObj extends AbstractRouteExtractObj = extractObj,
+		extObj extends RouteExtractObj = extractObj,
 		options extends {} = {},
 	>(name: string, params?: DeclareAbstractRouteParams<options>, ...desc: any[]): ReturnType<
 		DeclareAbstractRoute<
@@ -173,14 +170,14 @@ export interface AbstractRouteInstance<
 export interface BuilderPatternAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
-	extractObj extends AbstractRouteExtractObj = AbstractRouteExtractObj,
+	extractObj extends RouteExtractObj = RouteExtractObj,
 	options extends {} = {},
 	floor extends {} = {},
 >{
 	hook: AddHooksLifeCycle<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, request, response>["addHook"];
 
 	extract<
-		localeExtractObj extends extractObj,
+		localeExtractObj extends Omit<extractObj, "body">,
 		localFloor extends FlatExtract<localeExtractObj>
 	>(
 		extractObj: localeExtractObj,
@@ -298,13 +295,13 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		const extracted: AbstractRouteExtractObj = {};
+		const extracted: RouteExtractObj = {};
 		let errorExtract: ErrorExtractAbstractRouteFunction<Response> = (response, type, index, err) => {
 			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
 		};
-		const extract: BuilderPatternAbstractRoute<any, any, AbstractRouteExtractObj, any, any>["extract"] = (extractObj, error, ...desc) => {
+		const extract: BuilderPatternAbstractRoute<any, any, RouteExtractObj, any, any>["extract"] = (extractObj, error, ...desc) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
-				extracted[index as keyof AbstractRouteExtractObj] = value;
+				extracted[index as keyof RouteExtractObj] = value;
 			});
 			errorExtract = error || errorExtract;
 
@@ -662,7 +659,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		declareAbstractRoute<
 			request extends Request = Request, 
 			response extends Response = Response,
-			extractObj extends AbstractRouteExtractObj = AbstractRouteExtractObj,
+			extractObj extends RouteExtractObj = RouteExtractObj,
 			options extends {} = {},
 		>(name: string, params?: DeclareAbstractRouteParams<options>, ...desc: any[]){
 			return (declareAbstractRoute(name, params, undefined, ...desc) as any) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
