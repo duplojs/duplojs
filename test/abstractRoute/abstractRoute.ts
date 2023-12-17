@@ -13,7 +13,7 @@ export const Abstract1 = (duplo: DuploInstance<DuploConfig>) => {
 	.extract({
 		query: {
 			number: zod.coerce.number()
-		}
+		},
 	})
 	.check(
 		isOdd,

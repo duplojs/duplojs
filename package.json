@@ -21,9 +21,10 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "nodemon --exec 'ts-node --transpiler sucrase/ts-node-plugin test/index.ts'",
+    "dev": "nodemon --exec 'npm run test:speed'",
     "build": "rollup --config && npx tsc",
-    "test": "ts-node test"
+    "test": "ts-node test",
+    "test:speed": "ts-node --transpiler sucrase/ts-node-plugin test --speed"
   },
   "dependencies": {
     "fast-querystring": "^1.1.2",
@@ -31,7 +32,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@duplojs/worker-testing": "^0.1.5",
+    "@duplojs/worker-testing": "^0.2.5",
     "@types/mime": "^3.0.1",
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
