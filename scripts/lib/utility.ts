@@ -6,8 +6,11 @@ import {Checkers} from "./checker";
 
 export type PromiseOrNot<T> = T | Promise<T>;
 
-export type FlatExtract<T extends RouteExtractObj | ProcessExtractObj> = {
-	[Property in keyof Flatten<T>]: Flatten<T>[Property] extends ZodType ? zodInfer<Flatten<T>[Property]> : never
+export type FlatExtract<
+	T extends RouteExtractObj | ProcessExtractObj, 
+	flatten = Flatten<T>
+> = {
+	[Property in keyof flatten]: flatten[Property] extends ZodType ? zodInfer<flatten[Property]> : never
 };
 
 export type Flatten<T extends {}> = FromPaths<ToPaths<T>>;
