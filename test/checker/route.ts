@@ -18,7 +18,11 @@ duplo.declareRoute("GET", "/checker/test/1")
 	{
 		input: p => p("number"),
 		result: "odd",
-		catch: (res, i) => res.info(i).code(400).send("wrong"),
+		catch: (res, i, d, p) => {
+			parentPort?.postMessage("result " + d);
+			parentPort?.postMessage("pickup number " + p("number"));
+			res.info(i).code(400).send("wrong");
+		},
 		indexing: "result",
 		skip: p => p("skip") === "true",
 	}
@@ -62,6 +66,18 @@ duplo.declareRoute("GET", "/checker/test/3")
 		options: p => ({
 			result: p("number"),
 		})
+	}
+)
+.handler(({pickup: p}, res) => res.info("odd").code(200).send(p("result")));
+
+duplo.declareRoute("GET", "/checker/test/4")
+.check(
+	isOdd,
+	{
+		input: p => 2,
+		result: ["odd"],
+		catch: (res, i) => res.info(i).code(400).send("wrong"),
+		indexing: "result",
 	}
 )
 .handler(({pickup: p}, res) => res.info("odd").code(200).send(p("result")));

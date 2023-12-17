@@ -98,4 +98,14 @@ duplo.declareRoute("GET", "/test/hook/onError")
 .hook("onError", (res) => parentPort?.postMessage("hook onError"))
 .handler(({}, res) => {throw new Error("test");});
 
+duplo.setDefaultErrorExtract((res) => res.code(400).send("error extract"));
+
+duplo.declareRoute("GET", "/test/12/{test}")
+.extract({
+	params: {
+		test: zod.coerce.number(),
+	}
+})
+.handler(({}, res) => res.code(200).send());
+
 duplo.launch(() => parentPort?.postMessage("ready"));

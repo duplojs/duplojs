@@ -8,8 +8,7 @@ import correctPath from "./correctPath.ts";
 import makeProcessSystem, {Processes} from "./process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
 import {AbstractRoutes} from "./abstractRoute.ts";
-import {deepFreeze, rebuildRoutes} from "./utility.ts";
-import {deleteDescriptions} from "./description.ts";
+import {deepFreeze, deleteDescriptions, rebuildAbstractRoutes, rebuildProcesses, rebuildRoutes} from "./utility.ts";
 
 export interface DuploConfig{
 	port: number,
@@ -18,8 +17,10 @@ export interface DuploConfig{
 	onClose?: () => void;
 	prefix?: string;
 	keepDescriptions?: boolean;
-	env?: "DEV" | "PROD";
+	environment?: "DEV" | "PROD";
 	rebuildRoutes?: boolean;
+	rebuildAbstractRoutes?: boolean;
+	rebuildProcess?: boolean;
 }
 
 export interface Plugins {}
@@ -37,9 +38,9 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	setErrorHandler: ReturnType<typeof makeRoutesSystem>["setErrorHandler"];
 	createProcess: ReturnType<typeof makeProcessSystem>["createProcess"];
 	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
-	buildContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["buildContentTypeBody"]
 	declareAbstractRoute: ReturnType<typeof makeRoutesSystem>["declareAbstractRoute"];
 	mergeAbstractRoute: ReturnType<typeof makeRoutesSystem>["mergeAbstractRoute"];
+	setDefaultErrorExtract: ReturnType<typeof makeRoutesSystem>["setDefaultErrorExtract"];
 	use<
 		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
@@ -68,6 +69,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		setErrorHandler, 
 		declareAbstractRoute,
 		mergeAbstractRoute,
+		setDefaultErrorExtract,
 		routes, 
 		abstractRoutes
 	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
@@ -106,7 +108,10 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		launch(onLaunch = () => console.log("Ready !")){
 			serverHooksLifeCycle.beforeBuildRouter.syncLaunchSubscriber();
 			
+			if(config.rebuildProcess === true) rebuildProcesses(processes);
+			if(config.rebuildAbstractRoutes === true) rebuildAbstractRoutes(abstractRoutes);
 			if(config.rebuildRoutes === true) rebuildRoutes(routes);
+			
 			if(config.keepDescriptions !== true) deleteDescriptions(routes,	checkers, processes, abstractRoutes);
 			deepFreeze(routes, 3);
 			deepFreeze(checkers);
@@ -147,9 +152,9 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		setErrorHandler,
 		createProcess,
 		addContentTypeParsers,
-		buildContentTypeBody,
 		declareAbstractRoute,
 		mergeAbstractRoute,
+		setDefaultErrorExtract,
 		use: (input, options) => input(duploInstance, options),
 		routes,
 		checkers,

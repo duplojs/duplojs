@@ -19,14 +19,21 @@ export const IsAdmin = (duplo: DuploInstance<DuploConfig>) => {
 	.extract({
 		headers: {
 			admin: zod.literal("true"),
-		}, 
+		},
+		query: {
+			number: zod.coerce.number().default(2),
+		}
 	})
 	.check(
 		isOdd,
 		{
-			input: p => p("input"),
+			input: p => p("number"),
 			result: "odd",
-			catch: (res, i) => res.info(i).code(400).send("wrong"),
+			catch: (res, i, d, p) => {
+				parentPort?.postMessage("result " + d);
+				parentPort?.postMessage("pickup number " + p("number"));
+				res.info(i).code(400).send("wrong");
+			},
 			indexing: "result",
 			options: {
 				result: 55,
@@ -163,7 +170,7 @@ export const IsUser = (duplo: DuploInstance<DuploConfig>) => {
 		isOdd,
 		{
 			input: p => 2,
-			result: "odd",
+			result: ["odd"],
 			catch: (res, i) => res.info(i).code(400).send("wrong"),
 			indexing: "result",
 			options: p => ({

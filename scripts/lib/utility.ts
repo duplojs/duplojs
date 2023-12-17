@@ -1,12 +1,13 @@
-import {ZodType} from "zod";
-import {ProcessCheckerParams, ProcessExtractObj, ProcessProcessParams} from "./process";
+import {ZodType, infer as zodInfer} from "zod";
+import {ProcessCheckerParams, ProcessExtractObj, ProcessProcessParams, Processes} from "./process";
 import {RouteCheckerParams, RouteExtractObj, RouteProcessParams, RoutesObject} from "./route";
-import {AbstractRouteCheckerParams} from "./abstractRoute";
+import {AbstractRouteCheckerParams, AbstractRoutes} from "./abstractRoute";
+import {Checkers} from "./checker";
 
 export type PromiseOrNot<T> = T | Promise<T>;
 
 export type FlatExtract<T extends RouteExtractObj | ProcessExtractObj> = {
-	[Property in keyof Flatten<T>]: Flatten<T>[Property] extends ZodType<infer X> ? X : never
+	[Property in keyof Flatten<T>]: Flatten<T>[Property] extends ZodType ? zodInfer<Flatten<T>[Property]> : never
 };
 
 export type Flatten<T extends {}> = FromPaths<ToPaths<T>>;
@@ -34,7 +35,7 @@ export type StepChecker = {
 	input: AnyFunction,
 	catch: AnyFunction,
 	skip?: AnyFunction,
-	result?: string,
+	result?: string | string[],
 	indexing?: string,
 	params: (
 		RouteCheckerParams<any, any, any, any, any>  | 
@@ -77,12 +78,6 @@ export interface DescriptionFirst{
 	descStep: any[],
 }
 
-export interface DescriptionAccess{
-	type: "access",
-	isShort: boolean,
-	descStep: any[],
-}
-
 export interface DescriptionExtracted{
 	type: "extracted",
 	descStep: any[],
@@ -104,7 +99,7 @@ export interface DescriptionBuild{
 	descStep: any[],
 }
 
-export type DescriptionAll = DescriptionFirst | DescriptionAccess | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild | DescriptionAbstract;
+export type DescriptionAll = DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild | DescriptionAbstract;
 
 export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): void => {
 	deep === 0 ||
@@ -123,3 +118,36 @@ export const rebuildRoutes = (routes: RoutesObject) => {
 		)
 	);
 };
+
+export const rebuildAbstractRoutes = (abstractRoutes: AbstractRoutes) => {
+	Object.values(abstractRoutes).forEach(m => m.build());
+};
+
+export const rebuildProcesses = (processes: Processes) => {
+	Object.values(processes).forEach(m => m.build());
+};
+
+export function deleteDescriptions(
+	routes: RoutesObject,
+	checkers: Checkers,
+	processes: Processes,
+	abstractRoutes: AbstractRoutes,
+){
+	Object.values(routes).forEach(
+		method => Object.values(method).forEach(
+			route => route.descs = []
+		)
+	);
+
+	Object.values(checkers).forEach(
+		checker => checker.desc = []
+	);
+
+	Object.values(processes).forEach(
+		process => process.descs = []
+	);
+
+	Object.values(abstractRoutes).forEach(
+		abstractRoute => abstractRoute.descs = []
+	);
+}
