@@ -31,7 +31,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@duplojs/worker-testing": "^0.1.4",
+    "@duplojs/worker-testing": "^0.1.5",
     "@types/mime": "^3.0.1",
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
