@@ -1,102 +1,179 @@
-import makeFloor from "./floor";
+import makeFloor, {Floor} from "./floor";
 import {ServerHooksLifeCycle} from "./hook";
 import {Response} from "./response";
-import {PromiseOrNot, AnyFunction} from "./utility";
+import {AnyFunction, PromiseOrNot} from "./utility";
 
-export type GetReturnCheckerType<checker extends CheckerExport> = Awaited<ReturnType<checker["handler"]>>;
-
-export type MapReturnCheckerType<checker extends CheckerExport> = {
-	[Property in GetReturnCheckerType<checker> as Property["info"]]: Property["data"];
-};
-
-export type ReturnCheckerType<
-	checker extends CheckerExport, 
-	info extends keyof MapReturnCheckerType<checker> = string
-> = info extends keyof MapReturnCheckerType<checker> ? 
-	MapReturnCheckerType<checker>[info] : 
-	GetReturnCheckerType<checker>["data"];
+export interface CreateChecker {
+	(name: string): Pick<BuilderPatternChecker, "defineOptions" | "handler">;
+}
 
 export type CheckerOutput<
-	outputInfo extends string = string, 
-	outputData extends any = any
+	info extends string = string, 
+	data extends unknown = unknown
 > = {
-	info: outputInfo,
-	data: outputData,
+	info: info,
+	data: data,
 };
 
-interface CheckerOutputFunction<outputInfo extends string>{
-	output<
-		info extends outputInfo,
-		outputData extends any,
-	>(info: outputInfo & info, data: outputData): CheckerOutput<info, outputData>;
+export interface CheckerOutputFunction{
+	<
+		info extends string,
+		data extends unknown = undefined,
+	>(info: info, data: data): CheckerOutput<info, data>;
 }
 
-export interface CreateCheckerParameters<
-	input extends any, 
-	outputInfo extends string, 
-	options extends Record<string, any>, 
-	returnOutputType extends CheckerOutput<outputInfo>,
-	context extends Record<string, AnyFunction>,
-> {
-	handler(
-		input: input, 
-		output: CheckerOutputFunction<outputInfo>["output"],
-		options: options
-	): PromiseOrNot<returnOutputType>;
-	outputInfo: outputInfo[];
-	options?: options;
-}
-export interface CheckerParameters<input, outputInfo, options> {
-	input(pickup: ReturnType<typeof makeFloor>["pickup"]): input;
-	validate(info: outputInfo, data?: any): boolean;
-	catch(response: Response, info: outputInfo, data: any, existProcess: () => never): void;
-	output?: (drop: ReturnType<typeof makeFloor>["drop"], info: outputInfo, data?: any) => void;
-	readonly options?: options;
+export type CheckerCatchFunction<
+	outputHandler extends CheckerOutput,
+	result extends CheckerOutput["info"],
+> = (
+	response: Response, 
+	info: Exclude<outputHandler, {info: result}>["info"], 
+	data: Exclude<outputHandler, {info: result}>["data"],
+	pickup: Floor<Record<string, unknown>>["pickup"]
+) => void
+
+export interface CheckerPreComplated<
+	outputHandler extends CheckerOutput,
+	result extends CheckerOutput["info"],
+	indexing extends string
+>{
+	result?: (result & outputHandler["info"]) | (result[] & outputHandler["info"][]),
+	indexing?: indexing,
 }
 
-export type CheckerExport<
-	input extends any = any, 
-	outputInfo extends string = string, 
-	options extends Record<string, any> = Record<string, any>, 
-	returnOutputType extends CheckerOutput<outputInfo> = CheckerOutput<outputInfo>,
-	context extends Record<string, AnyFunction> = Record<string, AnyFunction>
-> = {
-	name: string,
-	handler: CreateCheckerParameters<input, outputInfo, options, returnOutputType, context>["handler"],
-	options: CheckerParameters<input, outputInfo, options>["options"] | {},
-	outputInfo: outputInfo[],
-	desc: any[]
+export interface BuilderPatternChecker<
+	options extends Record<string, any> = never,
+	input extends unknown = unknown,
+	outputHandler extends CheckerOutput = never,
+	allPrecompleted extends Record<string, any> = {},
+>{
+	defineOptions<
+		options extends Record<string, any>
+	>(options: options): Pick<
+		BuilderPatternChecker<
+			options
+		>, 
+		"handler"
+	>;
+
+	handler<
+		input extends unknown,
+		outputHandler extends CheckerOutput,
+	>(
+		handler: (input: input, output: CheckerOutputFunction, options: options) => PromiseOrNot<outputHandler>
+	): Pick<
+		BuilderPatternChecker<
+			options,
+			input,
+			outputHandler
+		>, 
+		"addPrecompleted" | "build"
+	>;
+
+	addPrecompleted<
+		name extends string,
+		result extends outputHandler["info"] = never,
+		indexing extends string = never,
+		catchBlock extends {catch?: CheckerCatchFunction<outputHandler, result>} = {catch?: CheckerCatchFunction<outputHandler, result>},
+	>(
+		name: name,
+		params: CheckerPreComplated<outputHandler, result, indexing> & catchBlock
+	): Pick<
+		BuilderPatternChecker<
+			options,
+			input,
+			outputHandler,
+			allPrecompleted & {
+				[p in name]: {
+					result: result extends string ? result : undefined,
+					indexing: indexing extends string ? indexing : undefined,
+					catch: catchBlock["catch"] extends AnyFunction ? catchBlock["catch"] : undefined,
+				}
+			}
+		>, 
+		"build" | "addPrecompleted"
+	>;
+
+	build(...desc: any): Checker<
+		options,
+		input,
+		outputHandler,
+		allPrecompleted
+	>
 }
 
-export type Checkers = Record<string, CheckerExport>
+export class Checker<
+	options extends Record<string, any> = any,
+	input extends unknown = any,
+	outputHandler extends CheckerOutput = CheckerOutput,
+	allPreCompleted extends Record<string, any> = {},
+>{
+	constructor(
+		public name: string,
+		public options: options,
+		public handler: (input: input) => PromiseOrNot<outputHandler>,
+		public precomplete: allPreCompleted,
+		public desc: any[],
+	){}
+}
+
+export type Checkers = Record<string, Checker>
+
+export type CheckerGetParmas<checker extends Checker> = 
+	checker extends Checker<
+		infer options,
+		infer input,
+		infer output
+	> 
+	? {options: options, input: input, output: output} 
+	: never
 
 export default function makeCheckerSystem(serverHooksLifeCycle: ServerHooksLifeCycle){
 	const checkers: Checkers = {};
 
-	function createChecker<
-		input extends any, 
-		outputInfo extends string, 
-		options extends Record<string, any>, 
-		returnOutputType extends CheckerOutput<outputInfo>,
-		context extends {},
-	>(
-		name: string, 
-		createCheckerParameters: CreateCheckerParameters<input, outputInfo, options, returnOutputType, context>,
-		...desc: any
-	): CheckerExport<input, outputInfo, options, returnOutputType, context>
-	{
-		const checker = {
-			name,
-			handler: createCheckerParameters.handler,
-			options: createCheckerParameters.options,
-			outputInfo: createCheckerParameters.outputInfo,
-			desc
+	const createChecker: CreateChecker = (name) => {
+		let grapOptions: any;
+		const defineOptions: BuilderPatternChecker<any, any, any, any>["defineOptions"] = (options) => {
+			grapOptions = options;
+			
+			return {
+				handler,
+			};
 		};
 
-		serverHooksLifeCycle.onCreateChecker.syncLaunchSubscriber(checker);
+		let grapHandler: any;
+		const handler: BuilderPatternChecker<any, any, any, any>["handler"] = (handler) => {
+			grapHandler = handler;
 
-		return checker;
-	}
+			return {
+				addPrecompleted,
+				build,
+			};
+		};
+
+		let precomplete: any = {};
+		const addPrecompleted: BuilderPatternChecker<any, any, any, any>["addPrecompleted"] = (name, params) => {
+			precomplete[name] = params;
+
+			return {
+				addPrecompleted,
+				build
+			};
+		};
+
+		const build: BuilderPatternChecker<any, any, any, any>["build"] = (...desc: any[]) => {
+			checkers[name] = new Checker<any, any, any, any>(name, grapOptions, grapHandler, precomplete, desc);
+
+			serverHooksLifeCycle.onCreateChecker.syncLaunchSubscriber(checkers[name]);
+
+			return checkers[name];
+		};
+
+		return {
+			defineOptions,
+			handler
+		} as any;
+	};
 
 	return {
 		createChecker,

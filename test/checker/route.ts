@@ -82,4 +82,14 @@ duplo.declareRoute("GET", "/checker/test/4")
 )
 .handler(({pickup: p}, res) => res.info("odd").code(200).send(p("result")));
 
+duplo.declareRoute("GET", "/checker/test/5")
+.check(
+	isOdd,
+	{
+		input: p => 2,
+		...isOdd.precomplete.wantOdd,
+	}
+)
+.handler(({pickup: p}, res) => res.info("odd").code(200).send(p("number")));
+
 duplo.launch(() => parentPort?.postMessage("ready"));
