@@ -3,13 +3,13 @@ import makeFloor, {Floor} from "./floor";
 import {__exec__, Response} from "./response";
 import correctPath from "./correctPath";
 import {ZodError, ZodType} from "zod";
-import {CheckerExport, GetReturnCheckerType, ReturnCheckerType} from "./checker";
 import {AddHooksLifeCycle, HooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {DuploConfig} from "./main";
 import {PickupDropProcess, ProcessExport} from "./process";
 import makeContentTypeParserSystem from "./contentTypeParser";
 import makeAbstractRoutesSystem, {AbstractRoute} from "./abstractRoute";
 import {AnyFunction, DescriptionAll, FlatExtract, PromiseOrNot, StepChecker, StepCut, StepProcess} from "./utility";
+import {Checker, CheckerGetParmas} from "./checker";
 
 export type DeclareRoute<
 	request extends Request = Request, 
@@ -68,22 +68,23 @@ export type RouteShort<
 export type RouteStepParamsSkip<floor extends {}> = (pickup: Floor<floor>["pickup"]) => boolean;
 
 export interface RouteCheckerParams<
-	checkerExport extends CheckerExport, 
+	checker extends Checker, 
 	response extends Response,
 	floor extends {},
 	info extends string,
 	index extends string,
+	checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
 >{
-	input(pickup: Floor<floor>["pickup"]): Parameters<checkerExport["handler"]>[0];
-	result?: (info & checkerExport["outputInfo"][number]) | (info[] & checkerExport["outputInfo"]);
+	input(pickup: Floor<floor>["pickup"]): checkerParams["input"];
+	result?: (info & checkerParams["output"]["info"]) | (info[] & checkerParams["output"]["info"][]);
 	indexing?: index & string;
 	catch(
 		response: response, 
-		info: Exclude<checkerExport["outputInfo"][number], info>, 
-		data: Exclude<GetReturnCheckerType<checkerExport>, {info: info}>["data"],
+		info: Exclude<checkerParams["output"], {info: info}>["info"], 
+		data: Exclude<checkerParams["output"], {info: info}>["data"],
 		pickup: Floor<floor>["pickup"]
 	): void;
-	options?: Partial<checkerExport["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerExport["options"]>);
+	options?: Partial<checkerParams["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerParams["options"]>);
 }
 
 export interface RouteProcessParams<
@@ -114,13 +115,14 @@ export interface BuilderPatternRoute<
 	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract">;
 
 	check<
-		checkerExport extends CheckerExport,
+		checker extends Checker,
 		info extends string,
 		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
 		index extends string = never,
+		checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
 	>(
-		checker: checkerExport, 
-		params: RouteCheckerParams<checkerExport, response, floor, info, index> & skipObj,
+		checker: checker, 
+		params: RouteCheckerParams<checker, response, floor, info, index> & skipObj,
 		...desc: any[]
 	): Omit<
 		BuilderPatternRoute<
@@ -129,8 +131,8 @@ export interface BuilderPatternRoute<
 			extractObj, 
 			floor & {
 				[Property in index]: skipObj["skip"] extends AnyFunction ? 
-					ReturnCheckerType<checkerExport, info> | undefined : 
-					ReturnCheckerType<checkerExport, info>
+					Extract<checkerParams["output"], {info: info}>["data"] | undefined : 
+					Extract<checkerParams["output"], {info: info}>["data"]
 			}
 		>, 
 		"hook" | "extract"
@@ -158,7 +160,7 @@ export interface BuilderPatternRoute<
 		"hook" | "extract"
 	>;
 
-	cut<localFloor extends {}, drop extends string>(
+	cut<localFloor extends {}, drop extends keyof localFloor>(
 		short: RouteShort<request, response, localFloor, floor>,
 		drop?: drop[] & Extract<keyof localFloor, string>[],
 		...desc: any[]

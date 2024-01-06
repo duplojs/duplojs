@@ -1,5 +1,5 @@
 import {AbstractRoute} from "./abstractRoute";
-import {CheckerExport} from "./checker";
+import {Checker} from "./checker";
 import {ProcessExport} from "./process";
 import {Request} from "./request";
 import {Response} from "./response";
@@ -39,7 +39,7 @@ export interface AddServerHooksLifeCycle<returnType extends any = any>{
 	addHook(name: "beforeBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["beforeBuildRouter"]["build"]>): returnType;
 }
 
-export default function makeHook<TypeHookFunction extends((...any: any) => any)>(numberArgs: number){
+export default function makeHook<TypeHookFunction extends((...any: any[]) => any)>(numberArgs: Parameters<TypeHookFunction>["length"]){
 	const args = Array(numberArgs).fill(undefined).map((value, index) => `arg${index}`).join(", ");
 	let subscribers: TypeHookFunction[] = [];
 
@@ -96,7 +96,7 @@ export function makeServerHooksLifeCycle(){
 	return {
 		onDeclareRoute: makeHook<((route: Route) => PromiseOrNot<true | void>)>(1),
 		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRoute) => PromiseOrNot<true | void>)>(1),
-		onCreateChecker: makeHook<((checker: CheckerExport) => PromiseOrNot<true | void>)>(1),
+		onCreateChecker: makeHook<((checker: Checker) => PromiseOrNot<true | void>)>(1),
 		onCreateProcess: makeHook<((process: ProcessExport) => PromiseOrNot<true | void>)>(1),
 		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onClose: makeHook<(() => PromiseOrNot<true | void>)>(0),

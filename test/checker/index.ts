@@ -82,5 +82,16 @@ export default workerTesting(
 				body: zod.literal("0"),
 			}
 		},
+		{
+			title: "Checker pre complete",
+			url: "http://localhost:1506/checker/test/5",
+			method: "GET",
+			output: ["checker result odd"],
+			response: {
+				code: 200,
+				info: "odd",
+				body: zod.literal("0"),
+			}
+		},
 	]
 );
