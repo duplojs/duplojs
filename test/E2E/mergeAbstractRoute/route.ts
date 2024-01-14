@@ -1,4 +1,4 @@
-import Duplo, {zod} from "../../scripts/index";
+import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {MergeAbstractRoute1, MergeAbstractRoute2, MergeAbstractRoute3} from "./mergeAbstractRoute";
 

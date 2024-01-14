@@ -5,7 +5,7 @@ export interface Floor<floor extends {}>{
 	// drop(index: string, value: any): void;
 }
 
-export default function makeFloor(): Floor<{}>
+export function makeFloor(): Floor<{}>
 {
 	const floor: Record<string, any> = new Map();
 

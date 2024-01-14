@@ -1,8 +1,8 @@
 import {ZodType, infer as zodInfer} from "zod";
-import {ProcessCheckerParams, ProcessExtractObj, ProcessProcessParams, Processes} from "./process";
-import {RouteCheckerParams, RouteExtractObj, RouteProcessParams, RoutesObject} from "./route";
+import {ProcessCheckerParams, ProcessExtractObj, ProcessProcessParams, Processes} from "./system/process";
+import {RouteCheckerParams, RouteExtractObj, RouteProcessParams, RoutesObject} from "./builder/route";
 import {AbstractRouteCheckerParams, AbstractRoutes} from "./abstractRoute";
-import {Checkers} from "./checker";
+import {Checkers} from "./system/checker";
 
 export type PromiseOrNot<T> = T | Promise<T>;
 
@@ -102,7 +102,31 @@ export interface DescriptionBuild{
 	descStep: any[],
 }
 
-export type DescriptionAll = DescriptionFirst | DescriptionExtracted | DescriptionStep | DescriptionHandler | DescriptionBuild | DescriptionAbstract;
+export interface DescriptionOptions{
+	type: "options",
+	descStep: any[],
+}
+
+export interface DescriptionInput{
+	type: "input",
+	descStep: any[],
+}
+
+export interface DescriptionPrecomplete{
+	type: "precomplete",
+	descStep: any[],
+}
+
+export type DescriptionAll = 
+	DescriptionFirst 
+	| DescriptionExtracted 
+	| DescriptionStep 
+	| DescriptionHandler 
+	| DescriptionBuild 
+	| DescriptionAbstract 
+	| DescriptionOptions 
+	| DescriptionInput
+	| DescriptionPrecomplete;
 
 export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): void => {
 	deep === 0 ||

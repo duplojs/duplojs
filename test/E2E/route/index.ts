@@ -1,5 +1,5 @@
 import {readFileSync} from "fs";
-import {zod} from "../../scripts";
+import {zod} from "../../../scripts";
 import {workerTesting} from "@duplojs/worker-testing";
 
 export default workerTesting(
@@ -109,7 +109,7 @@ export default workerTesting(
 			response: {
 				code: 200,
 				info: "s",
-				body: zod.literal(readFileSync(__dirname + "/../../CONTRIBUTING.md", "utf-8")),
+				body: zod.literal(readFileSync(__dirname + "/../../../CONTRIBUTING.md", "utf-8")),
 			}
 		},
 		{

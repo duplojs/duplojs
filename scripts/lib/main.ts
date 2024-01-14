@@ -1,14 +1,15 @@
 import http from "http";
 import {AddHooksLifeCycle, AddServerHooksLifeCycle, makeHooksLifeCycle, makeServerHooksLifeCycle} from "./hook.ts";
-import {Request} from "./request.ts";
+import {Request, methods} from "./request.ts";
 import {__exec__, Response, SentError} from "./response.ts";
-import makeRoutesSystem, {RoutesObject} from "./route.ts";
-import makeCheckerSystem, {Checkers} from "./checker.ts";
+import makeCheckerSystem, {Checkers} from "./system/checker.ts";
 import correctPath from "./correctPath.ts";
-import makeProcessSystem, {Processes} from "./process.ts";
+import {makeProcessSystem, Processes} from "./system/process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
-import {AbstractRoutes} from "./abstractRoute.ts";
+import makeAbstractRoutesSystem, {AbstractRoutes} from "./abstractRoute.ts";
 import {deepFreeze, deleteDescriptions, rebuildAbstractRoutes, rebuildProcesses, rebuildRoutes} from "./utility.ts";
+import {makeRouterSystem} from "./system/router.ts";
+import {Routes, makeRoutesSystem} from "./system/route.ts";
 
 export interface DuploConfig{
 	port: number,
@@ -34,7 +35,7 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	addHook: AddHooksLifeCycle<DuploInstance<duploConfig>>["addHook"] & AddServerHooksLifeCycle<DuploInstance<duploConfig>>["addHook"];
 	declareRoute: ReturnType<typeof makeRoutesSystem>["declareRoute"];
 	createChecker: ReturnType<typeof makeCheckerSystem>["createChecker"];
-	setNotfoundHandler: ReturnType<typeof makeRoutesSystem>["setNotfoundHandler"];
+	setNotfoundHandler: ReturnType<typeof makeRouterSystem>["setNotfoundHandler"];
 	setErrorHandler: ReturnType<typeof makeRoutesSystem>["setErrorHandler"];
 	createProcess: ReturnType<typeof makeProcessSystem>["createProcess"];
 	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
@@ -44,7 +45,7 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	use<
 		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
-	routes: RoutesObject;
+	routes: Routes;
 	checkers: Checkers;
 	processes: Processes;
 	abstractRoutes: AbstractRoutes;
@@ -61,23 +62,14 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 	const {addContentTypeParsers, buildContentTypeBody, parseContentTypeBody} = makeContentTypeParserSystem();
 	const {createChecker, checkers} = makeCheckerSystem(serverHooksLifeCycle);
 	const {createProcess, processes} = makeProcessSystem(serverHooksLifeCycle);
-	const {
-		declareRoute, 
-		buildRouter, 
-		findRoute, 
-		setNotfoundHandler, 
-		setErrorHandler, 
-		declareAbstractRoute,
-		mergeAbstractRoute,
-		setDefaultErrorExtract,
-		routes, 
-		abstractRoutes
-	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
+	const {declareRoute, setErrorHandler, setDefaultErrorExtract, routes, Route} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
+	const {abstractRoutes} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
+	const {findRoute, buildRouter, setNotfoundHandler} = makeRouterSystem(config, Route, routes);
 
 	const server = http.createServer( 
 		async(serverRequest, serverResponse) => {
 			try {
-				const {routeFunction, params, matchedPath} = findRoute(serverRequest.method as Request["method"], serverRequest.url as string);
+				const {routeFunction, params, matchedPath} = findRoute(serverRequest.method as methods, serverRequest.url as string);
 
 				await routeFunction(new Request(serverRequest, params, matchedPath), new Response(serverResponse));
 			}
@@ -152,8 +144,8 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		setErrorHandler,
 		createProcess,
 		addContentTypeParsers,
-		declareAbstractRoute,
-		mergeAbstractRoute,
+		// declareAbstractRoute,
+		// mergeAbstractRoute,
 		setDefaultErrorExtract,
 		use: (input, options) => input(duploInstance, options),
 		routes,

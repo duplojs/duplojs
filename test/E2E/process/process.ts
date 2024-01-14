@@ -1,21 +1,17 @@
 import {parentPort} from "worker_threads";
-import {DuploConfig, DuploInstance, zod} from "../../scripts";
+import {DuploConfig, DuploInstance, zod} from "../../../scripts";
 import {IsOdd} from "../checker/checker";
 
 export const IsAdmin = (duplo: DuploInstance<DuploConfig>) => {
 	const isOdd = IsOdd(duplo);
 	const hasRight = HasRight(duplo);
 
-	return duplo.createProcess(
-		"isAdmin",
-		{
-			options: {
-				testOption1: "test1",
-				testOption2: "test2",
-			},
-			input: () => 22,
-		}
-	)
+	return duplo.createProcess("isAdmin")
+	.options({
+		testOption1: "test1",
+		testOption2: "test2",
+	})
+	.input(() => 22)
 	.extract({
 		headers: {
 			admin: zod.literal("true"),
@@ -66,16 +62,12 @@ export const IsManager = (duplo: DuploInstance<DuploConfig>) => {
 	const isOdd = IsOdd(duplo);
 	const hasRight = HasRight(duplo);
 
-	return duplo.createProcess(
-		"isManager",
-		{
-			options: {
-				testOption1: "test1",
-				testOption2: "test2",
-			},
-			input: () => 22,
-		}
-	)
+	return duplo.createProcess("isManager")
+	.options({
+		testOption1: "test1",
+		testOption2: "test2",
+	})
+	.input(() => 22)
 	.extract({
 		query: {
 			skip: zod.literal("true").optional()
@@ -103,12 +95,8 @@ export const IsManager = (duplo: DuploInstance<DuploConfig>) => {
 export const IsCustomer = (duplo: DuploInstance<DuploConfig>) => {
 	const hasRight = HasRight(duplo);
 
-	return duplo.createProcess(
-		"isCustomer",
-		{
-			input: () => 22,
-		}
-	)
+	return duplo.createProcess("isCustomer")
+	.input(() => 22)
 	.process(
 		hasRight,
 		{
@@ -121,14 +109,10 @@ export const IsCustomer = (duplo: DuploInstance<DuploConfig>) => {
 export const IsOwner = (duplo: DuploInstance<DuploConfig>) => {
 	const hasRight = HasRight(duplo);
 
-	return duplo.createProcess(
-		"isOwner",
-		{
-			options: {
-				option1: 23,
-			},
-		}
-	)
+	return duplo.createProcess("isOwner")
+	.options({
+		option1: 23,
+	})
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("process options " + p("options").option1);
 	})
@@ -147,14 +131,10 @@ export const IsUser = (duplo: DuploInstance<DuploConfig>) => {
 	const isOdd = IsOdd(duplo);
 	const hasRight = HasRight(duplo);
 
-	return duplo.createProcess(
-		"isUser",
-		{
-			options: {
-				option1: 40,
-			},
-		}
-	)
+	return duplo.createProcess("isUser")
+	.options({
+		option1: 40,
+	})
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("process options " + p("options").option1);
 	})
@@ -184,35 +164,21 @@ export const IsUser = (duplo: DuploInstance<DuploConfig>) => {
 	.build();
 };
 
-export const HasRight = (duplo: DuploInstance<DuploConfig>) => duplo.createProcess(
-	"hasRight",
-	{
-		options: {
-			option1: 1,
-			option2: 2,
-		},
-		input: () => 30
-	}
-)
-.cut(({pickup: p}) => {
-	parentPort?.postMessage("process options1 " + p("options").option1);
-	parentPort?.postMessage("process options2 " + p("options").option2);
-	parentPort?.postMessage("process input " + p("input"));
+export const HasRight = (duplo: DuploInstance<DuploConfig>) => 
+	duplo
+	.createProcess("hasRight")
+	.options({
+		option1: 1,
+		option2: 2,
+	})
+	.input(() => 30)
+	.cut(({pickup: p}) => {
+		parentPort?.postMessage("process options1 " + p("options").option1);
+		parentPort?.postMessage("process options2 " + p("options").option2);
+		parentPort?.postMessage("process input " + p("input"));
 
-	return {
-		right: true,
-	};
-}, ["right"])
-.build(["right"]);
-
-export const ProcessExit = (duplo: DuploInstance<DuploConfig>) => duplo.createProcess(
-	"processExit",
-	{
-		allowExitProcess: true
-	}
-)
-.cut(({}, res, req, exit) => {
-	exit();
-	parentPort?.postMessage("no exit");
-})
-.build();
+		return {
+			right: true,
+		};
+	}, ["right"])
+	.build(["right"]);

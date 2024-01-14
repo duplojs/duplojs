@@ -1,10 +1,10 @@
-import {DuploConfig, DuploInstance} from "../../scripts/index";
+import {DuploConfig, DuploInstance} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 
 export const IsOdd = (duplo: DuploInstance<DuploConfig>) => 
 	duplo
 	.createChecker("isOdd")
-	.defineOptions({
+	.options({
 		result: 0
 	})
 	.handler((number: number, output, options) => {

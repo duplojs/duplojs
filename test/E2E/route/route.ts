@@ -1,4 +1,4 @@
-import Duplo, {zod} from "../../scripts/index";
+import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 
 const duplo = Duplo({port: 1506, host: "localhost", prefix: "route"});
@@ -52,7 +52,7 @@ duplo.declareRoute("GET", "/test/7")
 
 duplo.declareRoute("GET", "/test/8")
 .handler(({}, res) => {
-	res.code(200).info("s").sendFile(__dirname + "/../../CONTRIBUTING.md");
+	res.code(200).info("s").sendFile(__dirname + "/../../../CONTRIBUTING.md");
 });
 
 duplo.declareRoute("GET", "/test/9")

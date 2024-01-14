@@ -1,4 +1,4 @@
-import Duplo, {zod} from "../../scripts/index";
+import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {IsOdd} from "./checker";
 
@@ -28,7 +28,8 @@ duplo.declareRoute("GET", "/checker/test/1")
 	}
 )
 .cut(({pickup: p}, res) => {
-	if(p("result") === undefined){
+	const result = p("result");
+	if(result === undefined){
 		parentPort?.postMessage("skip test");
 		res.info("skipTest").code(204).send();
 	}

@@ -1,4 +1,4 @@
-import {zod} from "../../scripts";
+import {zod} from "../../../scripts";
 import {workerTesting} from "@duplojs/worker-testing";
 
 export default workerTesting(
@@ -143,16 +143,6 @@ export default workerTesting(
 				"checker result odd",
 				"checker result 2"
 			],
-			response: {
-				code: 204,
-				info: "result",
-			}
-		},
-		{
-			title: "process exit",
-			url: "http://localhost:1506/process/test/7",
-			method: "GET",
-			output: [],
 			response: {
 				code: 204,
 				info: "result",

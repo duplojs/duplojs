@@ -1,7 +1,7 @@
 import {AbstractRoute, AbstractRouteInstance, AbstractRoutes, DeclareAbstractRoute, __abstractRoute__} from "./abstractRoute";
 import {ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {Request} from "./request";
-import {DeclareRoute, RouteExtractObj, condition, mapped} from "./route";
+import {DeclareRoute, RouteExtractObj, condition, mapped} from "./builder/route";
 import makeFloor from "./floor";
 import {UnionToIntersection} from "./utility";
 import {Response} from "./response";

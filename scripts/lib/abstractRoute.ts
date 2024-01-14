@@ -1,71 +1,67 @@
 import {ZodType, ZodError} from "zod";
-import makeFloor, {Floor} from "./floor";
+import {makeFloor, Floor} from "./floor";
 import {AddHooksLifeCycle, ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
-import {PickupDropProcess, ProcessExport, ProcessHandlerFunction, __exitProcess__} from "./process";
-import {DeclareRoute, RouteExtractObj, RouteProcessParams, RouteStepParamsSkip, condition, mapped, spread} from "./route";
-import correctPath from "./correctPath";
+import {PickupDropProcess} from "./system/process";
+import {DeclareRoute, RouteStepParamsSkip} from "./builder/route";
 import {Response} from "./response";
 import {Request} from "./request";
-import {AnyFunction, DescriptionAll, FlatExtract, PromiseOrNot, StepChecker, StepCut, StepProcess} from "./utility";
+import {AnyFunction, DescriptionAll, FlatExtract, StepChecker, StepCut, StepProcess} from "./utility";
 import makeMergeAbstractRoutesSystem from "./mergeAbstractRoute";
-import {Checker, CheckerGetParmas} from "./checker";
+import {Checker, CheckerGetParmas} from "./system/checker";
+import {ErrorExtractFunction, RouteExtractObj, RoutehandlerFunction} from "./duplose/route";
+import {CheckerParamsStep, CutFunction, ProcessParamsStep} from "./step";
+import {Process} from "./duplose/process";
+import {condition, mapped, spread} from "./stringBuilder";
 
 export const __abstractRoute__ = Symbol("abstractRoute");
 
-export interface AbstractRoute<
+
+export class AbstractRoute<
 	options extends Record<string, any> = Record<string, any>,
 	floor extends {} = {},
 >{
-	name: string;
-	localPrefix: string;
-	fullPrefix: string;
-	drop: string[];
-	pickup: string[];
-	options: options;
-	allowExitProcess: boolean;
-	hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>;
-	mergeAbstractRoute?: AbstractRoute[];
-	parentAbstractRoute?: AbstractRoute;
-	extracted: RouteExtractObj;
-	errorExtract: ErrorExtractAbstractRouteFunction<any>;
-	steps: (StepChecker | StepProcess | StepCut)[];
-	handlerFunction?: AbstractRouteHandlerFunction<any, any>;
-	abstractRouteFunction: AbstractRouteFunction;
-	params: AbstractRouteParams<any, any, any>;
-	descs: DescriptionAll[];
-	extends: Record<string, any>;
-	stringFunction: string;
-	editingFunctions: EditingFunctionAbstractRoute[];
-	children: AbstractRoute[];
-	build: () => void;
+	constructor(
+		public name: string,
+		public drop: string[],
+		public pickup: string[],
+		public options: options | undefined,
+		public hooksLifeCyle: ReturnType<typeof makeHooksLifeCycle>,
+		public mergeAbstractRoute: AbstractRoute[] | undefined,
+		public parentAbstractRoute: AbstractRoute | undefined,
+		public extracted: RouteExtractObj,
+		public errorExtract: ErrorExtractFunction<any>,
+		public steps: (StepChecker | StepProcess | StepCut)[],
+		public handlerFunction: RoutehandlerFunction<any, any> | undefined,
+		public abstractRouteFunction: AbstractRouteFunction,
+		public params: AbstractRouteParams<any, any, any>,
+		public descs: DescriptionAll[],
+		public extensions: Record<string, any>,
+		public stringFunction: string,
+		public editingFunctions: EditingFunctionAbstractRoute[],
+		public children: AbstractRoute[],
+		public build: () => void
+	){
+		this.build = this.build.bind(this);
+	}
 }
+
+export class SubAbstractRoute extends AbstractRoute{}
 
 export type EditingFunctionAbstractRoute = (abstractRoute: AbstractRoute) => void;
 
-export type ErrorExtractAbstractRouteFunction<response extends Response> = (response: response, type: keyof RouteExtractObj, index: string, err: ZodError, exitProcess: () => never) => void;
-
 export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
-export interface DeclareAbstractRoute<
+export type DeclareAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
 	options extends {} = {},
 	floor extends {} = {},
->{
-	(
-		name: string, 
-		params?: DeclareAbstractRouteParams<options>, 
-		parentAbstractRoute?: AbstractRoute,
-		...desc: any[]
-	): BuilderPatternAbstractRoute<request, response, extractObj, options, floor>;
-}
-
-export interface  DeclareAbstractRouteParams<options extends {}>{
-	options?: options;
-	allowExitProcess?: boolean;
-	prefix?: string;
-}
+> = (
+	name: string, 
+	parentAbstractRoute?: AbstractRoute,
+	...desc: any[]
+) => BuilderPatternAbstractRoute<request, response, extractObj, options, floor>;
 
 export interface AbstractRouteParams<
 	drop extends string, 
@@ -75,39 +71,6 @@ export interface AbstractRouteParams<
 	pickup?: [drop, ...drop[]] & [pickup, ...pickup[]]; 
 	options?: Partial<options>;
 	ignorePrefix?: boolean;
-}
-
-export type AbstractRouteHandlerFunction<
-	response extends Response,
-	floor extends {},
-> = (floor: Floor<floor>, response: response, exitProcess: () => never) => void;
-
-export type AbstractRouteShort<
-	request extends Request, 
-	response extends Response,
-	returnFloor extends {},
-	floor extends {},
-> = (floor: Floor<floor>, response: response, request: request, exitProcess: () => never) => PromiseOrNot<returnFloor | undefined | void>;
-
-export interface AbstractRouteCheckerParams<
-	checker extends Checker, 
-	response extends Response,
-	floor extends {},
-	info extends string,
-	index extends string,
-	checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
->{
-	input(pickup: Floor<floor>["pickup"]): checkerParams["input"];
-	result?: (info & checkerParams["output"]["info"]) | (info[] & checkerParams["output"]["info"][]);
-	indexing?: index & string;
-	catch(
-		response: response, 
-		info: Exclude<checkerParams["output"], {info: info}>["info"], 
-		data: Exclude<checkerParams["output"], {info: info}>["data"],
-		pickup: Floor<floor>["pickup"], 
-		exitProcess: () => never
-	): void;
-	options?: Partial<checkerParams["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerParams["options"]>);
 }
 
 export interface AbstractRouteUseFunction<
@@ -134,7 +97,7 @@ export interface AbstractRouteInstance<
 	request extends Request = Request,
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-	options extends {} = {},
+	options extends {} = any,
 	floor extends {} = {},
 >{
 	declareRoute<
@@ -155,7 +118,7 @@ export interface AbstractRouteInstance<
 		res extends Response = response,
 		extObj extends RouteExtractObj = extractObj,
 		options extends {} = {},
-	>(name: string, params?: DeclareAbstractRouteParams<options>, ...desc: any[]): ReturnType<
+	>(name: string, ...desc: any[]): ReturnType<
 		DeclareAbstractRoute<
 			request & req, 
 			response & res, 
@@ -172,19 +135,45 @@ export interface BuilderPatternAbstractRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends RouteExtractObj = RouteExtractObj,
-	options extends {} = {},
+	_options extends Record<string, any> = any,
 	floor extends {} = {},
 >{
-	hook: AddHooksLifeCycle<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, request, response>["addHook"];
+	options<
+		options extends Record<string, any>
+	>(options: options): Omit<
+		BuilderPatternAbstractRoute<
+			request,
+			response,
+			extractObj,
+			options,
+			floor & {options: options}
+		>, 
+		"options"
+	>;
+
+	hook: AddHooksLifeCycle<
+		Omit<
+			BuilderPatternAbstractRoute<
+				request, 
+				response, 
+				extractObj, 
+				_options, 
+				floor
+			>,
+			"options"
+		>,
+		request, 
+		response
+	>["addHook"];
 
 	extract<
 		localeExtractObj extends Omit<extractObj, "body">,
 		localFloor extends FlatExtract<localeExtractObj>
 	>(
 		extractObj: localeExtractObj,
-		error?: ErrorExtractAbstractRouteFunction<response>, 
+		error?: ErrorExtractFunction<response>, 
 		...desc: any[]
-	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, options, floor & localFloor>, "hook" | "extract">;
+	): Omit<BuilderPatternAbstractRoute<request, response, extractObj, _options, floor & localFloor>, "hook" | "extract" | "options">;
 
 	check<
 		checker extends Checker,
@@ -194,48 +183,48 @@ export interface BuilderPatternAbstractRoute<
 		checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
 	>(
 		checker: checker, 
-		params: AbstractRouteCheckerParams<checker, response, floor, info, index> & skipObj, 
+		params: CheckerParamsStep<checker, response, floor, info, index> & skipObj, 
 		...desc: any[]
 	): Omit<
 		BuilderPatternAbstractRoute<
 			request, 
 			response, 
 			extractObj, 
-			options, 
+			_options, 
 			floor & {
 				[Property in index]: skipObj["skip"] extends AnyFunction ? 
 					Extract<checkerParams["output"], {info: info}>["data"] | undefined : 
 					Extract<checkerParams["output"], {info: info}>["data"]
 			}
 		>, 
-		"hook" | "extract"
+		"hook" | "extract" | "options"
 	>;
 
 	process<
-		processExport extends ProcessExport,
+		process extends Process,
 		pickup extends string,
 		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
 	>(
-		process: processExport, 
-		params?: RouteProcessParams<processExport, pickup, floor> & skipObj, 
+		process: process, 
+		params?: ProcessParamsStep<process, pickup, floor> & skipObj, 
 		...desc: any[]
 	): Omit<
 		BuilderPatternAbstractRoute<
 			request, 
 			response, 
 			extractObj, 
-			options, 
+			_options, 
 			floor & (
 				skipObj["skip"] extends AnyFunction ? 
-					Partial<PickupDropProcess<processExport, pickup>> :
-					PickupDropProcess<processExport, pickup>
+					Partial<PickupDropProcess<process, pickup>> :
+					PickupDropProcess<process, pickup>
 			)
 		>, 
-		"hook" | "extract"
+		"hook" | "extract" | "options"
 	>;
 
 	cut<localFloor extends {}, drop extends string>(
-		short: AbstractRouteShort<request, response, localFloor, floor>,
+		short: CutFunction<request, response, localFloor, floor>,
 		drop?: drop[] & Extract<keyof localFloor, string>[],
 		...desc: any[]
 	): Omit<
@@ -243,23 +232,23 @@ export interface BuilderPatternAbstractRoute<
 			request, 
 			response, 
 			extractObj, 
-			options, 
+			_options, 
 			floor & Pick<localFloor, drop extends keyof localFloor ? drop : never>
 		>, 
-		"hook" | "extract"
+		"hook" | "extract" | "options"
 	>;
 
 	handler(
-		handlerFunction: AbstractRouteHandlerFunction<response, floor>, 
+		handlerFunction: RoutehandlerFunction<response, floor>, 
 		...desc: any[]
-	): Pick<BuilderPatternAbstractRoute<request, response, extractObj, options, floor>, "build">;
+	): Pick<BuilderPatternAbstractRoute<request, response, extractObj, _options, floor>, "build">;
 	
 	build<
 		drop extends string,
 	>(
 		drop?: (keyof floor)[] & drop[], 
 		...desc: any[]
-	): AbstractRouteUseFunction<request, response, extractObj, options, floor, drop>;
+	): AbstractRouteUseFunction<request, response, extractObj, _options, floor, drop>;
 }
 
 export type AbstractRoutes = Record<string, AbstractRoute>
@@ -267,7 +256,7 @@ export type AbstractRoutes = Record<string, AbstractRoute>
 export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, serverHooksLifeCycle: ServerHooksLifeCycle){
 	const abstractRoutes: AbstractRoutes = {};
 	
-	const declareAbstractRoute: DeclareAbstractRoute = (name, declareParams, parentAbstractRoute, ...desc) => {
+	const declareAbstractRoute: DeclareAbstractRoute = (name, parentAbstractRoute, ...desc) => {
 		const descs: DescriptionAll[] = [];
 		if(desc.length !== 0)descs.push({type: "first", descStep: desc});
 		
@@ -282,6 +271,21 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			hooksLifeCyle.beforeSend.copySubscriber(parentAbstractRoute.hooksLifeCyle.beforeSend.subscribers);
 			hooksLifeCyle.afterSend.copySubscriber(parentAbstractRoute.hooksLifeCyle.afterSend.subscribers);
 		}
+
+		let grapOptions: Record<string, any> | undefined;
+		const options: BuilderPatternAbstractRoute<any, any, any, any, any>["options"] = (options) => {
+			grapOptions = options;
+
+			return {
+				hook,
+				extract,
+				check,
+				build,
+				process,
+				cut,
+				handler,
+			};
+		};
 
 		const hook: BuilderPatternAbstractRoute["hook"] = (name, hookFunction) => {
 			hooksLifeCyle[name].addSubscriber(hookFunction as any);
@@ -298,12 +302,12 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		};
 
 		const extracted: RouteExtractObj = {};
-		let errorExtract: ErrorExtractAbstractRouteFunction<Response> = (response, type, index, err) => {
+		let errorExtract: ErrorExtractFunction<Response> = (response, type, index, err) => {
 			response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
 		};
-		const extract: BuilderPatternAbstractRoute<any, any, RouteExtractObj, any, any>["extract"] = (extractObj, error, ...desc) => {
+		const extract: BuilderPatternAbstractRoute<any, any, RouteExtractObj, any, any>["extract"] = (extractObj: RouteExtractObj, error, ...desc) => {
 			Object.entries(extractObj).forEach(([index, value]) => {
-				extracted[index as keyof RouteExtractObj] = value;
+				extracted[index] = value;
 			});
 			errorExtract = error || errorExtract;
 
@@ -456,7 +460,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			};
 		};
 
-		let grapHandlerFunction: ProcessHandlerFunction<Response, any>;
+		let grapHandlerFunction: RoutehandlerFunction<Response, any>;
 		const handler: BuilderPatternAbstractRoute<any, any, any, any, any>["handler"] = (handlerFunction, ...desc) => {
 			grapHandlerFunction = handlerFunction;
 
@@ -476,138 +480,127 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 				descStep: desc
 			});
 
-			const abstractRoute: AbstractRoute = {
+			const abstractRoute = new AbstractRoute(
 				name,
-				localPrefix: declareParams?.prefix || "",
-				fullPrefix: "",
-				drop: drop || [],
-				pickup: [],
-				options: declareParams?.options || {},
-				allowExitProcess: !!declareParams?.allowExitProcess,
+				drop || [],
+				[],
+				grapOptions,
 				hooksLifeCyle,
+				undefined,
 				parentAbstractRoute,
 				extracted,
 				errorExtract,
 				steps,
-				handlerFunction: grapHandlerFunction,
-				abstractRouteFunction: () => ({}),
-				params: {},
+				grapHandlerFunction,
+				() => ({}),
+				{},
 				descs,
-				extends: {},
-				stringFunction: "",
-				editingFunctions: [],
-				children: [],
-				build: () => {
-					abstractRoute.fullPrefix = (abstractRoute.parentAbstractRoute?.fullPrefix || "") + correctPath(declareParams?.prefix || "");
-					
-					abstractRoute.steps.forEach(value => 
+				{},
+				"",
+				[],
+				[],
+				function(this: AbstractRoute){
+					this.steps.forEach(value => 
 						value.type === "checker" || value.type === "process" ? value.build() : undefined
 					);
 					
-					abstractRoute.stringFunction = abstractRouteFunctionString(
-						!!abstractRoute.options,
-						exitProcessTry(
-							!!abstractRoute.allowExitProcess,
-							spread(
-								condition(
-									!!abstractRoute.parentAbstractRoute,
-									() => parentAbstractRouteString(
-										abstractRoute.parentAbstractRoute?.abstractRouteFunction.constructor.name === "AsyncFunction",
-										mapped(
-											abstractRoute.parentAbstractRoute?.pickup || [],
-											(value) => processDrop(value)
-										)
+					this.stringFunction = abstractRouteFunctionString(
+						!!this.options,
+						spread(
+							condition(
+								!!this.parentAbstractRoute,
+								() => parentAbstractRouteString(
+									this.parentAbstractRoute?.abstractRouteFunction.constructor.name === "AsyncFunction",
+									mapped(
+										this.parentAbstractRoute?.pickup || [],
+										(value) => processDrop(value)
 									)
-								),
-								condition(
-									Object.keys(abstractRoute.extracted).length !== 0,
-									() => extractedTry(
-										mapped(
-											Object.entries(abstractRoute.extracted),
-											([type, value]) => value instanceof ZodType ?
-												extractedType(type) :
-												mapped(
-													Object.keys(value),
-													(key) => extractedTypeKey(type, key)
-												)
-										)
+								)
+							),
+							condition(
+								Object.keys(this.extracted).length !== 0,
+								() => extractedTry(
+									mapped(
+										Object.entries(this.extracted),
+										([type, value]) => value instanceof ZodType ?
+											extractedType(type) :
+											mapped(
+												Object.keys(value || {}),
+												(key) => extractedTypeKey(type, key)
+											)
 									)
-								),
-								condition(
-									abstractRoute.steps.length !== 0,
-									() => mapped(
-										abstractRoute.steps,
-										(step, index) => step.type === "cut" ?
-											cutStep(
-												(step.cutFunction as () => {}).constructor.name === "AsyncFunction", 
+								)
+							),
+							condition(
+								this.steps.length !== 0,
+								() => mapped(
+									this.steps,
+									(step, index) => step.type === "cut" ?
+										cutStep(
+											(step.cutFunction as () => {}).constructor.name === "AsyncFunction", 
+											index,
+											mapped(
+												step.drop,
+												value => processDrop(value)
+											)
+										) :
+										step.type === "checker" ?
+											skipStep(
+												!!step.skip,
 												index,
-												mapped(
-													step.drop,
-													value => processDrop(value)
+												checkerStep(
+													step.handler.constructor.name === "AsyncFunction",
+													index,
+													!!step.result,
+													Array.isArray(step.result),
+													!!step.indexing,
+													typeof step.options === "function",
 												)
 											) :
-											step.type === "checker" ?
-												skipStep(
-													!!step.skip,
+											skipStep(
+												!!step.skip,
+												index,
+												processStep(
+													step.processFunction.constructor.name === "AsyncFunction",
 													index,
-													checkerStep(
-														step.handler.constructor.name === "AsyncFunction",
-														index,
-														!!step.result,
-														Array.isArray(step.result),
-														!!step.indexing,
-														typeof step.options === "function",
-													)
-												) :
-												skipStep(
-													!!step.skip,
-													index,
-													processStep(
-														step.processFunction.constructor.name === "AsyncFunction",
-														index,
-														!!step.input,
-														typeof step.options === "function",
-														mapped(
-															step?.pickup || [],
-															(value) => processDrop(value)
-														)
+													!!step.input,
+													typeof step.options === "function",
+													mapped(
+														step?.pickup || [],
+														(value) => processDrop(value)
 													)
 												)
-									)
+											)
+								)
 									
-								),
-								condition(
-									!!abstractRoute.handlerFunction,
-									() => handlerFunction(
-										abstractRoute.handlerFunction?.constructor.name === "AsyncFunction"
-									)
+							),
+							condition(
+								!!this.handlerFunction,
+								() => handlerFunction(
+									this.handlerFunction?.constructor.name === "AsyncFunction"
 								)
 							)
 						),
 						drop || []
 					);
 
-					abstractRoute.editingFunctions.forEach(editingFunction => editingFunction(abstractRoute));
+					this.editingFunctions.forEach(editingFunction => editingFunction(this));
 
-					abstractRoute.abstractRouteFunction = eval(abstractRoute.stringFunction).bind({
-						parentAbstractRoute: abstractRoute.parentAbstractRoute,
-						extracted: abstractRoute.extracted,
-						errorExtract: abstractRoute.errorExtract,
-						steps: abstractRoute.steps,
-						handlerFunction: abstractRoute.handlerFunction,
-						extends: abstractRoute.extends,
+					this.abstractRouteFunction = eval(this.stringFunction).bind({
+						parentAbstractRoute: this.parentAbstractRoute,
+						extracted: this.extracted,
+						errorExtract: this.errorExtract,
+						steps: this.steps,
+						handlerFunction: this.handlerFunction,
+						extensions: this.extensions,
 
 						makeFloor,
 						ZodError,
-						__exitProcess__,
-						exitProcess: abstractRoute.allowExitProcess ?
-							() => {throw __exitProcess__;} :
-							() => {throw new Error("ExitProcess function is call in abstractRoute who has not 'allowExitProcess' define on true");}
 					}); 
 
 					abstractRoute.children.forEach(child => child.build());
 				}
-			};
+			);
 
 			abstractRoute.build();
 			abstractRoutes[name] = abstractRoute;
@@ -625,7 +618,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 								"params", "descs", "build", "children"
 							].includes(key) || ((subAbstractRoute as any)[key] = value)
 						);
-						subAbstractRoute.fullPrefix = subAbstractRoute.params.ignorePrefix ? "" : abstractRoute.fullPrefix;
+						// subAbstractRoute.fullPrefix = subAbstractRoute.params.ignorePrefix ? "" : abstractRoute.fullPrefix;
 						subAbstractRoute.pickup = subAbstractRoute.params?.pickup || [];
 						subAbstractRoute.options = {
 							...abstractRoute.options,
@@ -645,6 +638,7 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 		};
 
 		return {
+			options,
 			hook,
 			extract,
 			check,
@@ -663,8 +657,8 @@ export default function makeAbstractRoutesSystem(declareRoute: DeclareRoute, ser
 			response extends Response = Response,
 			extractObj extends RouteExtractObj = RouteExtractObj,
 			options extends {} = {},
-		>(name: string, params?: DeclareAbstractRouteParams<options>, ...desc: any[]){
-			return (declareAbstractRoute(name, params, undefined, ...desc) as any) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
+		>(name: string, ...desc: any[]){
+			return (declareAbstractRoute(name, undefined, ...desc) as any) as ReturnType<DeclareAbstractRoute<request, response, extractObj, options, {options: options}>>;
 		},
 		mergeAbstractRoute, 
 		abstractRoutes,
@@ -695,25 +689,6 @@ const abstractRouteFunctionString = (hasOptions: boolean, block: string, returnA
 		
 	}
 )
-`;
-
-const exitProcessTry = (hasTry: boolean, block: string) => hasTry ? /* js */`
-/* before_exit */
-/* end_block */
-try{
-	/* first_line_exit_try */
-	/* end_block */
-	${block}
-}
-catch(error){
-	/* first_line_exit_catch */
-	/* end_block */
-	if(error !== this.__exitProcess__) throw error;
-}
-/* after_exit */
-/* end_block */
-` : `
-${block}
 `;
 
 const parentAbstractRouteString = (async: boolean, drop: string) => /* js */`
@@ -750,7 +725,6 @@ catch(error) {
 		currentExtractedType, 
 		currentExtractedIndex, 
 		error,
-		this.exitProcess,
 	);
 	else throw error;
 }
@@ -787,7 +761,7 @@ floor.drop(
 const cutStep = (async: boolean, index: number, block: string) => /* js */`
 /* before_step_[${index}] */
 /* end_block */
-result = ${async ? "await " : ""}this.steps[${index}].cutFunction(floor, response, request, this.exitProcess);
+result = ${async ? "await " : ""}this.steps[${index}].cutFunction(floor, response, request);
 /* after_step_[${index}] */
 /* end_block */
 ${block}
@@ -811,8 +785,7 @@ if(this.steps[${index}].result !== result.info){
 		response, 
 		result.info, 
 		result.data, 
-		floor.pickup,
-		this.exitProcess
+		floor.pickup
 	);
 }` : ""}
 ${hasResult && resultIsArray ? /* js */`
@@ -821,8 +794,7 @@ if(!this.steps[${index}].result.includes(result.info)){
 		response, 
 		result.info, 
 		result.data, 
-		floor.pickup,
-		this.exitProcess
+		floor.pickup
 	);
 }` : ""}
 
@@ -862,5 +834,5 @@ floor.drop("${key}", result["${key}"]);
 const handlerFunction = (async: boolean) => /* js */`
 /* before_handler */
 /* end_block */
-${async ? "await " : ""}this.handlerFunction(floor, response, this.exitProcess);
+${async ? "await " : ""}this.handlerFunction(floor, response);
 `;

@@ -1,4 +1,4 @@
-import {DuploConfig, DuploInstance} from "../../scripts/index";
+import {DuploConfig, DuploInstance} from "../../../scripts/index";
 import {Abstract2, Abstract5, Abstract6, Abstract7, Abstract8, Abstract9} from "../abstractRoute/abstractRoute";
 
 export const MergeAbstractRoute1 = (duplo: DuploInstance<DuploConfig>) => {

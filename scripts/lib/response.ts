@@ -26,7 +26,7 @@ export class Response{
 
 	information?: string;
 
-	send(data?: any){
+	send(data?: any): never{
 		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 		

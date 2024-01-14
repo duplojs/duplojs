@@ -1,4 +1,4 @@
-import {DuploConfig, DuploInstance, zod} from "../../scripts/index";
+import {DuploConfig, DuploInstance, zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {IsOdd} from "../checker/checker";
 import {HasRight} from "../process/process";

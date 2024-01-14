@@ -1,4 +1,4 @@
-import {zod} from "../../scripts";
+import {zod} from "../../../scripts";
 import {workerTesting} from "@duplojs/worker-testing";
 
 export default workerTesting(

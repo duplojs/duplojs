@@ -1,4 +1,3 @@
-import {rejects} from "assert";
 import {Request} from "./request";
 
 type parseFunction = (request: Request) => void | Promise<void>;

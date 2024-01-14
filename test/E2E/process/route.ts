@@ -1,6 +1,6 @@
-import Duplo, {zod} from "../../scripts/index";
+import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
-import {IsAdmin, IsCustomer, IsManager, IsOwner, IsUser, ProcessExit} from "./process";
+import {IsAdmin, IsCustomer, IsManager, IsOwner, IsUser} from "./process";
 
 const duplo = Duplo({port: 1506, host: "localhost"});
 
@@ -9,7 +9,6 @@ const isManager = IsManager(duplo);
 const isCustomer = IsCustomer(duplo);
 const isOwner = IsOwner(duplo);
 const isUser = IsUser(duplo);
-const processExit = ProcessExit(duplo);
 
 duplo.declareRoute("GET", "/process/test/1")
 .process(
@@ -79,10 +78,6 @@ duplo.declareRoute("GET", "/process/test/6")
 		})
 	}
 )
-.handler(({pickup: p}, res) => res.code(204).info("result").send());
-
-duplo.declareRoute("GET", "/process/test/7")
-.process(processExit)
 .handler(({pickup: p}, res) => res.code(204).info("result").send());
 
 duplo.launch(() => parentPort?.postMessage("ready"));

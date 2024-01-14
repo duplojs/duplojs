@@ -1,6 +1,9 @@
 import {IncomingHttpHeaders, IncomingMessage} from "http";
 import fastQueryString from "fast-querystring";
 
+export type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
+
+
 export class Request{
 	constructor(
 		request: InstanceType<typeof IncomingMessage>, 
@@ -9,7 +12,7 @@ export class Request{
 	){
 		const [path, query] = (request.url ?? "").split("?");
 		this.rawRequest = request;
-		this.method = request.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
+		this.method = request.method as methods;
 		this.headers = request.headers;
 		this.url = request.url || "";
 		this.host = request.headers.host || "";
@@ -22,7 +25,7 @@ export class Request{
 
 	rawRequest: InstanceType<typeof IncomingMessage>;
 
-	method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
+	method: methods;
 
 	headers: IncomingHttpHeaders;
 

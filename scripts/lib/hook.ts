@@ -1,9 +1,9 @@
 import {AbstractRoute} from "./abstractRoute";
-import {Checker} from "./checker";
-import {ProcessExport} from "./process";
+import {Checker} from "./duplose/checker";
+import {Process} from "./duplose/process";
+import {Route} from "./duplose/route";
 import {Request} from "./request";
 import {Response} from "./response";
-import {Route} from "./route";
 import {PromiseOrNot} from "./utility";
 import {IncomingMessage, ServerResponse} from "http";
 
@@ -97,7 +97,7 @@ export function makeServerHooksLifeCycle(){
 		onDeclareRoute: makeHook<((route: Route) => PromiseOrNot<true | void>)>(1),
 		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRoute) => PromiseOrNot<true | void>)>(1),
 		onCreateChecker: makeHook<((checker: Checker) => PromiseOrNot<true | void>)>(1),
-		onCreateProcess: makeHook<((process: ProcessExport) => PromiseOrNot<true | void>)>(1),
+		onCreateProcess: makeHook<((process: Process) => PromiseOrNot<true | void>)>(1),
 		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onClose: makeHook<(() => PromiseOrNot<true | void>)>(0),
 		onServerError: makeHook<((serverRequest: IncomingMessage, serverResponse: ServerResponse, error: Error) => PromiseOrNot<true | void>)>(3),
