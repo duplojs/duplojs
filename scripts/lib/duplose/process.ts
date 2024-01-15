@@ -5,101 +5,35 @@ import {HooksLifeCycle, makeHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
 import {AnyFunction, DescriptionAll} from "../utility";
-import {ErrorExtractFunction, RouteExtractObj, RoutehandlerFunction} from "./route";
 import {handlerFunctionString, processFunctionString} from "../stringBuilder/process";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, processDrop, processStep, skipStep} from "../stringBuilder/route";
 import {CutStep} from "../step/cut";
 import {ProcessStep} from "../step/process";
 import {CheckerStep} from "../step/checker";
+import {DuploConfig} from "../main";
+import {Duplose, ExtractObject} from ".";
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
 
 export type EditingFunctionProcess = (process: Process) => void;
 
-export class Process<
+export abstract class Process<
 	input extends any = any, 
 	options extends Record<string, any> = any, 
-	extractObj extends RouteExtractObj = RouteExtractObj,
+	extractObj extends ExtractObject = ExtractObject,
 	floor extends Record<any, any> = Record<any, any>,
 	drop extends string = string,
->{
-	public hooksLifeCyle: HooksLifeCycle<Request, Response> = makeHooksLifeCycle();
-	public extracted: RouteExtractObj = {};
-	public steps: (CheckerStep | ProcessStep | CutStep)[] = [];
-	public errorExtract: ErrorExtractFunction<Response> = (response, type, index, err) => {
-		response.code(400).info(`TYPE_ERROR.${type}${index ? "." + index : ""}`).send();
-	};
-	public descs: DescriptionAll[] = [];
-	public handlerFunction?: RoutehandlerFunction<any, any>;
-	public processFunction: ProcessFunction = () => ({});
-	public editingFunctions: EditingFunctionProcess[] = [];
-	public extensions: Record<string, any> = {};
-	public stringFunction: string = "";
+> extends Duplose<ProcessFunction, EditingFunctionProcess>{
 	public drop: drop[] = [];
 	public options?: options;
 	public input?: ((pickup: Floor<Record<string, unknown>>["pickup"]) => input);
 
 	constructor(
 		public name: string,
-	)
-	{}
-
-	setExtract(extractObj: RouteExtractObj, error: ErrorExtractFunction<Response> | undefined, desc: any[]){
-		this.extracted = extractObj;
-		if(error){
-			this.errorExtract = error;
-		}
-
-		this.addDesc("extracted", desc);
-
-	}
-
-	addStepProcess(processStep: ProcessStep, desc: any[]){
-		Object.keys(this.hooksLifeCyle).forEach((key) => {
-			this.hooksLifeCyle[key].copySubscriber(
-				processStep.process.hooksLifeCyle[key].subscribers as AnyFunction[],
-			);
-		});
-
-		this.steps.push(processStep);
-
-		if(desc.length !== 0){
-			this.descs.push({
-				type: "process", 
-				descStep: desc,
-				index: this.steps.length - 1
-			});
-		}
-	}
-	
-	addStepChecker(checkerStep: CheckerStep, desc: any[]){
-		this.steps.push(checkerStep);
-
-		if(desc.length !== 0){
-			this.descs.push({
-				type: "checker", 
-				descStep: desc,
-				index: this.steps.length - 1
-			});
-		}
-	}
-	
-	addStepCut(cutStep: CutStep, desc: any[]){
-		this.steps.push(cutStep);
-
-		if(desc.length !== 0){
-			this.descs.push({
-				type: "cut", 
-				descStep: desc,
-				index: this.steps.length - 1
-			});
-		}
-	}
-
-	setHandler(handlerFunction: RoutehandlerFunction<Response, {}>, desc: any[]){
-		this.handlerFunction = handlerFunction;
-
-		this.addDesc("handler", desc);
+		desc: any[],
+	){
+		super();
+		this.addDesc("first", desc);
 	}
 
 	setDrop(drop: any[], desc: any[]){
@@ -120,19 +54,10 @@ export class Process<
 		this.addDesc("input", desc);
 	}
 
-	addDesc(type: DescriptionAll["type"], desc: any[]){
-		if(desc.length !== 0){
-			this.descs.push({
-				type: (type as any), 
-				descStep: desc
-			});
-		}
-	}
-
 	build(){
 		this.steps.forEach(value => value.build());
 
-		this.stringFunction = processFunctionString(
+		this.stringDuploseFunction = processFunctionString(
 			!!this.input,
 			!!this.options,
 			spread(
@@ -193,22 +118,23 @@ export class Process<
 					)
 				),
 				condition(
-					!!this.handlerFunction,
+					!!this.handler,
 					() => handlerFunctionString(
-						this.handlerFunction?.constructor.name === "AsyncFunction"
+						this.handler?.constructor.name === "AsyncFunction"
 					)
 				)
 			),
 			this.drop || []
 		);
 
-		this.editingFunctions.forEach(editingFunction => editingFunction(this));
+		this.editingDuploseFunctions.forEach(editingFunction => editingFunction(this));
 
-		this.processFunction = eval(this.stringFunction).bind({
+		this.duploseFunction = eval(this.stringDuploseFunction).bind({
+			config: this.config,
 			extracted: this.extracted,
 			errorExtract: this.errorExtract,
 			steps: this.steps, 
-			handlerFunction: this.handlerFunction,
+			handlerFunction: this.handler,
 			extensions: this.extensions,
 
 			ZodError,
@@ -216,3 +142,6 @@ export class Process<
 		});
 	}
 }
+
+//@ts-ignore
+export class ExtendsProcess extends Process<any, any, any, any, any>{}

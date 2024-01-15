@@ -59,12 +59,37 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 	const hooksLifeCyle = makeHooksLifeCycle();
 	const serverHooksLifeCycle = makeServerHooksLifeCycle();
 
-	const {addContentTypeParsers, buildContentTypeBody, parseContentTypeBody} = makeContentTypeParserSystem();
-	const {createChecker, checkers} = makeCheckerSystem(serverHooksLifeCycle);
-	const {createProcess, processes} = makeProcessSystem(serverHooksLifeCycle);
-	const {declareRoute, setErrorHandler, setDefaultErrorExtract, routes, Route} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
-	const {abstractRoutes} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
-	const {findRoute, buildRouter, setNotfoundHandler} = makeRouterSystem(config, Route, routes);
+	const {
+		addContentTypeParsers, 
+		buildContentTypeBody, 
+		parseContentTypeBody
+	} = makeContentTypeParserSystem();
+	const {
+		createChecker, 
+		checkers
+	} = makeCheckerSystem(serverHooksLifeCycle);
+	const {
+		createProcess, 
+		setDefaultErrorExtract: processSetDefaultErrorExtract,
+		processes,
+		Process,
+	} = makeProcessSystem(config, serverHooksLifeCycle);
+	const {
+		declareRoute, 
+		setErrorHandler, 
+		setDefaultErrorExtract: routeSetDefaultErrorExtract, 
+		routes, 
+		Route,
+	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
+	const {
+		abstractRoutes,
+	} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
+	const {
+		findRoute, 
+		buildRouter, 
+		setNotfoundHandler, 
+		buildedRouter,
+	} = makeRouterSystem(config, Route, routes);
 
 	const server = http.createServer( 
 		async(serverRequest, serverResponse) => {
@@ -146,7 +171,10 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		addContentTypeParsers,
 		// declareAbstractRoute,
 		// mergeAbstractRoute,
-		setDefaultErrorExtract,
+		setDefaultErrorExtract: (errorExtract) => {
+			processSetDefaultErrorExtract(errorExtract);
+			routeSetDefaultErrorExtract(errorExtract);
+		},
 		use: (input, options) => input(duploInstance, options),
 		routes,
 		checkers,

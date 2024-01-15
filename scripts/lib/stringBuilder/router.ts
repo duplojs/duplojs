@@ -15,7 +15,7 @@ export const routerStringFunction = (block: string) => /* js */`(
 export const matchRoute = (regex: string, index: number, path: string) => /* js */`
 result = ${regex}.exec(path);
 if(result !== null) return {
-	routeFunction: this.routes[${index}].routeFunction,
+	routeFunction: this.routes[${index}].duploseFunction,
 	params: result.groups || {},
 	matchedPath: "${path}",
 };

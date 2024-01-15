@@ -47,9 +47,7 @@ export class AbstractRoute<
 
 export class SubAbstractRoute extends AbstractRoute{}
 
-export type EditingFunctionAbstractRoute = (abstractRoute: AbstractRoute) => void;
 
-export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
 export type DeclareAbstractRoute<
 	request extends Request = Request, 

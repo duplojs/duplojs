@@ -4,18 +4,18 @@ import {Floor} from "../floor";
 import {Request} from "../request";
 import {Response} from "../response";
 import {AnyFunction, FlatExtract} from "../utility";
-import {Process as DefaultProcess} from "../duplose/process";
-import {ErrorExtractFunction, RouteExtractObj, RoutehandlerFunction} from "../duplose/route";
+import {Process as DefaultProcess, ExtendsProcess} from "../duplose/process";
 import {Processes} from "../system/process";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
 import {CheckerParamsStep, CheckerStep} from "../step/checker";
 import {CutFunction, ProcessParamsStep, ProcessStep} from "../step/process";
 import {CutStep} from "../step/cut";
+import {ErrorExtractFunction, ExtractObject, HandlerFunction} from "../duplose";
 
 export type CreateProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
-	extractObj extends RouteExtractObj = RouteExtractObj,
+	extractObj extends ExtractObject = ExtractObject,
 > = (
 	name: string, 
 	...desc: any[]
@@ -33,7 +33,7 @@ export type PickupDropProcess<
 export interface BuilderPatternProcess<
 	request extends Request = Request, 
 	response extends Response = Response,
-	extractObj extends RouteExtractObj = RouteExtractObj,
+	extractObj extends ExtractObject = ExtractObject,
 	_options extends Record<string, any> = any,
 	_input extends any = any,
 	floor extends {} = {},
@@ -174,7 +174,7 @@ export interface BuilderPatternProcess<
 	>;
 
 	handler(
-		handlerFunction: RoutehandlerFunction<response, floor>, 
+		handlerFunction: HandlerFunction<response, floor>, 
 		...desc: any[]
 	): Pick<
 		BuilderPatternProcess<
@@ -196,11 +196,11 @@ export interface BuilderPatternProcess<
 
 export function makeProcessBuilder(
 	serverHooksLifeCycle: ServerHooksLifeCycle,
-	Process: typeof DefaultProcess,
+	Process: typeof ExtendsProcess,
 	processes: Processes
 ){
 	const createProcess: CreateProcess = (name, ...desc) => {
-		const currentProcess = new Process<any, any, any, any, any>(name);
+		const currentProcess = new Process(name, desc);
 
 		const options: BuilderPatternProcess<any, any, any, any, any, any>["options"] = (options, ...desc) => {
 			currentProcess.setOptions(options, desc);
@@ -247,9 +247,8 @@ export function makeProcessBuilder(
 
 		if(desc.length !== 0)currentProcess.descs.push({type: "first", descStep: desc});
 
-		const extract: BuilderPatternProcess<any, any, any, any, any, any>["extract"] = (extractObj: RouteExtractObj, error?, ...desc) => {
+		const extract: BuilderPatternProcess<any, any, any, any, any, any>["extract"] = (extractObj, error?, ...desc) => {
 			currentProcess.setExtract(extractObj, error, desc);
-
 			return {
 				handler,
 				check,
@@ -306,11 +305,6 @@ export function makeProcessBuilder(
 
 		const handler: BuilderPatternProcess<any, any, any, any, any, any>["handler"] = (handlerFunction, ...desc) => {
 			currentProcess.setHandler(handlerFunction, desc);
-
-			if(desc.length !== 0)currentProcess.descs.push({
-				type: "handler", 
-				descStep: desc
-			});
 
 			return {
 				build

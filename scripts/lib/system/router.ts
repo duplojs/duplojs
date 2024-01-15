@@ -30,7 +30,7 @@ export function makeRouterSystem(
 ){
 	const buildedRouter: BuildedRouter = {};
 
-	const notfoundRoute = new Route("GET", ["*"], undefined);
+	const notfoundRoute = new Route("GET", ["*"], undefined, []);
 	const cutStep = new CutStep(
 		({}, response, request) => {
 			response.code(404).info("NOTFOUND").send(`${request.method}:${request.path} not found`);
@@ -47,7 +47,7 @@ export function makeRouterSystem(
 
 	const findRoute = (method: methods, path: string) => {
 		if(!buildedRouter[method]) return {
-			routeFunction: notfoundRoute.routeFunction,
+			routeFunction: notfoundRoute.duploseFunction,
 			params: {},
 			matchedPath: null,
 		};
@@ -80,7 +80,7 @@ export function makeRouterSystem(
 
 			buildedRouter[method] = eval(stringFunction).bind({
 				routes,
-				notfoundHandlerFunction: notfoundRoute.routeFunction, 
+				notfoundHandlerFunction: notfoundRoute.duploseFunction, 
 			});
 		});
 	};

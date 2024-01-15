@@ -1,10 +1,11 @@
 import makeContentTypeParserSystem from "../contentTypeParser";
 import {HooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {DuploConfig} from "../main";
-import {Route as DefaultRoute, ErrorExtractFunction, RouteErrorHandlerFunction} from "../duplose/route";
+import {Route as DefaultRoute, RouteErrorHandlerFunction} from "../duplose/route";
 import {methods} from "../request";
 import {makeRouteBuilder} from "../builder/route";
 import {Response} from "../response";
+import {ErrorExtractFunction} from "../duplose";
 
 export type Routes = Record<methods, DefaultRoute[]>;
 

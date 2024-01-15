@@ -5,18 +5,19 @@ import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {PickupDropProcess} from "../builder/process";
 import {AbstractRoute} from "../abstractRoute";
 import {AnyFunction, FlatExtract} from "../utility";
-import {ErrorExtractFunction, Route as DefaultRoute, RouteExtractObj, RoutehandlerFunction, ExtendsRoute} from "../duplose/route";
+import {Route as DefaultRoute, ExtendsRoute} from "../duplose/route";
 import {Process} from "../duplose/process";
 import {Routes} from "../system/route";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
 import {CheckerParamsStep, CheckerStep} from "../step/checker";
 import {CutFunction, ProcessParamsStep, ProcessStep} from "../step/process";
 import {CutStep} from "../step/cut";
+import {ErrorExtractFunction, ExtractObject, HandlerFunction} from "../duplose";
 
 export type DeclareRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
-	extractObj extends RouteExtractObj = RouteExtractObj,
+	extractObj extends ExtractObject = ExtractObject,
 	floor extends {} = {},
 > = (
 	method: methods, 
@@ -30,7 +31,7 @@ export type RouteStepParamsSkip<floor extends {}> = (pickup: Floor<floor>["picku
 export interface BuilderPatternRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
-	extractObj extends RouteExtractObj = RouteExtractObj,
+	extractObj extends ExtractObject = ExtractObject,
 	floor extends {} = {},
 >{
 	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj, floor>, request, response>["addHook"];
@@ -104,7 +105,7 @@ export interface BuilderPatternRoute<
 		"hook" | "extract"
 	>;
 
-	handler(handlerFunction: RoutehandlerFunction<response, floor>, ...desc: any[]): DefaultRoute;
+	handler(handlerFunction: HandlerFunction<response, floor>, ...desc: any[]): DefaultRoute;
 }
 
 export function makeRouteBuilder(
@@ -116,10 +117,9 @@ export function makeRouteBuilder(
 		const currentRoute = new Route(
 			method, 
 			paths instanceof Array ? paths : [paths], 
-			abstractRoute
+			abstractRoute,
+			desc
 		);
-		if(abstractRoute)currentRoute.descs.push(...abstractRoute.descs);
-		if(desc.length !== 0)currentRoute.descs.push({type: "first", descStep: desc});
 
 		const hook: BuilderPatternRoute["hook"] = (name, hookFunction: AnyFunction) => {
 			currentRoute.hooksLifeCyle[name].addSubscriber(hookFunction);
