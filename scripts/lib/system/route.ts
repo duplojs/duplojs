@@ -14,7 +14,7 @@ export interface RouteEditableProperty{
 	defaultErrorExtract: ErrorExtractFunction<Response>,
 }
 
-export function makeRoutesSystem(
+export function makeRouteSystem(
 	config: DuploConfig, 
 	mainHooksLifeCyle: HooksLifeCycle, 
 	serverHooksLifeCycle: ServerHooksLifeCycle,

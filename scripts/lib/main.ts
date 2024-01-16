@@ -6,10 +6,13 @@ import makeCheckerSystem, {Checkers} from "./system/checker.ts";
 import correctPath from "./correctPath.ts";
 import {makeProcessSystem, Processes} from "./system/process.ts";
 import makeContentTypeParserSystem from "./contentTypeParser.ts";
-import makeAbstractRoutesSystem, {AbstractRoutes} from "./abstractRoute.ts";
 import {deepFreeze, deleteDescriptions, rebuildAbstractRoutes, rebuildProcesses, rebuildRoutes} from "./utility.ts";
 import {makeRouterSystem} from "./system/router.ts";
-import {Routes, makeRoutesSystem} from "./system/route.ts";
+import {Routes, makeRouteSystem} from "./system/route.ts";
+import {AbstractRoutes, makeAbstractRouteSystem} from "./system/abstractRoute.ts";
+import {ExtractObject} from "./duplose/index.ts";
+import {BuilderPatternRoute} from "./builder/route.ts";
+import {BuilderPatternAbstractRoute, DeclareAbstractRoute} from "./builder/abstractRoute.ts";
 
 export interface DuploConfig{
 	port: number,
@@ -33,15 +36,15 @@ export interface DuploInstance<duploConfig extends DuploConfig> {
 	config: duploConfig;
 	launch(onReady?: () => void): DuploInstance<duploConfig>["server"];
 	addHook: AddHooksLifeCycle<DuploInstance<duploConfig>>["addHook"] & AddServerHooksLifeCycle<DuploInstance<duploConfig>>["addHook"];
-	declareRoute: ReturnType<typeof makeRoutesSystem>["declareRoute"];
+	declareRoute: ReturnType<typeof makeRouteSystem>["declareRoute"];
 	createChecker: ReturnType<typeof makeCheckerSystem>["createChecker"];
 	setNotfoundHandler: ReturnType<typeof makeRouterSystem>["setNotfoundHandler"];
-	setErrorHandler: ReturnType<typeof makeRoutesSystem>["setErrorHandler"];
+	setErrorHandler: ReturnType<typeof makeRouteSystem>["setErrorHandler"];
 	createProcess: ReturnType<typeof makeProcessSystem>["createProcess"];
 	addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
-	declareAbstractRoute: ReturnType<typeof makeRoutesSystem>["declareAbstractRoute"];
+	declareAbstractRoute: DeclareAbstractRoute;
 	mergeAbstractRoute: ReturnType<typeof makeRoutesSystem>["mergeAbstractRoute"];
-	setDefaultErrorExtract: ReturnType<typeof makeRoutesSystem>["setDefaultErrorExtract"];
+	setDefaultErrorExtract: ReturnType<typeof makeRouteSystem>["setDefaultErrorExtract"];
 	use<
 		duploInputFunction extends ((instance: DuploInstance<duploConfig>, options: any) => any)
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
@@ -80,10 +83,13 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		setDefaultErrorExtract: routeSetDefaultErrorExtract, 
 		routes, 
 		Route,
-	} = makeRoutesSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
+	} = makeRouteSystem(config, hooksLifeCyle, serverHooksLifeCycle, parseContentTypeBody);
 	const {
+		declareAbstractRoute,
+		setDefaultErrorExtract: abstractRouteSetDefaultErrorExtract,
+		AbstractRoute,
 		abstractRoutes,
-	} = makeAbstractRoutesSystem(declareRoute, serverHooksLifeCycle);
+	} = makeAbstractRouteSystem(config, serverHooksLifeCycle, declareRoute);
 	const {
 		findRoute, 
 		buildRouter, 
@@ -163,17 +169,30 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 			return server;
 		},
 		addHook,
-		declareRoute,
+		declareRoute<
+			request extends Request = Request, 
+			response extends Response = Response,
+			extractObj extends ExtractObject = ExtractObject,
+		>(method: methods, path: string | string[], ...desc: any[]){
+			return declareRoute(method, path, undefined, ...desc) as BuilderPatternRoute<request, response, extractObj>;
+		},
+		declareAbstractRoute<
+			request extends Request = Request, 
+			response extends Response = Response,
+			extractObj extends ExtractObject = ExtractObject
+		>(name: string, ...desc: any[]){
+			return declareAbstractRoute(name, undefined, ...desc) as BuilderPatternAbstractRoute<request, response, extractObj>;
+		},
 		createChecker,
+		createProcess,
 		setNotfoundHandler,
 		setErrorHandler,
-		createProcess,
 		addContentTypeParsers,
-		// declareAbstractRoute,
 		// mergeAbstractRoute,
 		setDefaultErrorExtract: (errorExtract) => {
 			processSetDefaultErrorExtract(errorExtract);
 			routeSetDefaultErrorExtract(errorExtract);
+			abstractRouteSetDefaultErrorExtract(errorExtract);
 		},
 		use: (input, options) => input(duploInstance, options),
 		routes,

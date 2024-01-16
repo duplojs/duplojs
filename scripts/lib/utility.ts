@@ -97,8 +97,8 @@ export interface DescriptionHandler{
 	descStep: any[],
 }
 
-export interface DescriptionBuild{
-	type: "build",
+export interface DescriptionDrop{
+	type: "drop",
 	descStep: any[],
 }
 
@@ -122,7 +122,7 @@ export type DescriptionAll =
 	| DescriptionExtracted 
 	| DescriptionStep 
 	| DescriptionHandler 
-	| DescriptionBuild 
+	| DescriptionDrop 
 	| DescriptionAbstract 
 	| DescriptionOptions 
 	| DescriptionInput

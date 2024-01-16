@@ -4,6 +4,8 @@ import {IsOdd} from "./checker";
 
 const duplo = Duplo({port: 1506, host: "localhost"});
 
+console.log(duplo);
+
 const isOdd = IsOdd(duplo);
 
 duplo.declareRoute("GET", "/checker/test/1")

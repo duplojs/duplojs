@@ -1,4 +1,4 @@
-import {AbstractRoute} from "./abstractRoute";
+import {AbstractRoute} from "./duplose/abstractRoute";
 import {Checker} from "./duplose/checker";
 import {Process} from "./duplose/process";
 import {Route} from "./duplose/route";

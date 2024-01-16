@@ -30,24 +30,25 @@ export type ErrorExtractFunction<
 	err: ZodError
 ) => void
 
-export abstract class Duplose<duploseFunction, editingDuploseFunctions>{
+export abstract class Duplose<_duploseFunction, _editingDuploseFunctions>{
 	public hooksLifeCyle: HooksLifeCycle<Request, Response> = makeHooksLifeCycle();
 	public extracted: ExtractObject = {};
 	public errorExtract: ErrorExtractFunction<Response> = () => {};
 	public steps: (CheckerStep | ProcessStep | CutStep)[] = [];
-	public handler: HandlerFunction<any, any> = () => {};
+	public handler?: HandlerFunction<any, any> = () => {};
 
 	public descs: DescriptionAll[] = [];
 	public extensions: Record<string, any> = {};
 	public stringDuploseFunction: string = "";
-	public duploseFunction: duploseFunction = (() => {}) as any;
-	public editingDuploseFunctions: editingDuploseFunctions[] = [];
+	public duploseFunction: _duploseFunction = (() => {}) as any;
+	public editingDuploseFunctions: _editingDuploseFunctions[] = [];
 
 	public abstract get config(): DuploConfig;
 	public abstract get defaultErrorExtract(): ErrorExtractFunction<Response>;
 
-	constructor(){
+	constructor(desc: any[]){
 		this.setExtract({}, undefined, []);
+		this.addDesc("first", desc);
 	}
 
 	setExtract(extractObj: ExtractObject, error: ErrorExtractFunction<Response> | undefined, desc: any[]){

@@ -49,6 +49,6 @@ export class ProcessStep extends Step{
 		this.skip = this.params.skip;
 		this.pickup = this.params.pickup;
 		this.input = this.params.input || this.process?.input;
-		this.processFunction = this.process.processFunction;
+		this.processFunction = this.process.duploseFunction;
 	}
 }

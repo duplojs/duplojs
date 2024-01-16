@@ -85,13 +85,13 @@ export const routeFunctionString = (
 )
 `;
 
-export const abstractRouteString = (async: boolean, drop: string) => /* js */`
+export const subAbstractRouteString = (async: boolean, drop: string) => /* js */`
 /* before_abstract_route */
 /* end_block */
-result = ${async ? "await " : ""}this.abstractRoute.abstractRouteFunction(
+result = ${async ? "await " : ""}this.subAbstractRoute.duploseFunction(
 	request, 
 	response, 
-	this.abstractRoute.options,
+	this.subAbstractRoute.options,
 );
 /* after_abstract_route */
 /* end_block */

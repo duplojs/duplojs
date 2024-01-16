@@ -1,113 +1,49 @@
+import {ZodError, ZodType} from "zod";
 import {Duplose} from "..";
-import {HooksLifeCycle, makeHooksLifeCycle} from "../../hook";
-import {DuploConfig} from "../../main";
 import {Request} from "../../request";
 import {Response} from "../../response";
 import {CheckerStep} from "../../step/checker";
 import {CutStep} from "../../step/cut";
-import {ProcessStep} from "../../step/process";
-import {AnyFunction, DescriptionAll} from "../../utility";
-import {ErrorExtractFunction, RouteExtractObj, RoutehandlerFunction} from "../route";
+import {condition, mapped, spread} from "../../stringBuilder";
+import {abstractRouteFunctionString} from "../../stringBuilder/abstractRoute";
+import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, processDrop, processStep, skipStep, subAbstractRouteString} from "../../stringBuilder/route";
+import {AnyFunction} from "../../utility";
+import {handlerFunctionString} from "../../stringBuilder/process";
+import {makeFloor} from "../../floor";
+import {SubAbstractRoute, SubAbstractRouteParams} from "./sub";
 
 export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
 export type EditingFunctionAbstractRoute = (abstractRoute: AbstractRoute) => void;
 
 export abstract class AbstractRoute<
-	options extends Record<string, any> = any,
-	floor extends {} = {},
-> extends Duplose{
-	public hooksLifeCyle: HooksLifeCycle<Request, Response> = makeHooksLifeCycle();
-	public extracted: RouteExtractObj = {};
-	public errorExtract: ErrorExtractFunction<Response> = () => {};
-	public steps: (CheckerStep | ProcessStep | CutStep)[] = [];
-	public handlerFunction?: RoutehandlerFunction<any, any>;
-	public abstractRouteFunction: AbstractRouteFunction = () => ({});
-	public editingFunctions: EditingFunctionAbstractRoute[] = [];
-	public extensions: Record<string, any> = {};
-	public stringFunction: string = "";
+	_options extends Record<string, any> = any,
+	_floor extends {} = {},
+> extends Duplose<AbstractRouteFunction, EditingFunctionAbstractRoute>{
 	public drop: string[] = [];
-	public options?: options;
+	public options?: _options;
+	public children: SubAbstractRoute[] = [];
 
-	public abstract get config(): DuploConfig;
-	public abstract get defaultErrorExtract(): ErrorExtractFunction<Response>;
-	
 	constructor(
 		public name: string,
-		public parentAbstractRoute: AbstractRoute | undefined,
+		public subAbstractRoute: SubAbstractRoute | undefined,
 		desc: any[],
 	){	
-		this.setExtract({}, undefined, []);
-		if(parentAbstractRoute){
+		super(desc);
+		if(subAbstractRoute){
 			Object.keys(this.hooksLifeCyle).forEach((key) => {
 				this.hooksLifeCyle[key].copySubscriber(
-					parentAbstractRoute.hooksLifeCyle[key].subscribers as AnyFunction[]
+					subAbstractRoute.hooksLifeCyle[key].subscribers as AnyFunction[]
 				);
 			});
-			parentAbstractRoute.descs.push(...parentAbstractRoute.descs);
+			this.addDesc("abstract", subAbstractRoute.desc);
 		}
-		this.addDesc("first", desc);
-	}
-
-	setExtract(extractObj: RouteExtractObj, error: ErrorExtractFunction<Response> | undefined, desc: any[]){
-		this.extracted = extractObj;
-		this.errorExtract = error || this.defaultErrorExtract;
-
-		this.addDesc("extracted", desc);
-	}
-
-	addStepProcess(processStep: ProcessStep, desc: any[]){
-		Object.keys(this.hooksLifeCyle).forEach((key) => {
-			this.hooksLifeCyle[key].copySubscriber(
-				processStep.process.hooksLifeCyle[key].subscribers as AnyFunction[],
-			);
-		});
-
-		this.steps.push(processStep);
-
-		if(desc.length !== 0){
-			this.descs.push({
-				type: "process", 
-				descStep: desc,
-				index: this.steps.length - 1
-			});
-		}
-	}
-	
-	addStepChecker(checkerStep: CheckerStep, desc: any[]){
-		this.steps.push(checkerStep);
-
-		if(desc.length !== 0){
-			this.descs.push({
-				type: "checker", 
-				descStep: desc,
-				index: this.steps.length - 1
-			});
-		}
-	}
-	
-	addStepCut(cutStep: CutStep, desc: any[]){
-		this.steps.push(cutStep);
-
-		if(desc.length !== 0){
-			this.descs.push({
-				type: "cut", 
-				descStep: desc,
-				index: this.steps.length - 1
-			});
-		}
-	}
-
-	setHandler(handlerFunction: RoutehandlerFunction<Response, {}>, desc: any[]){
-		this.handlerFunction = handlerFunction;
-
-		this.addDesc("handler", desc);
 	}
 
 	setDrop(drop: any[], desc: any[]){
 		this.drop = drop || [];
 			
-		this.addDesc("build", desc);
+		this.addDesc("drop", desc);
 	}
 
 	setOptions(options: any, desc: any[]){
@@ -116,15 +52,112 @@ export abstract class AbstractRoute<
 		this.addDesc("options", desc);
 	}
 
-	addDesc(
-		type: Exclude<DescriptionAll["type"], "cut" | "checker" | "process">, 
-		desc: any[]
-	){
-		if(desc.length !== 0){
-			this.descs.push({
-				type, 
-				descStep: desc
-			});
-		}
+	createSub(params: SubAbstractRouteParams, desc: any[]){
+		const sub = new SubAbstractRoute(this, params, desc);
+		this.children.push(sub);
+		return sub;
+	}
+
+	build(){
+		this.steps.forEach(value => value.build());
+			
+		this.stringDuploseFunction = abstractRouteFunctionString(
+			!!this.options,
+			spread(
+				condition(
+					!!this.subAbstractRoute,
+					() => subAbstractRouteString(
+						this.subAbstractRoute?.duploseFunction.constructor.name === "AsyncFunction",
+						mapped(
+							this.subAbstractRoute?.params.pickup || [],
+							(value) => processDrop(value)
+						)
+					)
+				),
+				condition(
+					Object.keys(this.extracted).length !== 0,
+					() => extractedTry(
+						mapped(
+							Object.entries(this.extracted),
+							([type, value]) => value instanceof ZodType ?
+								extractedType(type) :
+								mapped(
+									Object.keys(value || {}),
+									(key) => extractedTypeKey(type, key)
+								)
+						)
+					)
+				),
+				condition(
+					this.steps.length !== 0,
+					() => mapped(
+						this.steps,
+						(step, index) => step instanceof CutStep ?
+							cutStep(
+								(step.short as () => {}).constructor.name === "AsyncFunction", 
+								index,
+								mapped(
+									step.drop,
+									value => processDrop(value)
+								)
+							) :
+							step instanceof CheckerStep ?
+								skipStep(
+									!!step.skip,
+									index,
+									checkerStep(
+										step.handler.constructor.name === "AsyncFunction",
+										index,
+										!!step.result,
+										Array.isArray(step.result),
+										!!step.indexing,
+										typeof step.options === "function",
+									)
+								) :
+								skipStep(
+									!!step.skip,
+									index,
+									processStep(
+										step.processFunction.constructor.name === "AsyncFunction",
+										index,
+										!!step.input,
+										typeof step.options === "function",
+										mapped(
+											step?.pickup || [],
+											(value) => processDrop(value)
+										)
+									)
+								)
+					)
+							
+				),
+				condition(
+					!!this.handler,
+					() => handlerFunctionString(
+						this.handler?.constructor.name === "AsyncFunction"
+					)
+				)
+			),
+			this.drop
+		);
+
+		this.editingDuploseFunctions.forEach(editingFunction => editingFunction(this));
+
+		this.duploseFunction = eval(this.stringDuploseFunction).bind({
+			subAbstractRoute: this.subAbstractRoute,
+			extracted: this.extracted,
+			errorExtract: this.errorExtract,
+			steps: this.steps,
+			handler: this.handler,
+			extensions: this.extensions,
+
+			makeFloor,
+			ZodError,
+		});
+		
+		this.children.forEach(child => child.build());
 	}
 }
+
+//@ts-ignore
+export class ExtendsAbstractRoute extends AbstractRoute<any, any>{}

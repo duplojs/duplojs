@@ -3,7 +3,6 @@ import {Floor} from "../floor";
 import {__exec__, Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {PickupDropProcess} from "../builder/process";
-import {AbstractRoute} from "../abstractRoute";
 import {AnyFunction, FlatExtract} from "../utility";
 import {Route as DefaultRoute, ExtendsRoute} from "../duplose/route";
 import {Process} from "../duplose/process";
@@ -13,6 +12,7 @@ import {CheckerParamsStep, CheckerStep} from "../step/checker";
 import {CutFunction, ProcessParamsStep, ProcessStep} from "../step/process";
 import {CutStep} from "../step/cut";
 import {ErrorExtractFunction, ExtractObject, HandlerFunction} from "../duplose";
+import {SubAbstractRoute} from "../duplose/abstractRoute/sub";
 
 export type DeclareRoute<
 	request extends Request = Request, 
@@ -22,7 +22,7 @@ export type DeclareRoute<
 > = (
 	method: methods, 
 	path: string | string[], 
-	abstractRoute?: AbstractRoute, 
+	subAbstractRoute?: SubAbstractRoute, 
 	...desc: any[]
 ) => BuilderPatternRoute<request, response, extractObj, floor>;
 
@@ -113,11 +113,11 @@ export function makeRouteBuilder(
 	Route: typeof ExtendsRoute,
 	routes: Routes
 ){
-	const declareRoute: DeclareRoute = (method, paths, abstractRoute, ...desc) => {
+	const declareRoute: DeclareRoute = (method, paths, subAbstractRoute, ...desc) => {
 		const currentRoute = new Route(
 			method, 
 			paths instanceof Array ? paths : [paths], 
-			abstractRoute,
+			subAbstractRoute,
 			desc
 		);
 
@@ -209,12 +209,5 @@ export function makeRouteBuilder(
 
 	return {
 		declareRoute,
-		// declareRoute<
-		// 	request extends Request = Request, 
-		// 	response extends Response = Response,
-		// 	extractObj extends RouteExtractObj = RouteExtractObj,
-		// >(method: Request["method"], path: string | string[], ...desc: any[]){
-		// 	return declareRoute(method, path, undefined, ...desc) as BuilderPatternRoute<request, response, extractObj>;
-		// },
 	};
 }

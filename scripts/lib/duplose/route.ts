@@ -1,9 +1,8 @@
-import {AbstractRoute} from "../abstractRoute";
 import makeContentTypeParserSystem from "../contentTypeParser";
 import correctPath from "../correctPath";
 import {makeFloor} from "../floor";
 import {condition, mapped, spread} from "../stringBuilder";
-import {abstractRouteString, checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hookBody, processDrop, processStep, routeFunctionString, skipStep} from "../stringBuilder/route";
+import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hookBody, processDrop, processStep, routeFunctionString, skipStep, subAbstractRouteString} from "../stringBuilder/route";
 import {HooksLifeCycle} from "../hook";
 import {Request, methods} from "../request";
 import {Response, __exec__} from "../response";
@@ -12,6 +11,7 @@ import {ZodError, ZodType} from "zod";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
 import {Duplose} from ".";
+import {SubAbstractRoute} from "./abstractRoute/sub";
 
 export type EditingFunctionRoute = (route: Route) => void;
 
@@ -27,23 +27,27 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 	constructor(
 		public method: methods,
 		public paths: string[],
-		public abstractRoute: AbstractRoute | undefined,
+		public subAbstractRoute: SubAbstractRoute | undefined,
 		desc: any[],
 	){
-		super();
+		super(desc);
 		this.paths = this.paths.map(path => correctPath(path));
 		Object.keys(this.hooksLifeCyle).forEach((key) => {
 			this.hooksLifeCyle[key].copySubscriber(
 				this.mainHooksLifeCyle[key].subscribers as AnyFunction[],
-				this.abstractRoute?.hooksLifeCyle[key].subscribers || [] as AnyFunction[]
+				subAbstractRoute?.hooksLifeCyle[key].subscribers || [] as AnyFunction[]
 			);
 		});
-		
-		if(abstractRoute)abstractRoute.descs.push(...abstractRoute.descs);
-		this.addDesc("first", desc);
+		if(subAbstractRoute){
+			this.addDesc("abstract", subAbstractRoute.desc);
+		}
 	}
 
 	build(){
+		if(!this.handler){
+			throw new Error("Route Need handler");
+		}
+		
 		this.steps.forEach(value => value.build());
 
 		this.stringDuploseFunction = routeFunctionString(
@@ -56,11 +60,11 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 			!!this.hooksLifeCyle.afterSend.subscribers.length,
 			spread(
 				condition(
-					!!this.abstractRoute,
-					() => abstractRouteString(
-						this.abstractRoute?.abstractRouteFunction.constructor.name === "AsyncFunction",
+					!!this.subAbstractRoute,
+					() => subAbstractRouteString(
+						this.subAbstractRoute?.duploseFunction.constructor.name === "AsyncFunction",
 						mapped(
-							this.abstractRoute?.pickup || [],
+							this.subAbstractRoute?.pickup || [],
 							(value) => processDrop(value)
 						)
 					)
@@ -131,7 +135,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 		this.editingDuploseFunctions.forEach(editingFunction => editingFunction(this));
 
 		this.duploseFunction = eval(this.stringDuploseFunction).bind({
-			abstractRoute: this.abstractRoute,
+			subAbstractRoute: this.subAbstractRoute,
 			extracted: this.extracted, 
 			errorExtract: this.errorExtract,
 			steps: this.steps, 

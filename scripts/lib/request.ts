@@ -3,7 +3,6 @@ import fastQueryString from "fast-querystring";
 
 export type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
 
-
 export class Request{
 	constructor(
 		request: InstanceType<typeof IncomingMessage>, 

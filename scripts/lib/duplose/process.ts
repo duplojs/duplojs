@@ -1,16 +1,12 @@
 import {ZodError, ZodType} from "zod";
 import {makeFloor, Floor} from "../floor";
 import {condition, mapped, spread} from "../stringBuilder";
-import {HooksLifeCycle, makeHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
-import {AnyFunction, DescriptionAll} from "../utility";
 import {handlerFunctionString, processFunctionString} from "../stringBuilder/process";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, processDrop, processStep, skipStep} from "../stringBuilder/route";
 import {CutStep} from "../step/cut";
-import {ProcessStep} from "../step/process";
 import {CheckerStep} from "../step/checker";
-import {DuploConfig} from "../main";
 import {Duplose, ExtractObject} from ".";
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
@@ -18,37 +14,37 @@ export type ProcessFunction = (request: Request, response: Response, options: an
 export type EditingFunctionProcess = (process: Process) => void;
 
 export abstract class Process<
-	input extends any = any, 
-	options extends Record<string, any> = any, 
-	extractObj extends ExtractObject = ExtractObject,
-	floor extends Record<any, any> = Record<any, any>,
-	drop extends string = string,
+	_input extends any = any, 
+	_options extends Record<string, any> = any, 
+	_extractObj extends ExtractObject = ExtractObject,
+	_floor extends Record<any, any> = Record<any, any>,
+	_drop extends string = string,
 > extends Duplose<ProcessFunction, EditingFunctionProcess>{
-	public drop: drop[] = [];
-	public options?: options;
-	public input?: ((pickup: Floor<Record<string, unknown>>["pickup"]) => input);
+	public drop: _drop[] = [];
+	public options?: _options;
+	public input?: ((pickup: Floor<Record<string, unknown>>["pickup"]) => _input);
 
 	constructor(
 		public name: string,
 		desc: any[],
 	){
-		super();
+		super(desc);
 		this.addDesc("first", desc);
 	}
 
-	setDrop(drop: any[], desc: any[]){
+	setDrop(drop: _drop[], desc: any[]){
 		this.drop = drop || [];
 			
-		this.addDesc("build", desc);
+		this.addDesc("drop", desc);
 	}
 
-	setOptions(options: any, desc: any[]){
+	setOptions(options: _options, desc: any[]){
 		this.options = options;
 
 		this.addDesc("options", desc);
 	}
 
-	setInput(input: ((pickup: Floor<Record<string, unknown>>["pickup"]) => input), desc: any[]){
+	setInput(input: ((pickup: Floor<Record<string, unknown>>["pickup"]) => _input), desc: any[]){
 		this.input = input;
 
 		this.addDesc("input", desc);
