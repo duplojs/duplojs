@@ -41,15 +41,11 @@ export const Abstract2 = (duplo: DuploInstance<DuploConfig>) => {
 	const isOdd = IsOdd(duplo);
 	const hasRight = HasRight(duplo);
 
-	return duplo.declareAbstractRoute(
-		"abstract2",
-		{
-			options: {
-				test1: 90,
-				test2: 700,
-			}
-		}
-	)
+	return duplo.declareAbstractRoute("abstract2")
+	.options({
+		test1: 90,
+		test2: 700,
+	})
 	.check(
 		isOdd,
 		{
@@ -119,26 +115,6 @@ export const Abstract3 = (duplo: DuploInstance<DuploConfig>) => {
 	.build();
 };
 
-export const Abstract4 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute(
-	"abstract4",
-	{
-		prefix: "pre"
-	}
-)
-.build();
-
-export const Abstract5 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute(
-	"abstract5",
-	{
-		allowExitProcess: true,
-	}
-)
-.cut(({}, res, req, exit) => {
-	exit();
-	parentPort?.postMessage("no exit");
-})
-.build();
-
 export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 .declareAbstractRoute("abstract5.5")
 .cut(
@@ -156,22 +132,6 @@ export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 	parentPort?.postMessage("deepAbstract pickup test " + p("test"));
 })
 .build(["test", "toto"]);
-
-export const Abstract7 = (duplo: DuploInstance<DuploConfig>) => Abstract4(duplo)({ignorePrefix: true}).declareAbstractRoute(
-	"abstract7",
-	{
-		prefix: "pre"
-	}
-)
-.build();
-
-export const Abstract8 = (duplo: DuploInstance<DuploConfig>) => Abstract4(duplo)().declareAbstractRoute(
-	"abstract8",
-	{
-		prefix: "pre"
-	}
-)
-.build();
 
 export const Abstract9 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute("abstract8")
 .cut(() => ({yyy: 1}), ["yyy"])

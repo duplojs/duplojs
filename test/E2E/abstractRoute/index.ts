@@ -1,4 +1,4 @@
-import {zod} from "../../scripts";
+import {zod} from "../../../scripts";
 import {workerTesting} from "@duplojs/worker-testing";
 
 export default workerTesting(
@@ -79,58 +79,10 @@ export default workerTesting(
 			}
 		},
 		{
-			title: "abstract ignore prefix",
-			url: "http://localhost:1506/abstract/test/4",
-			method: "GET",
-			output: [],
-			response: {
-				code: 204,
-				info: "result"
-			}
-		},
-		{
-			title: "abstract prefix",
-			url: "http://localhost:1506/pre/abstract/test/4",
-			method: "GET",
-			output: [],
-			response: {
-				code: 200,
-				info: "result"
-			}
-		},
-		{
-			title: "abstract exit",
-			url: "http://localhost:1506/abstract/test/5",
-			method: "GET",
-			output: [],
-			response: {
-				code: 204,
-				info: "result"
-			}
-		},
-		{
 			title: "deepAbstract pickup value",
 			url: "http://localhost:1506/abstract/test/6",
 			method: "GET",
 			output: ["deepAbstract pickup test 57"],
-			response: {
-				code: 204,
-				info: "result"
-			}
-		},
-		{
-			title: "deepAbstract prefix and ignore abstract prefix",
-			url: "http://localhost:1506/pre/abstract/test/7",
-			method: "GET",
-			response: {
-				code: 204,
-				info: "result"
-			}
-		},
-		{
-			title: "deepAbstract prefix and abstract prefix",
-			url: "http://localhost:1506/pre/pre/abstract/test/8",
-			method: "GET",
 			response: {
 				code: 204,
 				info: "result"
