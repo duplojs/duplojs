@@ -3,7 +3,7 @@ import {ServerHooksLifeCycle, makeHooksLifeCycle} from "./hook";
 import {Request} from "./request";
 import {DeclareRoute, RouteExtractObj, condition, mapped} from "./builder/route";
 import makeFloor from "./floor";
-import {UnionToIntersection} from "./utility";
+import {UnionToIntersection} from "./utile";
 import {Response} from "./response";
 
 export default function makeMergeAbstractRoutesSystem(

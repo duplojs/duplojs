@@ -7,10 +7,11 @@ import {CutStep} from "../../step/cut";
 import {condition, mapped, spread} from "../../stringBuilder";
 import {abstractRouteFunctionString} from "../../stringBuilder/abstractRoute";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, processDrop, processStep, skipStep, subAbstractRouteString} from "../../stringBuilder/route";
-import {AnyFunction} from "../../utility";
+import {AnyFunction} from "../../utile";
 import {handlerFunctionString} from "../../stringBuilder/process";
 import {makeFloor} from "../../floor";
-import {SubAbstractRoute, SubAbstractRouteParams} from "./sub";
+import {ExtendsSubAbstractRoute, SubAbstractRoute, SubAbstractRouteParams} from "./sub";
+import {ExtendsAbstractRouteInstance} from "./instance";
 
 export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
@@ -23,6 +24,9 @@ export abstract class AbstractRoute<
 	public drop: string[] = [];
 	public options?: _options;
 	public children: SubAbstractRoute[] = [];
+
+	abstract get SubAbstractRoute(): typeof ExtendsSubAbstractRoute;
+	abstract get AbstractRouteInstance(): typeof ExtendsAbstractRouteInstance;
 
 	constructor(
 		public name: string,
@@ -52,10 +56,10 @@ export abstract class AbstractRoute<
 		this.addDesc("options", desc);
 	}
 
-	createSub(params: SubAbstractRouteParams, desc: any[]){
-		const sub = new SubAbstractRoute(this, params, desc);
+	createInstance(params: SubAbstractRouteParams, desc: any[]){
+		const sub = new this.SubAbstractRoute(this, params, desc);
 		this.children.push(sub);
-		return sub;
+		return new this.AbstractRouteInstance(sub);
 	}
 
 	build(){

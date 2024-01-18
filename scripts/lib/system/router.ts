@@ -5,7 +5,7 @@ import {DuploConfig} from "../main";
 import {Request, methods} from "../request";
 import {Response, __exec__} from "../response";
 import {Routes} from "../system/route";
-import {PromiseOrNot} from "../utility";
+import {PromiseOrNot} from "../utile";
 import {CutStep} from "../step/cut";
 
 export type RouteFound = {

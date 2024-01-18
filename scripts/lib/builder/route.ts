@@ -3,14 +3,14 @@ import {Floor} from "../floor";
 import {__exec__, Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {PickupDropProcess} from "../builder/process";
-import {AnyFunction, FlatExtract} from "../utility";
+import {AnyFunction, FlatExtract} from "../utile";
 import {Route as DefaultRoute, ExtendsRoute} from "../duplose/route";
 import {Process} from "../duplose/process";
 import {Routes} from "../system/route";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
 import {CheckerParamsStep, CheckerStep} from "../step/checker";
-import {CutFunction, ProcessParamsStep, ProcessStep} from "../step/process";
-import {CutStep} from "../step/cut";
+import {ProcessParamsStep, ProcessStep} from "../step/process";
+import {CutFunction, CutStep} from "../step/cut";
 import {ErrorExtractFunction, ExtractObject, HandlerFunction} from "../duplose";
 import {SubAbstractRoute} from "../duplose/abstractRoute/sub";
 
@@ -91,9 +91,12 @@ export interface BuilderPatternRoute<
 		"hook" | "extract"
 	>;
 
-	cut<localFloor extends {}, drop extends keyof localFloor>(
+	cut<
+		localFloor extends Record<string, unknown>, 
+		drop extends Exclude<keyof localFloor, symbol | number> = never
+	>(
 		short: CutFunction<request, response, localFloor, floor>,
-		drop?: drop[] & Extract<keyof localFloor, string>[],
+		drop?: drop[],
 		...desc: any[]
 	): Omit<
 		BuilderPatternRoute<
@@ -190,7 +193,6 @@ export function makeRouteBuilder(
 		const handler: BuilderPatternRoute<any, any, any, any>["handler"] = (handlerFunction, ...desc) => {
 			currentRoute.setHandler(handlerFunction, desc);
 
-			currentRoute.build();
 			routes[currentRoute.method].push(currentRoute);
 			serverHooksLifeCycle.onDeclareRoute.syncLaunchSubscriber(currentRoute);
 

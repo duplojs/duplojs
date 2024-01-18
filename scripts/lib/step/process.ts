@@ -3,7 +3,7 @@ import {Process} from "../duplose/process";
 import {Floor} from "../floor";
 import {Request} from "../request";
 import {Response} from "../response";
-import {AnyFunction, PromiseOrNot} from "../utility";
+import {AnyFunction, PromiseOrNot} from "../utile";
 
 export interface ProcessParamsStep<
 	process extends Process,
@@ -14,13 +14,6 @@ export interface ProcessParamsStep<
 	pickup?: process["drop"] & pickup[];
 	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<process["input"], undefined>>;
 }
-
-export type CutFunction<
-	request extends Request, 
-	response extends Response,
-	returnFloor extends {},
-	floor extends {},
-> = (floor: Floor<floor>, response: response, request: request) => PromiseOrNot<returnFloor | undefined | void>;
 
 export class ProcessStep extends Step{
 	options: Record<string, any> | AnyFunction = {};

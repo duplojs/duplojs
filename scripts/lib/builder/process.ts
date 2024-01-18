@@ -3,13 +3,13 @@ import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {Floor} from "../floor";
 import {Request} from "../request";
 import {Response} from "../response";
-import {AnyFunction, FlatExtract} from "../utility";
+import {AnyFunction, FlatExtract} from "../utile";
 import {Process as DefaultProcess, ExtendsProcess} from "../duplose/process";
 import {Processes} from "../system/process";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
 import {CheckerParamsStep, CheckerStep} from "../step/checker";
-import {CutFunction, ProcessParamsStep, ProcessStep} from "../step/process";
-import {CutStep} from "../step/cut";
+import {ProcessParamsStep, ProcessStep} from "../step/process";
+import {CutFunction, CutStep} from "../step/cut";
 import {ErrorExtractFunction, ExtractObject, HandlerFunction} from "../duplose";
 
 export type CreateProcess<
@@ -157,9 +157,12 @@ export interface BuilderPatternProcess<
 		"hook" | "extract" | "options" | "input"
 	>;
 
-	cut<localFloor extends {}, drop extends string>(
-		short: CutFunction<request, response, localFloor, floor>, 
-		drop?: drop[] & Extract<keyof localFloor, string>[],
+	cut<
+		localFloor extends Record<string, unknown>, 
+		drop extends Exclude<keyof localFloor, symbol | number> = never
+	>(
+		short: CutFunction<request, response, localFloor, floor>,
+		drop?: drop[],
 		...desc: any[]
 	): Omit<
 		BuilderPatternProcess<
@@ -314,8 +317,7 @@ export function makeProcessBuilder(
 		const build: BuilderPatternProcess<any, any, any, any, any, any>["build"] = (drop, ...desc) => {
 			currentProcess.setDrop(drop || [], desc);
 
-			currentProcess.build();
-			processes[name] = currentProcess;
+			processes.push(currentProcess);
 			serverHooksLifeCycle.onCreateProcess.syncLaunchSubscriber(currentProcess);
 			
 			return currentProcess;

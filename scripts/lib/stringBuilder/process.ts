@@ -30,5 +30,5 @@ export const processFunctionString = (hasInput: boolean, hasOptions: boolean, bl
 export const handlerFunctionString = (async: boolean) => /* js */`
 /* before_handler */
 /* end_block */
-${async ? "await " : ""}this.handlerFunction(floor, response);
+${async ? "await " : ""}this.handler(floor, response);
 `;

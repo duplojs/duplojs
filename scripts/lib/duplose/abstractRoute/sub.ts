@@ -1,4 +1,5 @@
 import {AbstractRoute, AbstractRouteFunction} from ".";
+import {MergeAbstractRoute} from "./merge";
 
 export interface SubAbstractRouteParams<
 	_drop extends string = any, 
@@ -9,12 +10,11 @@ export interface SubAbstractRouteParams<
 	options?: Partial<_options>;
 }
 
-export class SubAbstractRoute<
-	_options extends Record<string, any> = any,
+export abstract class SubAbstractRoute<
 	_floor extends {} = {},
 >{
 	public get hooksLifeCyle(){
-		return this.subAbstractRoute.hooksLifeCyle;
+		return this.parent.hooksLifeCyle;
 	}
 	public duploseFunction: AbstractRouteFunction; 
 	pickup: string[] = [];
@@ -22,19 +22,22 @@ export class SubAbstractRoute<
 
 
 	constructor(
-		public subAbstractRoute: AbstractRoute,
+		public parent: AbstractRoute | MergeAbstractRoute,
 		public params: SubAbstractRouteParams,
 		public desc: any[],
 	){
-		this.duploseFunction = this.subAbstractRoute.duploseFunction;
+		this.duploseFunction = this.parent.duploseFunction;
 	}
 
 	build(){
-		this.duploseFunction = this.subAbstractRoute.duploseFunction;
+		this.duploseFunction = this.parent.duploseFunction;
 		this.pickup = this.params.pickup || [];
 		this.options = {
-			...this.subAbstractRoute.options,
+			...this.parent.options,
 			...this.params.options
 		};
 	}
 }
+
+//@ts-ignore
+export class ExtendsSubAbstractRoute extends SubAbstractRoute{}

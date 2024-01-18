@@ -5,7 +5,7 @@ import {Response} from "../response";
 import {DuploConfig} from "../main";
 import {ErrorExtractFunction} from "../duplose";
 
-export type Processes = Record<string, DefaultProcess>;
+export type Processes = DefaultProcess[];
 
 export interface ProcessEditableProperty{
 	defaultErrorExtract: ErrorExtractFunction<Response>;
@@ -33,7 +33,7 @@ export function makeProcessSystem(
 		Process.editableProperty.defaultErrorExtract = errorExtract;
 	};
 
-	const processes: Processes = {};
+	const processes: Processes = [];
 
 	const {createProcess} = makeProcessBuilder(serverHooksLifeCycle, Process, processes);
 

@@ -7,7 +7,7 @@ import {Response} from "../response";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
 import {ProcessStep} from "../step/process";
-import {AnyFunction, DescriptionAll} from "../utility";
+import {AnyFunction, DescriptionAll} from "../utile";
 
 export interface ExtractObject{
 	body?: Record<string, ZodType> | ZodType,

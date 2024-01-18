@@ -172,13 +172,16 @@ export const HasRight = (duplo: DuploInstance<DuploConfig>) =>
 		option2: 2,
 	})
 	.input(() => 30)
-	.cut(({pickup: p}) => {
-		parentPort?.postMessage("process options1 " + p("options").option1);
-		parentPort?.postMessage("process options2 " + p("options").option2);
-		parentPort?.postMessage("process input " + p("input"));
+	.cut(
+		({pickup: p}) => {
+			parentPort?.postMessage("process options1 " + p("options").option1);
+			parentPort?.postMessage("process options2 " + p("options").option2);
+			parentPort?.postMessage("process input " + p("input"));
 
-		return {
-			right: true,
-		};
-	}, ["right"])
+			return {
+				right: true,
+			};
+		}, 
+		["right"]
+	)
 	.build(["right"]);

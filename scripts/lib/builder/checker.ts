@@ -3,7 +3,7 @@ import {Floor} from "../floor";
 import {ServerHooksLifeCycle} from "../hook";
 import {Response} from "../response";
 import {Checkers} from "../system/checker";
-import {AnyFunction, PromiseOrNot} from "../utility";
+import {AnyFunction, PromiseOrNot} from "../utile";
 
 export type CreateChecker<
 	_options extends Record<string, any> = never,

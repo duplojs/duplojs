@@ -44,7 +44,7 @@ export const routeFunctionString = (
 				${block}
 				/* before_handler */
 				/* end_block */
-				${async ? "await " : ""}this.handlerFunction(floor, response);
+				${async ? "await " : ""}this.handler(floor, response);
 				/* before_no_respose_sent */
 				/* end_block */
 				response.code(503).info("NO_RESPONSE_SENT").send();

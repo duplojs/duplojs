@@ -4,16 +4,16 @@ import {DeclareRoute, RouteStepParamsSkip} from "./route";
 import {Request} from "../request";
 import {Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
-import {AnyFunction, FlatExtract} from "../utility";
+import {AnyFunction, FlatExtract} from "../utile";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
 import {CheckerParamsStep, CheckerStep} from "../step/checker";
 import {Process} from "../duplose/process";
-import {CutFunction, ProcessParamsStep, ProcessStep} from "../step/process";
+import {ProcessParamsStep, ProcessStep} from "../step/process";
 import {PickupDropProcess} from "./process";
 import {ExtendsAbstractRoute} from "../duplose/abstractRoute";
 import {AbstractRoutes} from "../system/abstractRoute";
-import {CutStep} from "../step/cut";
-
+import {CutFunction, CutStep} from "../step/cut";
+import {AbstractRouteInstance} from "../duplose/abstractRoute/instance";
 
 export const __abstractRoute__ = Symbol("abstractRoute");
 
@@ -35,56 +35,22 @@ export interface AbstractRouteUseFunction<
 	extractObj extends ExtractObject,
 	options extends {},
 	floor extends {},
-	drop extends string,
 >{
 	<pickup extends string>(
-		params?: SubAbstractRouteParams<drop, pickup, options>, 
+		params?: SubAbstractRouteParams<
+			Exclude<keyof floor, symbol | number>,
+			pickup, 
+			options
+		>, 
 		...desc: any[]
 	): AbstractRouteInstance<
+		SubAbstractRoute<
+			Pick<floor, pickup extends keyof floor? pickup : never>
+		>,
 		request,
 		response,
-		extractObj,
-		options,
-		Pick<floor & {[-1]?: undefined}, pickup extends keyof floor? pickup : -1>
+		extractObj
 	>;
-}
-
-export interface AbstractRouteInstance<
-	request extends Request = Request,
-	response extends Response = Response,
-	extractObj extends ExtractObject = ExtractObject,
-	options extends {} = any,
-	floor extends {} = {},
->{
-	declareRoute<
-		req extends Request = request, 
-		res extends Response = response,
-		extObj extends ExtractObject = ExtractObject,
-	>(method: Request["method"], path: string | string[], ...desc: any[]): ReturnType<
-		DeclareRoute<
-			request & req, 
-			response & res, 
-			extractObj & extObj,
-			floor
-		>
-	>;
-
-	declareAbstractRoute<
-		req extends Request = request, 
-		res extends Response = response,
-		extObj extends ExtractObject = extractObj,
-		options extends {} = {},
-	>(name: string, ...desc: any[]): ReturnType<
-		DeclareAbstractRoute<
-			request & req, 
-			response & res, 
-			extractObj & extObj,
-			options,
-			{options: options} & floor
-		>
-	>;
-
-	[__abstractRoute__]: SubAbstractRoute<options, floor>
 }
 
 export interface BuilderPatternAbstractRoute<
@@ -191,9 +157,12 @@ export interface BuilderPatternAbstractRoute<
 		"hook" | "extract" | "options"
 	>;
 
-	cut<localFloor extends {}, drop extends string>(
+	cut<
+		localFloor extends Record<string, unknown>, 
+		drop extends Exclude<keyof localFloor, symbol | number> = never
+	>(
 		short: CutFunction<request, response, localFloor, floor>,
-		drop?: drop[] & Extract<keyof localFloor, string>[],
+		drop?: drop[],
 		...desc: any[]
 	): Omit<
 		BuilderPatternAbstractRoute<
@@ -212,14 +181,20 @@ export interface BuilderPatternAbstractRoute<
 	): Pick<BuilderPatternAbstractRoute<request, response, extractObj, _options, floor>, "build">;
 	
 	build<
-		drop extends string,
+		drop extends Exclude<keyof floor, symbol | number> = never,
 	>(
-		drop?: (keyof floor)[] & drop[], 
+		drop?: drop[], 
 		...desc: any[]
-	): AbstractRouteUseFunction<request, response, extractObj, _options, floor, drop>;
+	): AbstractRouteUseFunction<
+		request, 
+		response, 
+		extractObj, 
+		_options, 
+		Pick<floor, drop extends keyof floor ? drop : never>
+	>;
 }
 
-export function makeAbstractRoutesBuilder(
+export function makeAbstractRouteBuilder(
 	serverHooksLifeCycle: ServerHooksLifeCycle,
 	declareRoute: DeclareRoute,
 	AbstractRoute: typeof ExtendsAbstractRoute,
@@ -327,20 +302,11 @@ export function makeAbstractRoutesBuilder(
 
 		const build: BuilderPatternAbstractRoute<any, any, any, any, any>["build"] = (drop, ...desc) => {
 			currentAbstractRoute.setDrop(drop || [], desc);
-			currentAbstractRoute.build();
-			abstractRoutes[name] = currentAbstractRoute;
+			
+			abstractRoutes.push(currentAbstractRoute);
 			serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(currentAbstractRoute);
 
-			return (params, ...desc) => {
-				const currentSubAbstractRoute = currentAbstractRoute.createSub(params || {}, desc);
-				currentSubAbstractRoute.build();
-
-				return {
-					declareRoute: (method, path, ...desc) => declareRoute(method, path, subAbstractRoute, ...desc) as any,
-					declareAbstractRoute: (nameAbstractRoute, ...desc) => declareAbstractRoute(nameAbstractRoute, subAbstractRoute, ...desc) as any,
-					[__abstractRoute__]: currentSubAbstractRoute,
-				};
-			};
+			return (params, ...desc) => currentAbstractRoute.createInstance(params || {}, desc) as any;
 		};
 
 		return {

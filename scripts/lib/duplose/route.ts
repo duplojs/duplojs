@@ -6,7 +6,7 @@ import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hoo
 import {HooksLifeCycle} from "../hook";
 import {Request, methods} from "../request";
 import {Response, __exec__} from "../response";
-import {AnyFunction, PromiseOrNot} from "../utility";
+import {AnyFunction, PromiseOrNot} from "../utile";
 import {ZodError, ZodType} from "zod";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
@@ -139,7 +139,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 			extracted: this.extracted, 
 			errorExtract: this.errorExtract,
 			steps: this.steps, 
-			handlerFunction: this.handler,
+			handler: this.handler,
 			extensions: this.extensions,
 			hooks: {
 				launchAfterSend: this.hooksLifeCyle.afterSend.build(),

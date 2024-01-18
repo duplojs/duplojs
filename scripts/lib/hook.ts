@@ -1,10 +1,11 @@
 import {AbstractRoute} from "./duplose/abstractRoute";
+import {MergeAbstractRoute} from "./duplose/abstractRoute/merge";
 import {Checker} from "./duplose/checker";
 import {Process} from "./duplose/process";
 import {Route} from "./duplose/route";
 import {Request} from "./request";
 import {Response} from "./response";
-import {PromiseOrNot} from "./utility";
+import {PromiseOrNot} from "./utile";
 import {IncomingMessage, ServerResponse} from "http";
 
 export type HooksLifeCycle<
@@ -95,7 +96,7 @@ export function makeHooksLifeCycle<
 export function makeServerHooksLifeCycle(){
 	return {
 		onDeclareRoute: makeHook<((route: Route) => PromiseOrNot<true | void>)>(1),
-		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRoute) => PromiseOrNot<true | void>)>(1),
+		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRoute | MergeAbstractRoute) => PromiseOrNot<true | void>)>(1),
 		onCreateChecker: makeHook<((checker: Checker) => PromiseOrNot<true | void>)>(1),
 		onCreateProcess: makeHook<((process: Process) => PromiseOrNot<true | void>)>(1),
 		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),

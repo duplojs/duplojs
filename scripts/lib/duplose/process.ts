@@ -122,15 +122,17 @@ export abstract class Process<
 			),
 			this.drop || []
 		);
-
+		console.log("process : ", this.name);
+		
+		// if(this.name === "isAdmin")console.log(this.stringDuploseFunction);
 		this.editingDuploseFunctions.forEach(editingFunction => editingFunction(this));
-
+		
 		this.duploseFunction = eval(this.stringDuploseFunction).bind({
 			config: this.config,
 			extracted: this.extracted,
 			errorExtract: this.errorExtract,
 			steps: this.steps, 
-			handlerFunction: this.handler,
+			handler: this.handler,
 			extensions: this.extensions,
 
 			ZodError,

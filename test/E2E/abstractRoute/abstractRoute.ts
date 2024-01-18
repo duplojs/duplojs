@@ -7,9 +7,8 @@ export const Abstract1 = (duplo: DuploInstance<DuploConfig>) => {
 	const isOdd = IsOdd(duplo);
 	const hasRight = HasRight(duplo);
 
-	return duplo.declareAbstractRoute(
-		"abstract1",
-	)
+	return duplo
+	.declareAbstractRoute("abstract1")
 	.extract({
 		query: {
 			number: zod.coerce.number()
@@ -34,7 +33,7 @@ export const Abstract1 = (duplo: DuploInstance<DuploConfig>) => {
 			pickup: ["right"]
 		}
 	)
-	.build(["number", "result", "right"]);
+	.build(["result", "number", "right"]);
 };
 
 export const Abstract2 = (duplo: DuploInstance<DuploConfig>) => {
@@ -118,7 +117,7 @@ export const Abstract3 = (duplo: DuploInstance<DuploConfig>) => {
 export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 .declareAbstractRoute("abstract5.5")
 .cut(
-	({}, res) => {
+	(f) => {
 		return {
 			test: 57,
 			toto: "test"
