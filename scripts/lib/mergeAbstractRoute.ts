@@ -95,7 +95,7 @@ export default function makeMergeAbstractRoutesSystem(
 
 		abstractRoute.build();
 		allAbstractRoutes[abstractRoute.name] = abstractRoute;
-		serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(abstractRoute);
+		serverHooksLifeCycle.onDeclareAbstractRoute.launchSubscriber(abstractRoute);
 
 		return {
 			declareRoute: (method: Request["method"], path: string, ...desc: any[]) => declareRoute(method, path, abstractRoute, ...desc),

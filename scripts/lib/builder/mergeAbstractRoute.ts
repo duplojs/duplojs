@@ -7,21 +7,17 @@ import {Request} from "../request";
 import {Response} from "../response";
 import {AbstractRoutes} from "../system/abstractRoute";
 import {UnionToIntersection} from "../utile";
-import {DeclareAbstractRoute} from "./abstractRoute";
-import {DeclareRoute} from "./route";
 
 export default function makeMergeAbstractRouteBuilder(
 	serverHooksLifeCycle: ServerHooksLifeCycle,
 	MergeAbstractRoute: typeof ExtendsMergeAbstractRoute,
-	declareRoute: DeclareRoute, 
-	declareAbstractRoute: DeclareAbstractRoute, 
 	abstractRoutes: AbstractRoutes,
 ){
 	function mergeAbstractRoute<
 		abstractRouteInstance extends AbstractRouteInstance,
-		request extends abstractRouteInstance extends AbstractRouteInstance<infer request>? request : never,
-		response extends abstractRouteInstance extends AbstractRouteInstance<any, infer response>? response : never,
-		extractObj extends abstractRouteInstance extends AbstractRouteInstance<any, any, infer extractObj>? extractObj : never,
+		request extends abstractRouteInstance extends AbstractRouteInstance<any, infer request>? request : never,
+		response extends abstractRouteInstance extends AbstractRouteInstance<any, any, infer response>? response : never,
+		extractObj extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, infer extractObj>? extractObj : never,
 		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>? floor : never
 	>(
 		abstractRouteInstances: AbstractRouteInstance[],
@@ -36,9 +32,9 @@ export default function makeMergeAbstractRouteBuilder(
 		const currentMergeAbstractRoute = new MergeAbstractRoute(
 			abstractRouteInstances.map(ari => ari.subAbstractRoute)
 		);
-		
+
 		abstractRoutes.push(currentMergeAbstractRoute);
-		serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(currentMergeAbstractRoute);
+		serverHooksLifeCycle.onDeclareAbstractRoute.launchSubscriber(currentMergeAbstractRoute);
 
 		return currentMergeAbstractRoute.createInstance(desc) as any;
 	}

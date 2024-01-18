@@ -109,7 +109,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 			catch (error){
 				if(error instanceof Response) error = new SentError();
 				if(error instanceof SentError) error = error.error;
-				await serverHooksLifeCycle.onServerError.launchSubscriber(serverRequest, serverResponse, error as Error);
+				await serverHooksLifeCycle.onServerError.launchSubscriberAsync(serverRequest, serverResponse, error as Error);
 				if(!serverResponse.headersSent){
 					serverResponse.writeHead(500, {"content-type": "text/plain"});
 					serverResponse.write(error?.toString?.() || "");
@@ -131,7 +131,7 @@ export default function Duplo<duploConfig extends DuploConfig>(config: duploConf
 		server,
 		config,
 		launch(onLaunch = () => console.log("Ready !")){
-			serverHooksLifeCycle.beforeBuildRouter.syncLaunchSubscriber();
+			serverHooksLifeCycle.beforeBuildRouter.launchSubscriber();
 			
 			buildProcesses(processes);
 			buildAbstractRoutes(abstractRoutes);

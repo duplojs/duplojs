@@ -75,7 +75,7 @@ export function makeAbstractRouteSystem(
 
 	const {declareAbstractRoute} = makeAbstractRouteBuilder(serverHooksLifeCycle, declareRoute, AbstractRoute, abstractRoutes);
 
-	const {mergeAbstractRoute} = makeMergeAbstractRouteBuilder(serverHooksLifeCycle, MergeAbstractRoute, declareRoute, declareAbstractRoute, abstractRoutes);
+	const {mergeAbstractRoute} = makeMergeAbstractRouteBuilder(serverHooksLifeCycle, MergeAbstractRoute, abstractRoutes);
 
 	const setDefaultErrorExtract = (errorExtract: ErrorExtractFunction<Response>) => {
 		AbstractRoute.editableProperty.defaultErrorExtract = errorExtract;

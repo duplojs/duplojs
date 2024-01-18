@@ -5,7 +5,7 @@ import {Process} from "./duplose/process";
 import {Route} from "./duplose/route";
 import {Request} from "./request";
 import {Response} from "./response";
-import {PromiseOrNot} from "./utile";
+import {AnyFunction, PromiseOrNot} from "./utile";
 import {IncomingMessage, ServerResponse} from "http";
 
 export type HooksLifeCycle<
@@ -40,42 +40,58 @@ export interface AddServerHooksLifeCycle<returnType extends any = any>{
 	addHook(name: "beforeBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["beforeBuildRouter"]["build"]>): returnType;
 }
 
-export default function makeHook<TypeHookFunction extends((...any: any[]) => any)>(numberArgs: Parameters<TypeHookFunction>["length"]){
-	const args = Array(numberArgs).fill(undefined).map((value, index) => `arg${index}`).join(", ");
-	let subscribers: TypeHookFunction[] = [];
+export class Hook<
+	args extends any[] = [], 
+	subscriber extends AnyFunction = (...args: args) => PromiseOrNot<boolean | void>
+>{
+	constructor(numberArgs: args["length"]){
+		this.numberArgs = numberArgs;
+	}
 
-	return {
-		subscribers,
-		addSubscriber: (hookFunction: TypeHookFunction) => {subscribers.push(hookFunction);},
-		copySubscriber: (...spreadOtherSubscribers: Array<TypeHookFunction[]>) => subscribers.push(...spreadOtherSubscribers.flat()),
-		launchSubscriber: (async(...args) => {
-			for(const fnc of subscribers){
-				if(await fnc(...args as any) === true) break;
-			}
-		}) as (...args: Parameters<TypeHookFunction>) => Promise<void>,
-		syncLaunchSubscriber: ((...args) => {
-			for(const fnc of subscribers){
-				if(fnc(...args as any) === true) break;
-			}
-		}) as (...args: Parameters<TypeHookFunction>) => void,
-		hasSubscriber: (fnc: TypeHookFunction) => !!subscribers.find(f => f === fnc),
-		build: (): TypeHookFunction => {
-			let stringFunction = "";
-			let isAsync = false;
-			subscribers.forEach((fnc, index) => {
-				if(fnc.constructor.name === "AsyncFunction"){ 
-					stringFunction += /* js */`
-						if(await this.subscribers[${index}](${args}) === true) return;
-					`;
-					isAsync = true;
-				}
-				else stringFunction += /* js */`
-					if(this.subscribers[${index}](${args}) === true) return;
-				`;
-			});
-			return eval(/* js */`(${(isAsync ? "async" : "")} function(${args}){${stringFunction}})`).bind({subscribers});
-		},
-	};
+	private numberArgs: number;
+	private subscribers: subscriber[] = [];
+
+	addSubscriber(subscriber: subscriber, ...subscribers: subscriber[]){
+		this.subscribers.push(subscriber, ...subscribers);
+	}
+
+	removeSubscriber(subscriber: subscriber){
+		const index = this.subscribers.findIndex(sub => sub === subscriber);
+		if(index !== -1) this.subscribers.slice(index, 1);
+	}
+
+	removeAllSubscriber(){
+		this.subscribers = [];
+	}
+
+	launchSubscriber(...args: args){
+		this.subscribers.forEach(sub => sub(...args));
+	}
+
+	async launchSubscriberAsync(...args: args){
+		for(const fnc of this.subscribers){
+			if(await fnc(...args) === true) break;
+		}
+	} 
+
+	hasSubscriber(fnc: AnyFunction){
+		return !!this.subscribers.find(f => f === fnc);
+	}
+
+	copySubscriber(...spreadOtherSubscribers: Array<subscriber[]>){
+		this.subscribers.push(...spreadOtherSubscribers.flat());
+	}
+
+	build(): subscriber
+	{
+		const mapArg = new Array(this.numberArgs).fill(undefined).map((v, i) => `arg${i}`).join(", ");
+		const contentFunction = this.subscribers.map((v, i) => /* js */`
+			if(${(v.constructor.name === "AsyncFunction" ? "await " : "")}this.subscribers[${i}](${mapArg}) === true) return;
+		`).join("");
+		console.log(`(${(/await/.test(contentFunction) ? "async " : "")}function(${mapArg}){\n${contentFunction}\n})`);
+		
+		return eval(/* js */`(${(/await/.test(contentFunction) ? "async " : "")}function(${mapArg}){\n${contentFunction}\n})`).bind({subscribers: this.subscribers});
+	}
 }
 
 export function makeHooksLifeCycle<
@@ -83,25 +99,25 @@ export function makeHooksLifeCycle<
 	response extends Response = Response,
 >(){
 	return {
-		onConstructRequest: makeHook<((request: request) => PromiseOrNot<true | void>)>(1),
-		onConstructResponse: makeHook<((response: response) => PromiseOrNot<true | void>)>(1),
-		beforeRouteExecution: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
-		beforeParsingBody: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
-		onError: makeHook<((request: request, response: response, error: Error) => PromiseOrNot<true | void>)>(3),
-		beforeSend: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
-		afterSend: makeHook<((request: request, response: response) => PromiseOrNot<true | void>)>(2),
+		onConstructRequest: new Hook<[request: request]>(1),
+		onConstructResponse: new Hook<[response: response]>(1),
+		beforeRouteExecution: new Hook<[request: request, response: response]>(2),
+		beforeParsingBody: new Hook<[request: request, rresponse: response]>(2),
+		onError: new Hook<[request: request, response: response, error: Error]>(3),
+		beforeSend: new Hook<[request: request, response: response]>(2),
+		afterSend: new Hook<[request: request, response: response]>(2),
 	};
 }
 
 export function makeServerHooksLifeCycle(){
 	return {
-		onDeclareRoute: makeHook<((route: Route) => PromiseOrNot<true | void>)>(1),
-		onDeclareAbstractRoute: makeHook<((abstractRoute: AbstractRoute | MergeAbstractRoute) => PromiseOrNot<true | void>)>(1),
-		onCreateChecker: makeHook<((checker: Checker) => PromiseOrNot<true | void>)>(1),
-		onCreateProcess: makeHook<((process: Process) => PromiseOrNot<true | void>)>(1),
-		onReady: makeHook<(() => PromiseOrNot<true | void>)>(0),
-		onClose: makeHook<(() => PromiseOrNot<true | void>)>(0),
-		onServerError: makeHook<((serverRequest: IncomingMessage, serverResponse: ServerResponse, error: Error) => PromiseOrNot<true | void>)>(3),
-		beforeBuildRouter: makeHook<(() => true | void)>(0),
+		onDeclareRoute: new Hook<[route: Route]>(1),
+		onDeclareAbstractRoute: new Hook<[abstractRoute: AbstractRoute | MergeAbstractRoute]>(1),
+		onCreateChecker: new Hook<[checker: Checker]>(1),
+		onCreateProcess: new Hook<[process: Process]>(1),
+		onReady: new Hook(0),
+		onClose: new Hook(0),
+		onServerError: new Hook<[serverRequest: IncomingMessage, serverResponse: ServerResponse, error: Error]>(3),
+		beforeBuildRouter: new Hook(0),
 	};
 }

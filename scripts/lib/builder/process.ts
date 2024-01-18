@@ -318,7 +318,7 @@ export function makeProcessBuilder(
 			currentProcess.setDrop(drop || [], desc);
 
 			processes.push(currentProcess);
-			serverHooksLifeCycle.onCreateProcess.syncLaunchSubscriber(currentProcess);
+			serverHooksLifeCycle.onCreateProcess.launchSubscriber(currentProcess);
 			
 			return currentProcess;
 		};

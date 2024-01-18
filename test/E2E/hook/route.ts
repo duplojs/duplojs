@@ -1,4 +1,4 @@
-import Duplo, {zod} from "../../scripts/index";
+import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 
 const duplo = Duplo({port: 1506, host: "localhost"});

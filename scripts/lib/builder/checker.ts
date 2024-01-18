@@ -130,7 +130,7 @@ export default function makeCheckerBuilder(
 
 			checkers[name] = currentChecker;
 
-			serverHooksLifeCycle.onCreateChecker.syncLaunchSubscriber(checkers[name]);
+			serverHooksLifeCycle.onCreateChecker.launchSubscriber(checkers[name]);
 			return checkers[name];
 		};
 

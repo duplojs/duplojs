@@ -304,7 +304,7 @@ export function makeAbstractRouteBuilder(
 			currentAbstractRoute.setDrop(drop || [], desc);
 			
 			abstractRoutes.push(currentAbstractRoute);
-			serverHooksLifeCycle.onDeclareAbstractRoute.syncLaunchSubscriber(currentAbstractRoute);
+			serverHooksLifeCycle.onDeclareAbstractRoute.launchSubscriber(currentAbstractRoute);
 
 			return (params, ...desc) => currentAbstractRoute.createInstance(params || {}, desc) as any;
 		};

@@ -194,7 +194,7 @@ export function makeRouteBuilder(
 			currentRoute.setHandler(handlerFunction, desc);
 
 			routes[currentRoute.method].push(currentRoute);
-			serverHooksLifeCycle.onDeclareRoute.syncLaunchSubscriber(currentRoute);
+			serverHooksLifeCycle.onDeclareRoute.launchSubscriber(currentRoute);
 
 			return currentRoute;
 		};
