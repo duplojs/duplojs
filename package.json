@@ -23,9 +23,11 @@
   "scripts": {
     "dev": "nodemon --exec 'npm run test:speed'",
     "build": "rollup --config && npx tsc",
-	"test": "npm run test:e2e",
-	"test:speed": "npm run test:e2e:speed",
+    "test": "npm run test:e2e",
+    "test:speed": "npm run test:e2e:speed",
     "test:e2e": "ts-node test/E2E",
+    "test:tu": "vitest --config test/TU/vitest.config.mts",
+    "test:tu:watch": "vitest --config test/TU/vitest.config.mts --watch",
     "test:e2e:speed": "ts-node --transpiler sucrase/ts-node-plugin test/E2E --speed"
   },
   "dependencies": {
@@ -48,7 +50,8 @@
     "sucrase": "^3.34.0",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "vitest": "^1.2.1"
   },
   "nodemonConfig": {
     "watch": [
