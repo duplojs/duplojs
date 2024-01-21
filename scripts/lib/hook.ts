@@ -49,7 +49,7 @@ export class Hook<
 	}
 
 	private numberArgs: number;
-	private subscribers: subscriber[] = [];
+	public subscribers: subscriber[] = [];
 
 	addSubscriber(subscriber: subscriber, ...subscribers: subscriber[]){
 		this.subscribers.push(subscriber, ...subscribers);
@@ -88,7 +88,6 @@ export class Hook<
 		const contentFunction = this.subscribers.map((v, i) => /* js */`
 			if(${(v.constructor.name === "AsyncFunction" ? "await " : "")}this.subscribers[${i}](${mapArg}) === true) return;
 		`).join("");
-		console.log(`(${(/await/.test(contentFunction) ? "async " : "")}function(${mapArg}){\n${contentFunction}\n})`);
 		
 		return eval(/* js */`(${(/await/.test(contentFunction) ? "async " : "")}function(${mapArg}){\n${contentFunction}\n})`).bind({subscribers: this.subscribers});
 	}

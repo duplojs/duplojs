@@ -1,13 +1,12 @@
 import {AbstractRouteFunction} from ".";
-import {makeFloor} from "../../floor";
+import {DuploConfig} from "../../duploInstance";
 import {HooksLifeCycle, makeHooksLifeCycle} from "../../hook";
-import {DuploConfig} from "../../main";
 import {Request} from "../../request";
 import {Response} from "../../response";
 import {mapped} from "../../stringBuilder";
 import {mergeAbstractRouteFunctionString, subAbstractRoutesString} from "../../stringBuilder/mergeAbstractRoute";
 import {processDrop} from "../../stringBuilder/route";
-import {AnyFunction, DescriptionAll} from "../../utile";
+import {AnyFunction, DescriptionAll, makeFloor} from "../../utile";
 import {ExtendsAbstractRouteInstance} from "./instance";
 import {ExtendsSubAbstractRoute, SubAbstractRoute} from "./sub";
 

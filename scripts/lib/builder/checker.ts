@@ -1,9 +1,8 @@
 import {Checker as DefaultChecker, CheckerOutput, Checker, CheckerOutputFunction, CheckerPreComplated} from "../duplose/checker";
-import {Floor} from "../floor";
 import {ServerHooksLifeCycle} from "../hook";
 import {Response} from "../response";
 import {Checkers} from "../system/checker";
-import {AnyFunction, PromiseOrNot} from "../utile";
+import {AnyFunction, Floor, PromiseOrNot} from "../utile";
 
 export type CreateChecker<
 	_options extends Record<string, any> = never,
@@ -126,7 +125,7 @@ export default function makeCheckerBuilder(
 		};
 
 		const build: BuilderPatternChecker<any, any, any, any>["build"] = (...desc) => {
-			currentChecker.addDesc("build", desc);
+			currentChecker.addDesc("drop", desc);
 
 			checkers[name] = currentChecker;
 

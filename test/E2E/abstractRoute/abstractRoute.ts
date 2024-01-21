@@ -114,6 +114,8 @@ export const Abstract3 = (duplo: DuploInstance<DuploConfig>) => {
 	.build();
 };
 
+export const Abstract5 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute("abstract5").build();
+
 export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 .declareAbstractRoute("abstract5.5")
 .cut(

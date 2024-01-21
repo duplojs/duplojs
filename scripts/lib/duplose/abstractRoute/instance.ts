@@ -10,7 +10,7 @@ export abstract class AbstractRouteInstance<
 	request extends Request = Request,
 	response extends Response = Response,
 	extractObj extends ExtractObject = ExtractObject,
-	floor extends {} = _subAbstractRoute extends SubAbstractRoute<infer floor>? floor : {},
+	floor extends {} = _subAbstractRoute extends SubAbstractRoute<infer floor> ? floor : never,
 >{
 	abstract declareRoute<
 		req extends Request = request, 

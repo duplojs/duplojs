@@ -2,8 +2,8 @@ import {ServerHooksLifeCycle} from "../hook";
 import {Process as DefaultProcess} from "../duplose/process";
 import {makeProcessBuilder} from "../builder/process";
 import {Response} from "../response";
-import {DuploConfig} from "../main";
 import {ErrorExtractFunction} from "../duplose";
+import {DuploConfig} from "../duploInstance";
 
 export type Processes = DefaultProcess[];
 

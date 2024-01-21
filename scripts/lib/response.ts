@@ -5,7 +5,7 @@ import {basename, resolve} from "path";
 
 export const __exec__ = Symbol("exec");
 
-export class Response{
+export abstract class Response{
 	constructor(response: InstanceType<typeof ServerResponse>){
 		this.rawResponse = response;
 	}
@@ -150,6 +150,8 @@ export class Response{
 		}
 	}
 }
+
+export class ExtendsResponse extends Response{}
 
 export class SentError{
 	constructor(message = "There was a problem related to a response made outside the recommended context"){

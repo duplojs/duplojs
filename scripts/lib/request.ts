@@ -3,7 +3,7 @@ import fastQueryString from "fast-querystring";
 
 export type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
 
-export class Request{
+export abstract class Request{
 	constructor(
 		request: InstanceType<typeof IncomingMessage>, 
 		params: Record<string, string>, 
@@ -44,3 +44,5 @@ export class Request{
 
 	body: unknown;
 }
+
+export class ExtendsRequest extends Request{}

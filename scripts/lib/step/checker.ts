@@ -1,8 +1,7 @@
 import {Step} from ".";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
-import {Floor} from "../floor";
 import {Response} from "../response";
-import {AnyFunction} from "../utile";
+import {AnyFunction, Floor} from "../utile";
 
 export interface CheckerParamsStep<
 	checker extends Checker, 

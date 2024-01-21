@@ -1,9 +1,8 @@
 import {RouteStepParamsSkip} from "../builder/route";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
-import {Floor} from "../floor";
 import {Request} from "../request";
 import {Response} from "../response";
-import {AnyFunction, FlatExtract} from "../utile";
+import {AnyFunction, FlatExtract, Floor} from "../utile";
 import {Process as DefaultProcess, ExtendsProcess} from "../duplose/process";
 import {Processes} from "../system/process";
 import {Checker, CheckerGetParmas} from "../duplose/checker";

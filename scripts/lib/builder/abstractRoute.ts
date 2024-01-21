@@ -45,7 +45,7 @@ export interface AbstractRouteUseFunction<
 		...desc: any[]
 	): AbstractRouteInstance<
 		SubAbstractRoute<
-			Pick<floor, pickup extends keyof floor? pickup : never>
+			Pick<floor & {[-1]?: undefined}, pickup extends keyof floor? pickup : -1>
 		>,
 		request,
 		response,

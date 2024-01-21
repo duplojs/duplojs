@@ -15,18 +15,39 @@ export default function makeMergeAbstractRouteBuilder(
 ){
 	function mergeAbstractRoute<
 		abstractRouteInstance extends AbstractRouteInstance,
-		request extends abstractRouteInstance extends AbstractRouteInstance<any, infer request>? request : never,
-		response extends abstractRouteInstance extends AbstractRouteInstance<any, any, infer response>? response : never,
-		extractObj extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, infer extractObj>? extractObj : never,
-		floor extends abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>? floor : never
+		request extends Request =(
+			abstractRouteInstance extends AbstractRouteInstance<any, infer request>
+				? request 
+				: never
+		),
+		response extends Response = (
+			abstractRouteInstance extends AbstractRouteInstance<any, any, infer response>
+				? response 
+				: never
+		),
+		extractObj extends ExtractObject = (
+			abstractRouteInstance extends AbstractRouteInstance<any, any, any, infer extractObj>
+				? extractObj 
+				: never
+		),
+		floor extends {} = (
+			abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>
+				? floor
+				: never
+		),
+		mergeFloor extends {} = (
+			UnionToIntersection<floor> extends {} 
+				? UnionToIntersection<floor>
+				: {}
+		)
 	>(
-		abstractRouteInstances: AbstractRouteInstance[],
+		abstractRouteInstances: abstractRouteInstance[],
 		...desc: any[]
 	): AbstractRouteInstance<
-		SubAbstractRoute<UnionToIntersection<floor> extends {}? UnionToIntersection<floor> : never>,
-		UnionToIntersection<request> extends Request? UnionToIntersection<request> : never,
-		UnionToIntersection<response> extends Response? UnionToIntersection<response> : never,
-		UnionToIntersection<extractObj> extends ExtractObject? UnionToIntersection<extractObj> : never
+		SubAbstractRoute<mergeFloor>,
+		request extends Request ? UnionToIntersection<request> : never,
+		response extends Response ? UnionToIntersection<response> : never,
+		extractObj extends ExtractObject ? UnionToIntersection<extractObj> : never		
 	>
 	{	
 		const currentMergeAbstractRoute = new MergeAbstractRoute(

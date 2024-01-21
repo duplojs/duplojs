@@ -1,9 +1,8 @@
 import {methods, Request} from "../request";
-import {Floor} from "../floor";
 import {__exec__, Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {PickupDropProcess} from "../builder/process";
-import {AnyFunction, FlatExtract} from "../utile";
+import {AnyFunction, FlatExtract, Floor} from "../utile";
 import {Route as DefaultRoute, ExtendsRoute} from "../duplose/route";
 import {Process} from "../duplose/process";
 import {Routes} from "../system/route";

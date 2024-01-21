@@ -1,5 +1,4 @@
 import {ZodError, ZodType} from "zod";
-import {makeFloor, Floor} from "../floor";
 import {condition, mapped, spread} from "../stringBuilder";
 import {Request} from "../request";
 import {Response} from "../response";
@@ -8,6 +7,7 @@ import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, pro
 import {CutStep} from "../step/cut";
 import {CheckerStep} from "../step/checker";
 import {Duplose, ExtractObject} from ".";
+import {Floor, makeFloor} from "../utile";
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
 
@@ -122,9 +122,7 @@ export abstract class Process<
 			),
 			this.drop || []
 		);
-		console.log("process : ", this.name);
 		
-		// if(this.name === "isAdmin")console.log(this.stringDuploseFunction);
 		this.editingDuploseFunctions.forEach(editingFunction => editingFunction(this));
 		
 		this.duploseFunction = eval(this.stringDuploseFunction).bind({

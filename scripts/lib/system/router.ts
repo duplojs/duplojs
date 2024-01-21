@@ -1,12 +1,12 @@
 import {ExtendsRoute, RouteFunction} from "../duplose/route";
 import {mapped} from "../stringBuilder";
 import {matchRoute, routerStringFunction} from "../stringBuilder/router";
-import {DuploConfig} from "../main";
 import {Request, methods} from "../request";
 import {Response, __exec__} from "../response";
 import {Routes} from "../system/route";
 import {PromiseOrNot} from "../utile";
 import {CutStep} from "../step/cut";
+import {DuploConfig} from "../duploInstance";
 
 export type RouteFound = {
 	routeFunction: RouteFunction,

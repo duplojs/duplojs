@@ -11,7 +11,6 @@ const isOwner = IsOwner(duplo);
 const isUser = IsUser(duplo);
 
 duplo.declareRoute("GET", "/process/test/1")
-.hook("onError", (req, res, error) => console.log(error))
 .process(
 	isAdmin,
 	{

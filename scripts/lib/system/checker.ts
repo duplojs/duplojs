@@ -12,6 +12,7 @@ export default function makeCheckerSystem(
 	const {createChecker} = makeCheckerBuilder(serverHooksLifeCycle, Checker, checkers);
 
 	return {
+		Checker,
 		createChecker,
 		checkers,
 	};

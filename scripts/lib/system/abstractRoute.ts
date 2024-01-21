@@ -1,6 +1,5 @@
 import {ServerHooksLifeCycle} from "../hook";
 import {Response} from "../response";
-import {DuploConfig} from "../main";
 import {ErrorExtractFunction} from "../duplose";
 import {AbstractRoute as DefaultAbstractRoute} from "../duplose/abstractRoute";
 import {makeAbstractRouteBuilder} from "../builder/abstractRoute";
@@ -11,6 +10,7 @@ import {MergeAbstractRoute as DefaultMergeAbstractRoute} from "../duplose/abstra
 import makeMergeAbstractRouteBuilder from "../builder/mergeAbstractRoute";
 import {AbstractRouteInstance as DefaultAbstractRouteInstance} from "../duplose/abstractRoute/instance";
 import {methods} from "../request";
+import {DuploConfig} from "../duploInstance";
 
 export type AbstractRoutes = (DefaultAbstractRoute | MergeAbstractRoute)[];
 

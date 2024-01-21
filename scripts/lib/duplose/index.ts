@@ -1,13 +1,12 @@
 import {ZodError, ZodType} from "zod";
-import {Floor} from "../floor";
 import {HooksLifeCycle, makeHooksLifeCycle} from "../hook";
-import {DuploConfig} from "../main";
 import {Request} from "../request";
 import {Response} from "../response";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
 import {ProcessStep} from "../step/process";
-import {AnyFunction, DescriptionAll} from "../utile";
+import {AnyFunction, DescriptionAll, Floor} from "../utile";
+import {DuploConfig} from "../duploInstance";
 
 export interface ExtractObject{
 	body?: Record<string, ZodType> | ZodType,

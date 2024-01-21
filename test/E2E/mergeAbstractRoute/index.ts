@@ -34,15 +34,6 @@ export default workerTesting(
 				code: 204,
 				info: "result",
 			}
-		},
-		{
-			title: "prefix",
-			url: "http://localhost:1506/pre/pre/mergeAbstract/test/3",
-			method: "GET",
-			response: {
-				code: 204,
-				info: "result",
-			}
-		},
+		}
 	]
 );

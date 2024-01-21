@@ -140,3 +140,44 @@ export function deleteDescriptions(
 		abstractRoute => abstractRoute.descs = []
 	);
 }
+
+export function correctPath(path: string){
+	if(path[0] !== "/") path = "/" + path;
+	path = path.endsWith("/") ? path.slice(0, -1) : path;
+	return path;
+}
+
+export interface Floor<floor extends {}>{
+	pickup<key extends Exclude<keyof floor, number>>(index: key): floor[key];
+	// pickup<key extends keyof floor>(index: string): any;
+	drop<key extends Exclude<keyof floor, number>>(index: key, value: floor[key]): void;
+	// drop(index: string, value: any): void;
+}
+
+export function makeFloor(): Floor<{}>
+{
+	const floor: Record<string, any> = new Map();
+
+	return {
+		pickup: (index) => floor.get(index),
+		drop: (index, value) => {floor.set(index, value);}
+	};
+}
+
+declare global {
+	interface ObjectConstructor {
+		hasProp<anyObject extends Record<string, unknown>>(o: anyObject, key: symbol | number | string): key is keyof anyObject;
+		entries<anyObject extends object>(o: anyObject): Array<
+			Exclude<
+				{
+					[p in keyof anyObject]: [p, anyObject[p]] 
+				}[keyof anyObject],
+				undefined
+			>
+		>;
+		keys<anyObject extends object>(o: anyObject): (keyof anyObject)[];
+	}
+}
+
+//@ts-ignore
+Object.hasProp = (o, key) => key in o;
