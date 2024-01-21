@@ -1,5 +1,4 @@
 import http from "http";
-import makeContentTypeParserSystem from "./contentTypeParser";
 import {AddHooksLifeCycle, AddServerHooksLifeCycle, makeHooksLifeCycle, makeServerHooksLifeCycle} from "./hook";
 import {makeAbstractRouteSystem} from "./system/abstractRoute";
 import makeCheckerSystem, {Checkers} from "./system/checker";
@@ -19,6 +18,7 @@ export interface DuploConfig{
 	prefix?: string;
 	keepDescriptions?: boolean;
 	environment?: "DEV" | "PROD";
+	disableDefaultHookParsingBody?: boolean;
 }
 
 export interface Plugins {}
@@ -30,11 +30,6 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	public server: http.Server;
 	public Request: typeof ExtendsRequest;
 	public Response: typeof ExtendsResponse;
-	
-	public addContentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["addContentTypeParsers"];
-	protected buildContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["buildContentTypeBody"];
-	protected contentTypeParsers: ReturnType<typeof makeContentTypeParserSystem>["contentTypeParsers"];
-	protected parseContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["parseContentTypeBody"];
 
 	protected Checker: ReturnType<typeof makeCheckerSystem>["Checker"];
 	public createChecker: ReturnType<typeof makeCheckerSystem>["createChecker"];
@@ -79,19 +74,40 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	){
 		config.prefix = correctPath(config.prefix || "");
 
+		if(this.config.disableDefaultHookParsingBody !== true){
+			
+			this.hooksLifeCyle.parsingBody.addSubscriber(async(request) => {
+				const contentType = request.headers["content-type"];
+				if(
+					contentType && (
+						/application\/json/.test(contentType) ||
+						/text\/plain/.test(contentType)
+					)
+				){
+					await new Promise<void>(
+						(resolve, reject) => {
+							let stringBody = "";
+							request.rawRequest.on("error", reject);
+							request.rawRequest.on("data", chunck => stringBody += chunck);
+							request.rawRequest.on("end", () => {
+								if(/text\/plain/.test(contentType)){
+									request.body = stringBody;
+								}
+								else {
+									request.body = JSON.parse(stringBody);
+								}
+								resolve();
+							});
+						}
+					);
+					
+					return true;
+				}
+			});
+		}
+
 		this.Request = class extends Request{};
 		this.Response = class extends Response{};
-
-		const {
-			addContentTypeParsers, 
-			buildContentTypeBody, 
-			parseContentTypeBody,
-			contentTypeParsers
-		} = makeContentTypeParserSystem();
-		this.addContentTypeParsers = addContentTypeParsers;
-		this.buildContentTypeBody = buildContentTypeBody;
-		this.parseContentTypeBody = parseContentTypeBody;
-		this.contentTypeParsers = contentTypeParsers;
 		
 		const {
 			Checker,
@@ -119,7 +135,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 			setDefaultErrorExtract: routeSetDefaultErrorExtract, 
 			routes, 
 			Route,
-		} = makeRouteSystem(config, this.hooksLifeCyle, this.serverHooksLifeCycle, parseContentTypeBody);
+		} = makeRouteSystem(config, this.hooksLifeCyle, this.serverHooksLifeCycle);
 		this.declareRoute = declareRoute;
 		this.setErrorHandler = setErrorHandler;
 		this.routeSetDefaultErrorExtract = routeSetDefaultErrorExtract;
@@ -203,7 +219,6 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		deepFreeze(this.abstractRoutes, 2);
 		
 		this.buildRouter();
-		this.buildContentTypeBody();
 
 		this.serverHooksLifeCycle.onServerError.addSubscriber((serverRequest, serverResponse, error) => console.error(error));
 

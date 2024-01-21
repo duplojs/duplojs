@@ -27,7 +27,7 @@ duplo.declareRoute("GET", "/test/2/{test}")
 duplo.declareRoute("GET", "/test/3")
 .handler(({}, res) => res.code(200).info("s").send({test: 1}));
 
-duplo.declareRoute("POST", "/test/4")
+const tt = duplo.declareRoute("POST", "/test/4")
 .extract({
 	body: zod.string(),
 })
@@ -81,8 +81,8 @@ duplo.declareRoute("GET", "/test/hook/beforeRouteExecution")
 .hook("beforeRouteExecution", (res) => parentPort?.postMessage("hook beforeRouteExecution"))
 .handler(({}, res) => {res.code(200).info("s").send();});
 
-duplo.declareRoute("GET", "/test/hook/beforeParsingBody")
-.hook("beforeParsingBody", (res) => parentPort?.postMessage("hook beforeParsingBody"))
+duplo.declareRoute("GET", "/test/hook/parsingBody")
+.hook("parsingBody", (res) => parentPort?.postMessage("hook parsingBody"))
 .extract({body: zod.undefined()})
 .handler(({}, res) => {res.code(200).info("s").send();});
 

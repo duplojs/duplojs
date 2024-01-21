@@ -23,7 +23,7 @@ export interface AddHooksLifeCycle<
 	addHook(name: "onConstructRequest", functionHook: ReturnType<HooksLifeCycle<request, response>["onConstructRequest"]["build"]>): returnType;
 	addHook(name: "onConstructResponse", functionHook: ReturnType<HooksLifeCycle<request, response>["onConstructResponse"]["build"]>): returnType;
 	addHook(name: "beforeRouteExecution", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeRouteExecution"]["build"]>): returnType;
-	addHook(name: "beforeParsingBody", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeParsingBody"]["build"]>): returnType;
+	addHook(name: "parsingBody", functionHook: ReturnType<HooksLifeCycle<request, response>["parsingBody"]["build"]>): returnType;
 	addHook(name: "onError", functionHook: ReturnType<HooksLifeCycle<request, response>["onError"]["build"]>): returnType;
 	addHook(name: "beforeSend", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeSend"]["build"]>): returnType;
 	addHook(name: "afterSend", functionHook: ReturnType<HooksLifeCycle<request, response>["afterSend"]["build"]>): returnType;
@@ -57,20 +57,22 @@ export class Hook<
 
 	removeSubscriber(subscriber: subscriber){
 		const index = this.subscribers.findIndex(sub => sub === subscriber);
-		if(index !== -1) this.subscribers.slice(index, 1);
+		if(index !== -1) this.subscribers.splice(index, 1);
 	}
 
 	removeAllSubscriber(){
 		this.subscribers = [];
 	}
 
-	launchSubscriber(...args: args){
-		this.subscribers.forEach(sub => sub(...args));
+	launchSubscriber(...args: args): boolean | void{
+		for(const fnc of this.subscribers){
+			if(fnc(...args) === true) return true;
+		}
 	}
 
-	async launchSubscriberAsync(...args: args){
+	async launchSubscriberAsync(...args: args): Promise<boolean | void>{
 		for(const fnc of this.subscribers){
-			if(await fnc(...args) === true) break;
+			if(await fnc(...args) === true) return true;
 		}
 	} 
 
@@ -101,7 +103,7 @@ export function makeHooksLifeCycle<
 		onConstructRequest: new Hook<[request: request]>(1),
 		onConstructResponse: new Hook<[response: response]>(1),
 		beforeRouteExecution: new Hook<[request: request, response: response]>(2),
-		beforeParsingBody: new Hook<[request: request, rresponse: response]>(2),
+		parsingBody: new Hook<[request: request, rresponse: response]>(2),
 		onError: new Hook<[request: request, response: response, error: Error]>(3),
 		beforeSend: new Hook<[request: request, response: response]>(2),
 		afterSend: new Hook<[request: request, response: response]>(2),

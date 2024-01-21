@@ -1,4 +1,3 @@
-import makeContentTypeParserSystem from "../contentTypeParser";
 import {HooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {Route as DefaultRoute, RouteErrorHandlerFunction} from "../duplose/route";
 import {methods} from "../request";
@@ -17,16 +16,11 @@ export interface RouteEditableProperty{
 export function makeRouteSystem(
 	config: DuploConfig, 
 	mainHooksLifeCyle: HooksLifeCycle, 
-	serverHooksLifeCycle: ServerHooksLifeCycle,
-	parseContentTypeBody: ReturnType<typeof makeContentTypeParserSystem>["parseContentTypeBody"]
+	serverHooksLifeCycle: ServerHooksLifeCycle
 ){
 	class Route extends DefaultRoute{
 		public get config(){
 			return config;
-		}
-
-		public get parseContentTypeBody(){
-			return parseContentTypeBody;
 		}
 
 		public get mainHooksLifeCyle(){

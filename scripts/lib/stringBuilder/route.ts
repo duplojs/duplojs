@@ -100,15 +100,12 @@ ${drop}
 /* end_block */
 `;
 
-export const hookBody = (hasHookBeforeParsingBody: boolean) => /* js */`
+export const hookBody = (hasHookParsingBody: boolean) => /* js */`
 if(request.body === undefined){
 	/* before_hook_before_parsing_body */
 	/* end_block */
-	${hasHookBeforeParsingBody ? "await this.hooks.launchBeforeParsingBody(request, response);" : ""}
+	${hasHookParsingBody ? "await this.hooks.launchParsingBody(request, response);" : ""}
 	/* after_hook_before_parsing_body */
-	/* end_block */
-	if(request.body === undefined)await this.parseContentTypeBody(request);
-	/* after_parsing_body */
 	/* end_block */
 }
 `;

@@ -4,8 +4,7 @@ import {z as zod} from "zod";
 //types
 export type * from "./lib/duploInstance.ts";
 export type * from "./lib/system/checker.ts";
-export type * from "./lib/contentTypeParser.ts";
-export type * from "./lib/hook.ts";
+export {Hook} from "./lib/hook.ts";
 export type * from "./lib/system/process.ts";
 export {Request} from "./lib/request.ts";
 export {Response, SentError} from "./lib/response.ts";

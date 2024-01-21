@@ -1,7 +1,7 @@
 import {ServerResponse} from "http";
 import {createReadStream, existsSync,} from "fs";
 import mime from "mime";
-import {basename, resolve} from "path";
+import {basename} from "path";
 
 export const __exec__ = Symbol("exec");
 

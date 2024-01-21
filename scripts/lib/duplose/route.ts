@@ -1,4 +1,3 @@
-import makeContentTypeParserSystem from "../contentTypeParser";
 import {condition, mapped, spread} from "../stringBuilder";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hookBody, processDrop, processStep, routeFunctionString, skipStep, subAbstractRouteString} from "../stringBuilder/route";
 import {HooksLifeCycle} from "../hook";
@@ -19,7 +18,6 @@ export type RouteErrorHandlerFunction = (request: Request, response: Response, e
 
 export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>{
 	public abstract get errorHandlerFunction(): RouteErrorHandlerFunction;
-	public abstract get parseContentTypeBody(): ReturnType<typeof makeContentTypeParserSystem>["parseContentTypeBody"];
 	public abstract get mainHooksLifeCyle(): HooksLifeCycle<Request, Response>;
 
 	constructor(
@@ -69,7 +67,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 				),
 				condition(
 					!!this.extracted.body,
-					() => hookBody(!!this.hooksLifeCyle.beforeParsingBody.subscribers.length)
+					() => hookBody(!!this.hooksLifeCyle.parsingBody.subscribers.length)
 				),
 				condition(
 					Object.keys(this.extracted).length !== 0,
@@ -141,7 +139,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 			extensions: this.extensions,
 			hooks: {
 				launchAfterSend: this.hooksLifeCyle.afterSend.build(),
-				launchBeforeParsingBody: this.hooksLifeCyle.beforeParsingBody.build(),
+				launchParsingBody: this.hooksLifeCyle.parsingBody.build(),
 				launchBeforeSend: this.hooksLifeCyle.beforeSend.build(),
 				launchOnConstructRequest: this.hooksLifeCyle.onConstructRequest.build(),
 				launchOnConstructResponse: this.hooksLifeCyle.onConstructResponse.build(),
@@ -154,7 +152,6 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 			Request,
 			__exec__,
 			errorHandlerFunction: this.errorHandlerFunction,
-			parseContentTypeBody: this.parseContentTypeBody,
 			config: this.config,
 		});
 	}

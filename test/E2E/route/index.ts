@@ -173,10 +173,10 @@ export default workerTesting(
 			}
 		},
 		{
-			title: "hook beforeParsingBody",
-			url: "http://localhost:1506/route/test/hook/beforeParsingBody",
+			title: "hook parsingBody",
+			url: "http://localhost:1506/route/test/hook/parsingBody",
 			method: "GET",
-			output: ["hook beforeParsingBody"],
+			output: ["hook parsingBody"],
 			response: {
 				code: 200,
 				info: "s",
