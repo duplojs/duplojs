@@ -1,7 +1,12 @@
 import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 
-const duplo = Duplo({port: 1506, host: "localhost", prefix: "route"});
+const duplo = Duplo({
+	port: 1506, 
+	host: "localhost", 
+	prefix: "route", 
+	environment: "DEV"
+});
 
 duplo.setNotfoundHandler((req, res) => {
 	parentPort?.postMessage("matched path " + req.matchedPath);

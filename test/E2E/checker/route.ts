@@ -2,7 +2,11 @@ import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {IsOdd} from "./checker";
 
-const duplo = Duplo({port: 1506, host: "localhost"});
+const duplo = Duplo({
+	port: 1506, 
+	host: "localhost", 
+	environment: "DEV"
+});
 
 const isOdd = IsOdd(duplo);
 

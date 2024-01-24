@@ -13,11 +13,11 @@ import {ErrorExtractFunction} from "./duplose";
 export interface DuploConfig{
 	port: number,
 	host: string,
+	environment: "DEV" | "PROD";
 	onLaunch?: () => void;
 	onClose?: () => void;
 	prefix?: string;
 	keepDescriptions?: boolean;
-	environment?: "DEV" | "PROD";
 	disableDefaultHookParsingBody?: boolean;
 }
 

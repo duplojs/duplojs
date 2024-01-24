@@ -2,7 +2,11 @@ import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {Abstract1, Abstract2, Abstract3, Abstract6} from "./abstractRoute";
 
-const duplo = Duplo({port: 1506, host: "localhost"});
+const duplo = Duplo({
+	port: 1506, 
+	host: "localhost", 
+	environment: "DEV"
+});
 
 const abstract1 = Abstract1(duplo);
 const abstract2 = Abstract2(duplo);

@@ -2,7 +2,11 @@ import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {MergeAbstractRoute1, MergeAbstractRoute2} from "./mergeAbstractRoute";
 
-const duplo = Duplo({port: 1506, host: "localhost"});
+const duplo = Duplo({
+	port: 1506, 
+	host: "localhost", 
+	environment: "DEV"
+});
 
 const mergeAbstractRoute1 = MergeAbstractRoute1(duplo);
 const mergeAbstractRoute2 = MergeAbstractRoute2(duplo);

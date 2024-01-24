@@ -2,7 +2,11 @@ import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {IsAdmin, IsCustomer, IsManager, IsOwner, IsUser} from "./process";
 
-const duplo = Duplo({port: 1506, host: "localhost"});
+const duplo = Duplo({
+	port: 1506, 
+	host: "localhost", 
+	environment: "DEV"
+});
 
 const isAdmin = IsAdmin(duplo);
 const isManager = IsManager(duplo);

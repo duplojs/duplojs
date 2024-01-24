@@ -1,7 +1,11 @@
 import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 
-const duplo = Duplo({port: 1506, host: "localhost"});
+const duplo = Duplo({
+	port: 1506, 
+	host: "localhost", 
+	environment: "DEV"
+});
 
 duplo
 .addHook("onConstructRequest", () => {parentPort?.postMessage("global onConstructRequest");})
