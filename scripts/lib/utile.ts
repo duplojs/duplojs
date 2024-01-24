@@ -181,3 +181,8 @@ declare global {
 
 //@ts-ignore
 Object.hasProp = (o, key) => key in o;
+
+export const pathToStringRegExp = (path: string) => `/^${path.replace(/\//g, "\\/").replace(/\.?\*/g, ".*")}\\/?(?:\\?[^]*)?$/`.replace(
+	/\{([a-zA-Z0-9_\-]+)\}/g,
+	(match, group1) => `(?<${group1}>[a-zA-Z0-9_\\-]+)`
+);

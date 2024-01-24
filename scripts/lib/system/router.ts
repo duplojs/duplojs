@@ -4,7 +4,7 @@ import {matchRoute, routerStringFunction} from "../stringBuilder/router";
 import {Request, methods} from "../request";
 import {Response, __exec__} from "../response";
 import {Routes} from "../system/route";
-import {PromiseOrNot} from "../utile";
+import {pathToStringRegExp, PromiseOrNot} from "../utile";
 import {CutStep} from "../step/cut";
 import {DuploConfig} from "../duploInstance";
 
@@ -67,10 +67,7 @@ export function makeRouterSystem(
 							paths,
 							(path) => 
 								matchRoute(
-									`/^${(config.prefix + path).replace(/\//g, "\\/").replace(/\.?\*/g, ".*")}\\/?(?:\\?[^]*)?$/`.replace(
-										/\{([a-zA-Z0-9_\-]+)\}/g,
-										(match, group1) => `(?<${group1}>[a-zA-Z0-9_\\-]+)`
-									),
+									pathToStringRegExp(config.prefix + path),
 									index,
 									path
 								)

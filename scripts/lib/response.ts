@@ -1,5 +1,5 @@
 import {ServerResponse} from "http";
-import {createReadStream, existsSync,} from "fs";
+import {createReadStream, existsSync} from "fs";
 import mime from "mime";
 import {basename} from "path";
 
@@ -26,15 +26,17 @@ export abstract class Response{
 
 	information?: string;
 
-	send(data?: any): never{
+	send(body?: unknown): never
+	{
 		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 		
-		this.data = data;
+		this.body = body;
 		throw this;
 	}
 
-	sendFile(path: string){
+	sendFile(path: string): never
+	{
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 
 		if(this.isSend === true) throw new SentError();
@@ -45,7 +47,8 @@ export abstract class Response{
 		throw this;
 	}
 
-	download(path: string, name?: string){
+	download(path: string, name?: string): never
+	{
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 
 		if(this.isSend === true) throw new SentError();
@@ -57,12 +60,13 @@ export abstract class Response{
 		throw this;
 	}
 
-	redirect(path: string){
+	redirect(path: string, code: number = 302): never
+	{
 		if(this.isSend === true) throw new SentError();
 		this.isSend = true;
 
 		this.headers["Location"] = path;
-		this.status = this.status === 200 ? 302 : this.status;
+		this.status = code;
 		throw this;
 	}
 
@@ -72,13 +76,13 @@ export abstract class Response{
 	}
 
 	setHeader(index: string, value: string | string[]){
-		this.headers[index.toLowerCase()] = value;
+		this.headers[index] = value;
 		return this;
 	}
 
 	headers: Record<string, string | string[]> = {};
 
-	data: unknown;
+	body: unknown;
 
 	file?: string;
 
@@ -90,31 +94,31 @@ export abstract class Response{
 		// et répondre manuelment avec l'objet ServerReponse (rawResponse).
 		// Cette condition permet d'annuler la logique par défaut d'envois
 		// dans le cas ou une réponse serveur a déjà étais envoyer.
-		if(this.rawResponse.headersSent) return;
+		if(this.rawResponse.headersSent) return Promise.resolve();
 
 		if(this.information) this.headers.info = this.information;
-		if(this.data !== undefined){
+		if(this.body !== undefined){
 			const contentType = this.headers["content-type"] as string;
 			const hasContentType = contentType !== undefined;
 			
 			if(
 				hasContentType === false && 
-				(typeof this.data === "string" || typeof this.data === "number")
+				(typeof this.body === "string" || typeof this.body === "number")
 			){
 				this.headers["content-type"] = "text/plain; charset=utf-8";
-				this.data = this.data.toString();
+				this.body = this.body.toString();
 			}
-			else if(hasContentType === false && this.data instanceof ArrayBuffer){
+			else if(hasContentType === false && this.body instanceof ArrayBuffer){
 				this.headers["content-type"] = "application/octet-stream";
 			}
 			else if(
 				(hasContentType === false || /json/.test(contentType)) && 
-				typeof this.data === "object"
+				typeof this.body === "object"
 			){
 				if(hasContentType === false){
 					this.headers["content-type"] = "application/json; charset=utf-8";
 				}
-				this.data = JSON.stringify(this.data);
+				this.body = JSON.stringify(this.body);
 			}
 
 			this.rawResponse.writeHead(this.status, this.headers);
@@ -122,7 +126,7 @@ export abstract class Response{
 				this.rawResponse
 				.once("error", reject)
 				.once("close", resolve)
-				.write(this.data);
+				.write(this.body);
 				
 				this.rawResponse.end();
 			});
