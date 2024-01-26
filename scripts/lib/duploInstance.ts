@@ -1,18 +1,21 @@
 import http from "http";
 import {AddHooksLifeCycle, AddServerHooksLifeCycle, makeHooksLifeCycle, makeServerHooksLifeCycle} from "./hook";
 import {makeAbstractRouteSystem} from "./system/abstractRoute";
-import makeCheckerSystem, {Checkers} from "./system/checker";
+import makeCheckerSystem from "./system/checker";
 import {makeProcessSystem} from "./system/process";
 import {makeRouteSystem} from "./system/route";
 import {makeRouterSystem} from "./system/router";
 import {AnyFunction, buildAbstractRoutes, buildProcesses, buildRoutes, correctPath, deepFreeze, deleteDescriptions} from "./utile";
 import {ExtendsRequest, Request, methods} from "./request";
-import {ExtendsResponse, Response, SentError} from "./response";
+import {ExtendsResponse, Response} from "./response";
 import {ErrorExtractFunction} from "./duplose";
 import {parsingBody} from "./defaultHooks/parsingBody";
 import {serializeJSON} from "./defaultHooks/serializeJSON";
 import {serializeString} from "./defaultHooks/serializeString";
 import {serializeFile} from "./defaultHooks/serializeFile";
+import {NotError} from "./errors/notError";
+import {UncaughtResponse} from "./errors/uncaughtResponse";
+import {OutOfContextResponse} from "./errors/outOfContextResponse";
 
 export interface DuploConfig{
 	port: number,
@@ -163,8 +166,12 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 			await routeFunction(new this.Request(serverRequest, params, matchedPath), new this.Response(serverResponse));
 		}
 		catch (error){
-			if(error instanceof Response) error = new SentError();
-			if(error instanceof SentError) error = error.error;
+			if(error instanceof Response){
+				error = new OutOfContextResponse();
+			}
+			else if(!(error instanceof Error)){
+				error = new NotError();
+			}
 			await this.serverHooksLifeCycle.onServerError.launchSubscriberAsync(serverRequest, serverResponse, error as Error);
 			if(!serverResponse.headersSent){
 				serverResponse.writeHead(500, {"content-type": "text/plain"});
@@ -221,12 +228,16 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		this.server.listen(this.config.port, this.config.host);
 
 		process.on("uncaughtException", (error: any, origin) => {
-			if(error instanceof Response) error = new SentError();
-			if(error instanceof SentError) console.error(error.error, origin);
-			else {
-				console.error(error, origin);
-				process.exit(1);
+			if(error instanceof Response){
+				console.log(new UncaughtResponse());
 			}
+			else if(!(error instanceof Error)){
+				console.log(new NotError());
+			}
+			else {
+				console.log(error);
+			}
+			process.exit(1);
 		});
 
 		return this.server;

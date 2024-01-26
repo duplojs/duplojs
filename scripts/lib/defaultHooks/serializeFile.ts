@@ -1,4 +1,4 @@
-import {createReadStream} from "fs";
+import {createReadStream, existsSync} from "fs";
 import {Request} from "../request";
 import {Response} from "../response";
 

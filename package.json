@@ -28,6 +28,7 @@
     "test:e2e": "ts-node test/E2E",
     "test:tu": "vitest --config test/TU/vitest.config.mts",
     "test:tu:watch": "vitest --config test/TU/vitest.config.mts --watch",
+    "test:tu:coverage": "vitest --config test/TU/vitest.config.mts --coverage",
     "test:e2e:speed": "ts-node --transpiler sucrase/ts-node-plugin test/E2E --speed"
   },
   "dependencies": {
@@ -38,11 +39,14 @@
   "devDependencies": {
     "@duplojs/worker-testing": "^0.2.5",
     "@types/mime": "^3.0.1",
+    "@types/mock-fs": "^4.13.4",
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-istanbul": "^1.2.1",
     "autocannon": "^7.11.0",
     "eslint": "^8.45.0",
+    "mock-fs": "^5.2.0",
     "node-mocks-http": "^1.14.1",
     "nodemon": "^3.0.1",
     "rollup": "^3.26.2",

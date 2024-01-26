@@ -139,7 +139,7 @@ export default workerTesting(
 			output: [],
 			response: {
 				code: 500,
-				body: zod.literal("Error: There was a problem related to a response made outside the recommended context")
+				body: zod.literal("Error: Response interrupted the code from its context.")
 			}
 		},
 		{

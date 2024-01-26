@@ -1,7 +1,8 @@
 import {ServerResponse} from "http";
-import {createReadStream, existsSync} from "fs";
+import {existsSync} from "fs";
 import mime from "mime";
 import {basename} from "path";
+import {AlreadySent} from "./errors/alreadySent";
 
 export abstract class Response{
 	constructor(response: InstanceType<typeof ServerResponse>){
@@ -27,7 +28,7 @@ export abstract class Response{
 
 	send(body?: unknown): never
 	{
-		if(this.isSend === true) throw new SentError();
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 		
 		if(this.headers["content-type"] === undefined){
@@ -47,7 +48,7 @@ export abstract class Response{
 	{
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 
-		if(this.isSend === true) throw new SentError();
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 
 		this.file = path;
@@ -59,7 +60,7 @@ export abstract class Response{
 	{
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 
-		if(this.isSend === true) throw new SentError();
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 
 		this.file = path;
@@ -70,7 +71,7 @@ export abstract class Response{
 
 	redirect(path: string, code: number = 302): never
 	{
-		if(this.isSend === true) throw new SentError();
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 
 		this.headers["Location"] = path;
@@ -98,11 +99,3 @@ export abstract class Response{
 }
 
 export class ExtendsResponse extends Response{}
-
-export class SentError{
-	constructor(message = "There was a problem related to a response made outside the recommended context"){
-		this.error = new Error(message);
-	}
-
-	error: Error;
-}

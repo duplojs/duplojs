@@ -1,3 +1,4 @@
+import {AlreadySent} from "../../../scripts/lib/errors/alreadySent";
 import {makeMokedResponse, trySend} from "../mocks/response";
 
 let existsSyncReturn = true;
@@ -43,13 +44,36 @@ describe("request", () => {
 		});
 	});
 
-	it("send data", () => {
+	it("send string", () => {
 		const {response} = makeMokedResponse();
 		
 		trySend(() => response.send("test"));
 
+		expect(response.headers).toEqual({"content-type": "text/plain; charset=utf-8"});
 		expect(response.isSend).toBe(true);
 		expect(response.body).toBe("test");
+	});
+
+	it("send json", () => {
+		const {response} = makeMokedResponse();
+		
+		trySend(() => response.send({test: "value"}));
+
+		expect(response.headers).toEqual({"content-type": "application/json; charset=utf-8",});
+		expect(response.isSend).toBe(true);
+		expect(response.body).toEqual({test: "value"});
+	});
+
+	it("retry send", () => {
+		const {response} = makeMokedResponse();
+		
+		trySend(() => response.send("test"));
+
+		try {
+			response.send();
+		} catch (error){
+			expect(error).instanceOf(AlreadySent);
+		}
 	});
 
 	it("send exist file", () => {
@@ -85,6 +109,19 @@ describe("request", () => {
 		expect(response.isSend).toBe(true);
 		expect(response.file).toBe(undefined);
 		expect(response.information).toBe("FILE.NOTFOUND");
+	});
+
+	it("retry send file", () => {
+		existsSyncReturn = true;
+		const {response} = makeMokedResponse();
+		
+		trySend(() => response.send("test"));
+
+		try {
+			response.sendFile("index");
+		} catch (error){
+			expect(error).instanceOf(AlreadySent);
+		}
 	});
 
 	it("download exist file", () => {
@@ -125,6 +162,19 @@ describe("request", () => {
 		expect(response.information).toBe("FILE.NOTFOUND");
 	});
 
+	it("retry download", () => {
+		existsSyncReturn = true;
+		const {response} = makeMokedResponse();
+		
+		trySend(() => response.send("test"));
+
+		try {
+			response.download("index");
+		} catch (error){
+			expect(error).instanceOf(AlreadySent);
+		}
+	});
+
 	it("redirect", () => {
 		const {response} = makeMokedResponse();
 		
@@ -145,5 +195,17 @@ describe("request", () => {
 		expect(response.headers).toEqual({
 			"Location": "/test",
 		});
+	});
+
+	it("retry redirect", () => {
+		const {response} = makeMokedResponse();
+		
+		trySend(() => response.send("test"));
+
+		try {
+			response.redirect("/test", 309);
+		} catch (error){
+			expect(error).instanceOf(AlreadySent);
+		}
 	});
 });
