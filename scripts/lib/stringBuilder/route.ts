@@ -72,7 +72,27 @@ export const routeFunctionString = (
 				${hasHookBeforeSend ? "await this.hooks.launchBeforeSend(request, response);" : ""}
 				/* after_hook_before_send */
 				/* end_block */
-				await response[this.__exec__]();
+
+				/* before_write_head */
+				/* end_block */
+				response.rawResponse.writeHead(response.status, response.headers);
+				/* after_write_head */
+				/* end_block */
+
+				/* before_hook_serialize_body */
+				/* end_block */
+				await this.hooks.launchSerializeBody(request, response);
+				/* after_hook_serialize_body */
+				/* end_block */
+
+				/* before_close_response */
+				/* end_block */
+				if(response.rawResponse.writableEnded === false){
+					response.rawResponse.end();
+				}
+				/* after_close_response */
+				/* end_block */
+
 				/* before_hook_after_send */
 				/* end_block */
 				${hasHookAfterSend ? "await this.hooks.launchAfterSend(request, response);" : ""}
@@ -100,11 +120,11 @@ ${drop}
 /* end_block */
 `;
 
-export const hookBody = (hasHookParsingBody: boolean) => /* js */`
+export const hookBody = () => /* js */`
 if(request.body === undefined){
 	/* before_hook_before_parsing_body */
 	/* end_block */
-	${hasHookParsingBody ? "await this.hooks.launchParsingBody(request, response);" : ""}
+	await this.hooks.launchParsingBody(request, response);
 	/* after_hook_before_parsing_body */
 	/* end_block */
 }

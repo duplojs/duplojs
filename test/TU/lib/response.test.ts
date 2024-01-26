@@ -1,6 +1,4 @@
-import {exec} from "child_process";
 import {makeMokedResponse, trySend} from "../mocks/response";
-import {__exec__} from "../../../scripts/lib/response";
 
 let existsSyncReturn = true;
 
@@ -41,6 +39,7 @@ describe("request", () => {
 			"My-Header-1": "value1",
 			"My-Header-2": "value2",
 			"My-Header-3": "value3",
+			"info": "test1",
 		});
 	});
 
@@ -146,24 +145,5 @@ describe("request", () => {
 		expect(response.headers).toEqual({
 			"Location": "/test",
 		});
-	});
-
-	it("exec with string body", async() => {
-		const {response, rawResponse} = makeMokedResponse();
-
-		response.status = 209;
-		response.body = "test";
-		response.information = "info";
-		await new Promise((resolve) => {
-			response[__exec__]().then(resolve);
-			rawResponse.emit("close");
-		});
-
-		expect(rawResponse._getStatusCode()).toBe(209);
-		expect(rawResponse._getHeaders()).toEqual({
-			"content-type": "text/plain; charset=utf-8",
-			info: "info",
-		});
-		expect(rawResponse._getData()).toBe("test");
 	});
 });

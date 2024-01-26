@@ -9,6 +9,10 @@ import {AnyFunction, buildAbstractRoutes, buildProcesses, buildRoutes, correctPa
 import {ExtendsRequest, Request, methods} from "./request";
 import {ExtendsResponse, Response, SentError} from "./response";
 import {ErrorExtractFunction} from "./duplose";
+import {parsingBody} from "./defaultHooks/parsingBody";
+import {serializeJSON} from "./defaultHooks/serializeJSON";
+import {serializeString} from "./defaultHooks/serializeString";
+import {serializeFile} from "./defaultHooks/serializeFile";
 
 export interface DuploConfig{
 	port: number,
@@ -18,7 +22,6 @@ export interface DuploConfig{
 	onClose?: () => void;
 	prefix?: string;
 	keepDescriptions?: boolean;
-	disableDefaultHookParsingBody?: boolean;
 }
 
 export interface Plugins {}
@@ -73,38 +76,6 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		public config: duploConfig
 	){
 		config.prefix = correctPath(config.prefix || "");
-
-		if(this.config.disableDefaultHookParsingBody !== true){
-			
-			this.hooksLifeCyle.parsingBody.addSubscriber(async(request) => {
-				const contentType = request.headers["content-type"];
-				if(
-					contentType && (
-						/application\/json/.test(contentType) ||
-						/text\/plain/.test(contentType)
-					)
-				){
-					await new Promise<void>(
-						(resolve, reject) => {
-							let stringBody = "";
-							request.rawRequest.on("error", reject);
-							request.rawRequest.on("data", chunck => stringBody += chunck);
-							request.rawRequest.on("end", () => {
-								if(/text\/plain/.test(contentType)){
-									request.body = stringBody;
-								}
-								else {
-									request.body = JSON.parse(stringBody);
-								}
-								resolve();
-							});
-						}
-					);
-					
-					return true;
-				}
-			});
-		}
 
 		this.Request = class extends Request{};
 		this.Response = class extends Response{};
@@ -204,6 +175,18 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	}
 
 	public launch(onLaunch = () => console.log("Ready !")){
+		this.addHook("beforeBuildRouter", () => {
+			Object.entries(this.routes).forEach(([key, value]) => {
+				value.forEach((route) => {
+					if(["POST", "PUT", "PATCH"].includes(key) && route.extracted.body){
+						route.hooksLifeCyle.parsingBody.addSubscriber(parsingBody);
+					}
+					route.hooksLifeCyle.serializeBody.addSubscriber(serializeJSON);
+					route.hooksLifeCyle.serializeBody.addSubscriber(serializeString);
+					route.hooksLifeCyle.serializeBody.addSubscriber(serializeFile);
+				});
+			});
+		});
 		this.serverHooksLifeCycle.beforeBuildRouter.launchSubscriber();
 		
 		buildProcesses(this.processes);

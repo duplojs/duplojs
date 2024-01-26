@@ -106,6 +106,7 @@ export function makeHooksLifeCycle<
 		parsingBody: new Hook<[request: request, rresponse: response]>(2),
 		onError: new Hook<[request: request, response: response, error: Error]>(3),
 		beforeSend: new Hook<[request: request, response: response]>(2),
+		serializeBody: new Hook<[request: request, response: response]>(2),
 		afterSend: new Hook<[request: request, response: response]>(2),
 	};
 }

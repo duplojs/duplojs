@@ -67,7 +67,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 				),
 				condition(
 					!!this.extracted.body,
-					() => hookBody(!!this.hooksLifeCyle.parsingBody.subscribers.length)
+					() => hookBody()
 				),
 				condition(
 					Object.keys(this.extracted).length !== 0,
@@ -145,6 +145,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 				launchOnConstructResponse: this.hooksLifeCyle.onConstructResponse.build(),
 				launchOnError: this.hooksLifeCyle.onError.build(),
 				launchBeforeRouteExecution: this.hooksLifeCyle.beforeRouteExecution.build(),
+				launchSerializeBody: this.hooksLifeCyle.serializeBody.build(),
 			},
 			ZodError, 
 			makeFloor,
