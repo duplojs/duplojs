@@ -31,7 +31,13 @@ export abstract class SubAbstractRoute<
 
 	build(){
 		this.duploseFunction = this.parent.duploseFunction;
-		this.pickup = this.params.pickup || [];
+		
+		if(this.parent instanceof MergeAbstractRoute){
+			this.pickup = this.parent.pickup;
+		}
+		else {
+			this.pickup = this.params.pickup || [];
+		}
 		this.options = {
 			...this.parent.options,
 			...this.params.options

@@ -27,8 +27,8 @@
     "test:speed": "npm run test:e2e:speed",
     "test:e2e": "ts-node test/E2E",
     "test:tu": "vitest --config test/TU/vitest.config.mts",
-    "test:tu:watch": "vitest --config test/TU/vitest.config.mts --watch",
     "test:tu:coverage": "vitest --config test/TU/vitest.config.mts --coverage",
+    "test:tu:watch": "vitest --config test/TU/vitest.config.mts --watch --coverage",
     "test:e2e:speed": "ts-node --transpiler sucrase/ts-node-plugin test/E2E --speed"
   },
   "dependencies": {

@@ -24,9 +24,12 @@ export interface CheckerParamsStep<
 }
 
 export class CheckerStep extends Step{
+	/* istanbul ignore next */ 
 	public handler: AnyFunction = () => {};
 	public options: Record<string, any> | AnyFunction = {};
+	/* istanbul ignore next */ 
 	public input: AnyFunction = () => {};
+	/* istanbul ignore next */ 
 	public catch: AnyFunction = () => {};
 	public skip?: AnyFunction;
 	public result?: string | string[];

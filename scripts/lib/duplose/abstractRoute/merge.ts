@@ -41,8 +41,6 @@ export abstract class MergeAbstractRoute{
 					subAbstractRoute.hooksLifeCyle[key].subscribers as AnyFunction[]
 				);
 			});
-
-			this.pickup.push(...subAbstractRoute.pickup);
 		});
 	}
 
@@ -53,6 +51,11 @@ export abstract class MergeAbstractRoute{
 	}
 
 	build(){
+		this.pickup = [];
+		this.subAbstractRoutes.forEach(subAbstractRoute => {
+			this.pickup.push(...subAbstractRoute.pickup);
+		});
+		
 		this.stringDuploseFunction = mergeAbstractRouteFunctionString(
 			mapped(
 				this.subAbstractRoutes, 
@@ -67,7 +70,7 @@ export abstract class MergeAbstractRoute{
 			),
 			this.pickup
 		);
-
+		
 		this.editingDuploseFunctions.forEach(editingFunction => editingFunction(this));
 
 		this.duploseFunction = eval(this.stringDuploseFunction).bind({
@@ -76,6 +79,8 @@ export abstract class MergeAbstractRoute{
 			extensions: this.extensions,
 			makeFloor,
 		});
+
+		this.children.forEach(child => child.build());
 	}
 }
 

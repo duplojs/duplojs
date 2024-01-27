@@ -2,7 +2,7 @@ import {ExtendsRoute, RouteFunction} from "../duplose/route";
 import {mapped} from "../stringBuilder";
 import {matchRoute, routerStringFunction} from "../stringBuilder/router";
 import {Request, methods} from "../request";
-import {Response, __exec__} from "../response";
+import {Response} from "../response";
 import {Routes} from "../system/route";
 import {pathToStringRegExp, PromiseOrNot} from "../utile";
 import {CutStep} from "../step/cut";
@@ -38,6 +38,7 @@ export function makeRouterSystem(
 		[]
 	);
 	notfoundRoute.addStepCut(cutStep, []);
+	notfoundRoute.setHandler(() => {}, []);
 	
 	const setNotfoundHandler = (notfoundFunction: RouteNotfoundHandlerFunction) => {
 		cutStep.short = async({}, response, request) => {

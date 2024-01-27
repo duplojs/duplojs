@@ -32,13 +32,15 @@ export type ErrorExtractFunction<
 export abstract class Duplose<_duploseFunction, _editingDuploseFunctions>{
 	public hooksLifeCyle: HooksLifeCycle<Request, Response> = makeHooksLifeCycle();
 	public extracted: ExtractObject = {};
+	/* istanbul ignore next */ 
 	public errorExtract: ErrorExtractFunction<Response> = () => {};
 	public steps: (CheckerStep | ProcessStep | CutStep)[] = [];
-	public handler?: HandlerFunction<any, any> = () => {};
+	public handler?: HandlerFunction<any, any>;
 
 	public descs: DescriptionAll[] = [];
 	public extensions: Record<string, any> = {};
 	public stringDuploseFunction: string = "";
+	/* istanbul ignore next */ 
 	public duploseFunction: _duploseFunction = (() => {}) as any;
 	public editingDuploseFunctions: _editingDuploseFunctions[] = [];
 

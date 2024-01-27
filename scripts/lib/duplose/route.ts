@@ -2,7 +2,7 @@ import {condition, mapped, spread} from "../stringBuilder";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hookBody, processDrop, processStep, routeFunctionString, skipStep, subAbstractRouteString} from "../stringBuilder/route";
 import {HooksLifeCycle} from "../hook";
 import {Request, methods} from "../request";
-import {Response, __exec__} from "../response";
+import {Response} from "../response";
 import {AnyFunction, PromiseOrNot, correctPath, makeFloor} from "../utile";
 import {ZodError, ZodType} from "zod";
 import {CheckerStep} from "../step/checker";
@@ -151,7 +151,6 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 			makeFloor,
 			Response,
 			Request,
-			__exec__,
 			errorHandlerFunction: this.errorHandlerFunction,
 			config: this.config,
 		});

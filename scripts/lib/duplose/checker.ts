@@ -1,4 +1,4 @@
-import {DescriptionAll, PromiseOrNot} from "../utile";
+import {AnyFunction, DescriptionAll, PromiseOrNot} from "../utile";
 
 export type CheckerOutput<
 	info extends string = string, 
@@ -36,6 +36,7 @@ export interface CheckerPreComplated<
 >{
 	result?: (result & outputHandler["info"]) | (result[] & outputHandler["info"][]),
 	indexing?: indexing,
+	catch?: AnyFunction,
 }
 
 export class Checker<
@@ -45,13 +46,17 @@ export class Checker<
 	allPreCompleted extends Record<string, any> = {},
 >{
 	public options = {} as options;
+	/* istanbul ignore next */ 
 	public handler: CheckerHandler<input, outputHandler> = () => ({} as any);
 	public precomplete = {} as allPreCompleted;
 	public descs: DescriptionAll[] = [];
 
 	constructor(
 		public name: string,
-	){}
+		desc: any[]
+	){
+		this.addDesc("first", desc);
+	}
 
 	setOptions(options: any, desc: any[]){
 		this.options = options;

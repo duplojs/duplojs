@@ -1,4 +1,4 @@
-import Duplo, {zod} from "../../../scripts/index";
+import Duplo from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {MergeAbstractRoute1, MergeAbstractRoute2} from "./mergeAbstractRoute";
 
@@ -20,3 +20,5 @@ mergeAbstractRoute1.declareRoute("GET", "/mergeAbstract/test/1")
 
 mergeAbstractRoute2.declareRoute("GET", "/mergeAbstract/test/2")
 .handler(({}, res) => res.code(204).info("result").send());
+
+duplo.launch(() => parentPort?.postMessage("ready"));

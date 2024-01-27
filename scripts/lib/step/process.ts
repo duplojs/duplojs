@@ -14,7 +14,9 @@ export interface ProcessParamsStep<
 
 export class ProcessStep extends Step{
 	options: Record<string, any> | AnyFunction = {};
+	/* istanbul ignore next */
 	input?: AnyFunction = () => undefined;
+	/* istanbul ignore next */ 
 	processFunction: AnyFunction = () => {};
 	pickup?: string[];
 	skip?: AnyFunction;

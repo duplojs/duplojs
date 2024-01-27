@@ -8,7 +8,10 @@ export type CreateChecker<
 	_options extends Record<string, any> = never,
 	input extends unknown = unknown,
 	outputHandler extends CheckerOutput = never,
-> = (name: string) => Pick<
+> = (
+	name: string, 
+	...desc: any[]
+) => Pick<
 	BuilderPatternChecker<_options, input, outputHandler>, 
 	"options" | "handler"
 >;
@@ -95,8 +98,8 @@ export default function makeCheckerBuilder(
 	checkers: Checkers
 ){
 
-	const createChecker: CreateChecker<any, any, any> = (name) => {
-		const currentChecker = new Checker<any, any, any, any>(name);
+	const createChecker: CreateChecker<any, any, any> = (name, ...desc) => {
+		const currentChecker = new Checker<any, any, any, any>(name, desc);
 
 		const options: BuilderPatternChecker<any, any, any, any>["options"] = (options, ...desc) => {
 			currentChecker.setOptions(options, desc);

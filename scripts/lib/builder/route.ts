@@ -1,5 +1,5 @@
 import {methods, Request} from "../request";
-import {__exec__, Response} from "../response";
+import {Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {PickupDropProcess} from "../builder/process";
 import {AnyFunction, FlatExtract, Floor} from "../utile";

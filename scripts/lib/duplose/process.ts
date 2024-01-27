@@ -29,11 +29,10 @@ export abstract class Process<
 		desc: any[],
 	){
 		super(desc);
-		this.addDesc("first", desc);
 	}
 
 	setDrop(drop: _drop[], desc: any[]){
-		this.drop = drop || [];
+		this.drop = drop;
 			
 		this.addDesc("drop", desc);
 	}
