@@ -1,6 +1,6 @@
 import {AbstractRouteFunction} from ".";
 import {DuploConfig} from "../../duploInstance";
-import {HooksLifeCycle, makeHooksLifeCycle} from "../../hook";
+import {Hook, HooksLifeCycle, makeHooksLifeCycle} from "../../hook";
 import {Request} from "../../request";
 import {Response} from "../../response";
 import {mapped} from "../../stringBuilder";
@@ -37,8 +37,8 @@ export abstract class MergeAbstractRoute{
 
 		this.subAbstractRoutes.forEach(subAbstractRoute => {
 			Object.keys(this.hooksLifeCyle).forEach((key) => {
-				this.hooksLifeCyle[key].copySubscriber(
-					subAbstractRoute.hooksLifeCyle[key].subscribers as AnyFunction[]
+				this.hooksLifeCyle[key].addSubscriber(
+					subAbstractRoute.hooksLifeCyle[key] as Hook
 				);
 			});
 		});

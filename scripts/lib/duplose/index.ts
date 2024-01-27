@@ -1,11 +1,11 @@
 import {ZodError, ZodType} from "zod";
-import {HooksLifeCycle, makeHooksLifeCycle} from "../hook";
+import {Hook, HooksLifeCycle, makeHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
 import {ProcessStep} from "../step/process";
-import {AnyFunction, DescriptionAll, Floor} from "../utile";
+import {DescriptionAll, Floor} from "../utile";
 import {DuploConfig} from "../duploInstance";
 
 export interface ExtractObject{
@@ -61,8 +61,8 @@ export abstract class Duplose<_duploseFunction, _editingDuploseFunctions>{
 
 	addStepProcess(processStep: ProcessStep, desc: any[]){
 		Object.keys(this.hooksLifeCyle).forEach((key) => {
-			this.hooksLifeCyle[key].copySubscriber(
-				processStep.process.hooksLifeCyle[key].subscribers as AnyFunction[],
+			this.hooksLifeCyle[key].addSubscriber(
+				processStep.process.hooksLifeCyle[key] as Hook,
 			);
 		});
 

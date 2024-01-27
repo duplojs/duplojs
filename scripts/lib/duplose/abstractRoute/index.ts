@@ -11,6 +11,7 @@ import {AnyFunction, makeFloor} from "../../utile";
 import {handlerFunctionString} from "../../stringBuilder/process";
 import {ExtendsSubAbstractRoute, SubAbstractRoute, SubAbstractRouteParams} from "./sub";
 import {ExtendsAbstractRouteInstance} from "./instance";
+import {Hook} from "../../hook";
 
 export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
@@ -35,8 +36,8 @@ export abstract class AbstractRoute<
 		super(desc);
 		if(subAbstractRoute){
 			Object.keys(this.hooksLifeCyle).forEach((key) => {
-				this.hooksLifeCyle[key].copySubscriber(
-					subAbstractRoute.hooksLifeCyle[key].subscribers as AnyFunction[]
+				this.hooksLifeCyle[key].addSubscriber(
+					subAbstractRoute.hooksLifeCyle[key] as Hook
 				);
 			});
 			this.addDesc("abstract", subAbstractRoute.desc);

@@ -49,13 +49,16 @@ export class Hook<
 	}
 
 	private numberArgs: number;
-	public subscribers: subscriber[] = [];
+	public subscribers: Array<subscriber | Hook<args, subscriber>> = [];
 
-	addSubscriber(subscriber: subscriber, ...subscribers: subscriber[]){
+	addSubscriber(
+		subscriber: subscriber | Hook<args, subscriber>, 
+		...subscribers: Array<subscriber | Hook<args, subscriber>>
+	){
 		this.subscribers.push(subscriber, ...subscribers);
 	}
 
-	removeSubscriber(subscriber: subscriber){
+	removeSubscriber(subscriber: subscriber | Hook<args>){
 		const index = this.subscribers.findIndex(sub => sub === subscriber);
 		if(index !== -1) this.subscribers.splice(index, 1);
 	}
@@ -64,34 +67,59 @@ export class Hook<
 		this.subscribers = [];
 	}
 
-	launchSubscriber(...args: args): boolean | void{
-		for(const fnc of this.subscribers){
-			if(fnc(...args) === true) return true;
+	launchSubscriber(...args: args): boolean | void
+	{
+		for(const subscriber of this.subscribers){
+			if(subscriber instanceof Hook){
+				if(subscriber.launchSubscriber(...args) === true) return true;
+			}
+			else {
+				if(subscriber(...args) === true) return true;
+			}
 		}
 	}
 
-	async launchSubscriberAsync(...args: args): Promise<boolean | void>{
-		for(const fnc of this.subscribers){
-			if(await fnc(...args) === true) return true;
+	async launchSubscriberAsync(...args: args): Promise<boolean | void>
+	{
+		for(const subscriber of this.subscribers){
+			if(subscriber instanceof Hook){
+				if(await subscriber.launchSubscriberAsync(...args) === true) return true;
+			}
+			else {
+				if(await subscriber(...args) === true) return true;
+			}
 		}
 	} 
 
-	hasSubscriber(fnc: AnyFunction){
-		return !!this.subscribers.find(f => f === fnc);
-	}
-
-	copySubscriber(...spreadOtherSubscribers: Array<subscriber[]>){
-		this.subscribers.push(...spreadOtherSubscribers.flat());
+	hasSubscriber(subscriber:  subscriber | Hook<args, subscriber>){
+		return !!this.subscribers.find(f => f === subscriber);
 	}
 
 	build(): subscriber
 	{
+		const subscribers = (
+			function findSubscribers(
+				subscribers: Array<subscriber | Hook<args, subscriber>>, 
+				flatSubscribers: subscriber[] = []
+			){
+				subscribers.forEach(subscriber => {
+					if(subscriber instanceof Hook){
+						findSubscribers(subscriber.subscribers, flatSubscribers);
+					}
+					else {
+						flatSubscribers.push(subscriber);
+					}
+				});
+				return flatSubscribers;
+			}
+		)(this.subscribers);
+
 		const mapArg = new Array(this.numberArgs).fill(undefined).map((v, i) => `arg${i}`).join(", ");
-		const contentFunction = this.subscribers.map((v, i) => /* js */`
+		const contentFunction = subscribers.map((v, i) => /* js */`
 			if(${(v.constructor.name === "AsyncFunction" ? "await " : "")}this.subscribers[${i}](${mapArg}) === true) return;
 		`).join("");
 		
-		return eval(/* js */`(${(/await/.test(contentFunction) ? "async " : "")}function(${mapArg}){\n${contentFunction}\n})`).bind({subscribers: this.subscribers});
+		return eval(/* js */`(${(/await/.test(contentFunction) ? "async " : "")}function(${mapArg}){\n${contentFunction}\n})`).bind({subscribers});
 	}
 }
 

@@ -57,7 +57,6 @@ describe("hook", () => {
 		const fnc2 = () => {
 			testlaunch = true;
 		};
-
 		hook.addSubscriber(fnc1);
 		hook.addSubscriber(fnc2);
 		hook.launchSubscriber();
@@ -71,7 +70,6 @@ describe("hook", () => {
 		const fnc2 = () => {
 			testlaunch = true;
 		};
-
 		hook.addSubscriber(fnc1);
 		hook.addSubscriber(fnc2);
 		hook.launchSubscriberAsync();
@@ -79,7 +77,30 @@ describe("hook", () => {
 		expect(testlaunch).toBe(false);
 	});
 
-	it("copy hook", () => {
+	it("copy hook", async() => {
+		let testlaunch = false;
+		const fnc1 = () => true;
+		const fnc = () => {
+			testlaunch = true;
+		};
+
+		const copyedHook = new Hook(0);
+		copyedHook.addSubscriber(fnc);
+		copyedHook.addSubscriber(fnc1);
+		hook.addSubscriber(copyedHook);
+
+		hook.launchSubscriber();
+
+		expect(testlaunch).toBe(true);
+
+		testlaunch = false;
+
+		await hook.launchSubscriberAsync();
+
+		expect(testlaunch).toBe(true);
+	});
+
+	it("copy hook and build", () => {
 		let testlaunch = false;
 		const fnc = () => {
 			testlaunch = true;
@@ -87,9 +108,10 @@ describe("hook", () => {
 
 		const copyedHook = new Hook(0);
 		copyedHook.addSubscriber(fnc);
-		hook.copySubscriber(copyedHook.subscribers);
-
-		hook.launchSubscriber();
+		hook.addSubscriber(copyedHook);
+		
+		const buidedHook = hook.build();
+		buidedHook();
 
 		expect(testlaunch).toBe(true);
 	});

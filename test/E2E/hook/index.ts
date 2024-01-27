@@ -77,5 +77,22 @@ export default workerTesting(
 				info: "INTERNAL_SERVER_ERROR",
 			}
 		},
+		{
+			title: "not found",
+			url: "http://localhost:1506/hook",
+			method: "GET",
+			sleepAfterRequest: 100,
+			output: [
+				"global onConstructRequest",
+				"global onConstructResponse",
+				"global beforeRouteExecution",
+				"global beforeSend",
+				"global afterSend",
+			],
+			response: {
+				code: 404,
+				info: "NOTFOUND",
+			}
+		},
 	]
 );

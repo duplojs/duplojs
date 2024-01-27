@@ -1,6 +1,6 @@
 import {condition, mapped, spread} from "../stringBuilder";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hookBody, processDrop, processStep, routeFunctionString, skipStep, subAbstractRouteString} from "../stringBuilder/route";
-import {HooksLifeCycle} from "../hook";
+import {Hook, HooksLifeCycle} from "../hook";
 import {Request, methods} from "../request";
 import {Response} from "../response";
 import {AnyFunction, PromiseOrNot, correctPath, makeFloor} from "../utile";
@@ -29,10 +29,15 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 		super(desc);
 		this.paths = this.paths.map(path => correctPath(path));
 		Object.keys(this.hooksLifeCyle).forEach((key) => {
-			this.hooksLifeCyle[key].copySubscriber(
-				this.mainHooksLifeCyle[key].subscribers as AnyFunction[],
-				subAbstractRoute?.hooksLifeCyle[key].subscribers || [] as AnyFunction[]
+			this.hooksLifeCyle[key].addSubscriber(
+				this.mainHooksLifeCyle[key] as Hook
 			);
+
+			if(subAbstractRoute){
+				this.hooksLifeCyle[key].addSubscriber(
+					subAbstractRoute.hooksLifeCyle[key] as Hook
+				);
+			}
 		});
 		if(subAbstractRoute){
 			this.addDesc("abstract", subAbstractRoute.desc);
