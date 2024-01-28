@@ -1,13 +1,6 @@
 name: E2E
 
-on:
-  pull_request_target:
-    types:
-      - opened
-      - edited
-      - synchronize
-      - labeled
-      - unlabeled
+on: [pull_request]
 
 jobs:
   e2e:
