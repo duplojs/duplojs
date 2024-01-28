@@ -7,7 +7,7 @@ export type Checkers = Record<string, DefaultChecker>
 export default function makeCheckerSystem(
 	serverHooksLifeCycle: ServerHooksLifeCycle
 ){
-	const Checker = class extends DefaultChecker<any, any, any, any>{};
+	class Checker extends DefaultChecker<any, any, any, any>{}
 	const checkers: Checkers = {};
 	const {createChecker} = makeCheckerBuilder(serverHooksLifeCycle, Checker, checkers);
 

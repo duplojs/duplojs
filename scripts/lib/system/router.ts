@@ -38,8 +38,12 @@ export function makeRouterSystem(
 		[]
 	);
 	notfoundRoute.addStepCut(cutStep, []);
-	notfoundRoute.setHandler(() => {}, []);
-	
+	notfoundRoute.setHandler(
+		/* istanbul ignore next */ 
+		() => {}, 
+		[]
+	);
+
 	const setNotfoundHandler = (notfoundFunction: RouteNotfoundHandlerFunction) => {
 		cutStep.short = async({}, response, request) => {
 			await notfoundFunction(request, response);

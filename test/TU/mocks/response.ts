@@ -10,7 +10,7 @@ export const makeMokedResponse = () => {
 	return {rawResponse, response};
 };
 
-export const trySend = (tryfnc: () => never) => {
+export const trySend = (tryfnc: () => any) => {
 	try {
 		tryfnc();
 	}
