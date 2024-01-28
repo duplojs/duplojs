@@ -1,4 +1,4 @@
-import {UncaughtResponse} from "../../../../scripts/lib/errors/uncaughtResponse";
+import {UncaughtResponse} from "../../../../scripts/lib/error/uncaughtResponse";
 
 it("ucaughtResponse", () => {
 	const error = new UncaughtResponse();

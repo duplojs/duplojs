@@ -1,4 +1,4 @@
-import {NotError} from "../../../../scripts/lib/errors/notError";
+import {NotError} from "../../../../scripts/lib/error/notError";
 
 it("NotError", () => {
 	const error = new NotError();

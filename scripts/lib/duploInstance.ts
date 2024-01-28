@@ -13,9 +13,9 @@ import {parsingBody} from "./defaultHooks/parsingBody";
 import {serializeJSON} from "./defaultHooks/serializeJSON";
 import {serializeString} from "./defaultHooks/serializeString";
 import {serializeFile} from "./defaultHooks/serializeFile";
-import {NotError} from "./errors/notError";
-import {UncaughtResponse} from "./errors/uncaughtResponse";
-import {OutOfContextResponse} from "./errors/outOfContextResponse";
+import {NotError} from "./error/notError";
+import {UncaughtResponse} from "./error/uncaughtResponse";
+import {OutOfContextResponse} from "./error/outOfContextResponse";
 
 export interface DuploConfig{
 	port: number,

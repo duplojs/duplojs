@@ -1,4 +1,4 @@
-import {AlreadySent} from "../../../scripts/lib/errors/alreadySent";
+import {AlreadySent} from "../../../scripts/lib/error/alreadySent";
 import {makeMokedResponse, trySend} from "../mocks/response";
 
 let existsSyncReturn = true;

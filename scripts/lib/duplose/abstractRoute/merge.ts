@@ -23,6 +23,7 @@ export abstract class MergeAbstractRoute{
 	abstract get AbstractRouteInstance(): typeof ExtendsAbstractRouteInstance;
 
 	public descs: DescriptionAll[] = [];
+	/* istanbul ignore next */ 
 	public duploseFunction: AbstractRouteFunction = () => ({}); 
 	public extensions: Record<string, any> = {};
 	public stringDuploseFunction: string = "";

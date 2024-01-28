@@ -1,4 +1,4 @@
-import {OutOfContextResponse} from "../../../../scripts/lib/errors/outOfContextResponse";
+import {OutOfContextResponse} from "../../../../scripts/lib/error/outOfContextResponse";
 
 it("outOfContextResponse", () => {
 	const error = new OutOfContextResponse();

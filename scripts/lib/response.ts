@@ -2,7 +2,7 @@ import {ServerResponse} from "http";
 import {existsSync} from "fs";
 import mime from "mime";
 import {basename} from "path";
-import {AlreadySent} from "./errors/alreadySent";
+import {AlreadySent} from "./error/alreadySent";
 
 export abstract class Response{
 	constructor(response: InstanceType<typeof ServerResponse>){

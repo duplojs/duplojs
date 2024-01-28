@@ -1,5 +1,5 @@
 import {defaultErrorExtract} from "..";
-import {AbstractRoute as DefaultAbstractRoute, ExtendsAbstractRouteInstance} from "../../../../../scripts";
+import {AbstractRoute as DefaultAbstractRoute} from "../../../../../scripts";
 import {AbstractRouteInstance} from "./instance";
 import {SubAbstractRoute} from "./sub";
 
