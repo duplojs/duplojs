@@ -27,8 +27,6 @@ it("systeme router", async() => {
 	rs.buildRouter();
 
 	const t = rs.findRoute("GET", "/15");
-	console.log(t);
-	
 	expect(t.matchedPath).toBe("/{id}");
 	expect(t.params).toEqual({id: "15"});
 	await t.routeFunction(request, response);

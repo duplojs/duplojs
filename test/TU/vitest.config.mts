@@ -7,7 +7,9 @@ export default defineConfig({
 		include: ["test/TU/lib/**/*.test.ts"],
 		coverage: {
 			provider: "istanbul",
-			reporter: ["text", "json", "html"],
+			reporter: [
+				"text", "json", "html", "json-summary"
+			],
 			reportsDirectory: "coverage"
 		}
 	},
