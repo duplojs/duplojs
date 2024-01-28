@@ -2,7 +2,7 @@ import {condition, mapped} from ".";
 
 export const mergeAbstractRouteFunctionString = (block: string, returnArray: string[]) => /* js */`
 (
-	${(/await/.test(block) ? "async " : "")}function(request, response, options){
+	${(/await/.test(block) ? "async " : "")}function(request, response){
 		/* first_line */
 		/* end_block */
 		const floor = this.makeFloor();

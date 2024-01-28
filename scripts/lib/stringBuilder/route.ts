@@ -58,7 +58,7 @@ export const routeFunctionString = (
 					${hasHookOnError ? "await this.hooks.launchOnError(request, response, error);" : ""}
 					/* after_hook_on_error */
 					/* end_block */
-					this.errorHandlerFunction(request, response, error);
+					await this.errorHandlerFunction(request, response, error);
 				}
 				else throw error;
 			}
@@ -193,7 +193,14 @@ ${block}
 /* end_block */
 `;
 
-export const checkerStep = (async: boolean, index: number, hasResult: boolean, resultIsArray: boolean, hasIndexing: boolean, optionsIsFunction: boolean) => /* js */`
+export const checkerStep = (
+	async: boolean, 
+	index: number, 
+	hasResult: boolean, 
+	resultIsArray: boolean,
+	hasIndexing: boolean, 
+	optionsIsFunction: boolean
+) => /* js */`
 /* before_step_[${index}] */
 /* end_block */
 result = ${async ? "await " : ""}this.steps[${index}].handler(
@@ -227,7 +234,13 @@ ${hasIndexing ? /* js */`floor.drop(this.steps[${index}].indexing, result.data)`
 /* end_block */
 `;
 
-export const processStep = (async: boolean, index: number, hasInput: boolean, optionsIsFunction: boolean, drop: string) => /* js */`
+export const processStep = (
+	async: boolean, 
+	index: number, 
+	hasInput: boolean, 
+	optionsIsFunction: boolean,
+	drop: string
+) => /* js */`
 /* before_step_[${index}] */
 /* end_block */
 result = ${async ? "await " : ""}this.steps[${index}].processFunction(
