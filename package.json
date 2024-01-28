@@ -29,7 +29,8 @@
     "test:tu": "vitest --config test/TU/vitest.config.mts",
     "test:tu:coverage": "vitest --config test/TU/vitest.config.mts --coverage",
     "test:tu:watch": "vitest --config test/TU/vitest.config.mts --watch --coverage",
-    "test:e2e:speed": "ts-node --transpiler sucrase/ts-node-plugin test/E2E --speed"
+    "test:e2e:speed": "ts-node --transpiler sucrase/ts-node-plugin test/E2E --speed",
+	"test:type": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
     "fast-querystring": "^1.1.2",
