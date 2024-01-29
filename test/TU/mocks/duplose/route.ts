@@ -4,6 +4,8 @@ import {makeHooksLifeCycle} from "../../../../scripts/lib/hook";
 
 export function errorHandlerFunction(){}
 
+const mainHooksLifeCyle = makeHooksLifeCycle();
+
 export class Route extends DefaultRoute{
 	get config(){
 		return {
@@ -22,6 +24,6 @@ export class Route extends DefaultRoute{
 	}
 
 	get mainHooksLifeCyle(){
-		return makeHooksLifeCycle();
+		return mainHooksLifeCyle;
 	}
 }

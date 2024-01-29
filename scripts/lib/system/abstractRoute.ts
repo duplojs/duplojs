@@ -73,7 +73,7 @@ export function makeAbstractRouteSystem(
 
 	const abstractRoutes: AbstractRoutes = [];
 
-	const {declareAbstractRoute} = makeAbstractRouteBuilder(serverHooksLifeCycle, declareRoute, AbstractRoute, abstractRoutes);
+	const {declareAbstractRoute} = makeAbstractRouteBuilder(serverHooksLifeCycle, AbstractRoute, abstractRoutes);
 
 	const {mergeAbstractRoute} = makeMergeAbstractRouteBuilder(serverHooksLifeCycle, MergeAbstractRoute, abstractRoutes);
 

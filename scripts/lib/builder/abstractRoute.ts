@@ -196,7 +196,6 @@ export interface BuilderPatternAbstractRoute<
 
 export function makeAbstractRouteBuilder(
 	serverHooksLifeCycle: ServerHooksLifeCycle,
-	declareRoute: DeclareRoute,
 	AbstractRoute: typeof ExtendsAbstractRoute,
 	abstractRoutes: AbstractRoutes
 ){

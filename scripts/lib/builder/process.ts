@@ -247,8 +247,6 @@ export function makeProcessBuilder(
 			};
 		};
 
-		if(desc.length !== 0)currentProcess.descs.push({type: "first", descStep: desc});
-
 		const extract: BuilderPatternProcess<any, any, any, any, any, any>["extract"] = (extractObj, error?, ...desc) => {
 			currentProcess.setExtract(extractObj, error, desc);
 			return {
