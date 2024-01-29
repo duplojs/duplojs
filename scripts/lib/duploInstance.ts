@@ -34,8 +34,8 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	protected serverHooksLifeCycle = makeServerHooksLifeCycle();
 
 	public server: http.Server;
-	public Request: typeof ExtendsRequest;
-	public Response: typeof ExtendsResponse;
+	protected Request: typeof ExtendsRequest;
+	protected Response: typeof ExtendsResponse;
 
 	protected Checker: ReturnType<typeof makeCheckerSystem>["Checker"];
 	public createChecker: ReturnType<typeof makeCheckerSystem>["createChecker"];
@@ -74,6 +74,22 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	
 	public plugins: Plugins = {};
 	public addHook: AddHooksLifeCycle<this>["addHook"] & AddServerHooksLifeCycle<this>["addHook"];
+
+	get class(){
+		return {
+			Checker: this.Checker,
+			Route: this.Route,
+			Process: this.Process,
+			AbstractRoute: this.AbstractRoute,
+			SubAbstractRoute: this.SubAbstractRoute,
+			AbstractRouteInstance: this.AbstractRouteInstance,
+			MergeAbstractRoute: this.MergeAbstractRoute,
+			Request: this.Request,
+			Response: this.Response,
+			hooksLifeCyle: this.hooksLifeCyle,
+			serverHooksLifeCycle: this.serverHooksLifeCycle,
+		};
+	}
 
 	constructor(
 		public config: duploConfig
@@ -156,10 +172,10 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 			return this;
 		};
 
-		this.server = http.createServer(this.serverHandler.bind(this));
+		this.server = http.createServer();
 	}
 
-	private async serverHandler(serverRequest: http.IncomingMessage, serverResponse: http.ServerResponse){
+	protected async serverHandler(serverRequest: http.IncomingMessage, serverResponse: http.ServerResponse){
 		try {
 			const {routeFunction, params, matchedPath} = this.findRoute(serverRequest.method as methods, serverRequest.url as string);
 
@@ -225,17 +241,18 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 			this.server.on("close", this.config.onClose);
 		}
 
+		this.server.on("request", this.serverHandler.bind(this));
 		this.server.listen(this.config.port, this.config.host);
 
 		process.on("uncaughtException", (error: any, origin) => {
 			if(error instanceof Response){
-				console.log(new UncaughtResponse());
+				console.error(new UncaughtResponse());
 			}
 			else if(!(error instanceof Error)){
-				console.log(new NotError());
+				console.error(new NotError());
 			}
 			else {
-				console.log(error);
+				console.error(error);
 			}
 			process.exit(1);
 		});
