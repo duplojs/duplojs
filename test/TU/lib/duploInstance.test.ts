@@ -9,13 +9,16 @@ import {makeMokedResponse} from "../mocks/response";
 
 it("duploInstance", () => {
 	const saveProcess = process;
-
 	class MyEmitter extends EventEmitter{
 		exit(){}
 	}
 	const myEmitter = new MyEmitter();
 	//@ts-ignore
 	process = myEmitter;
+	const savedLog = console.log;
+	// console.log = () => {};
+	const savedErrorLog = console.error;
+	console.error = () => {};
 
 	const duplo = new DuploInstance({
 		port: 1506, 
@@ -52,12 +55,10 @@ it("duploInstance", () => {
 
 	console.error = () => {};
 
-	const {rawRequest} = makeMokedRequest({method: "GET", url: "/", matchedPath: "/"});
+	const {rawRequest, request} = makeMokedRequest({method: "GET", url: "/", matchedPath: "/"});
 	const {rawResponse, response} = makeMokedResponse();
 	duplo.class.serverHooksLifeCycle.onServerError.launchSubscriber(rawRequest, rawResponse, undefined as any);
 
-	//@ts-ignore
-	process.exit = () => {};
 	//@ts-ignore
 	process.emit("uncaughtException", response, "");
 	//@ts-ignore
@@ -66,6 +67,27 @@ it("duploInstance", () => {
 	process.emit("uncaughtException", new Error(), "");
 
 	process = saveProcess;
-
+	
 	duplo.server.emit("request", rawRequest, rawResponse);
+	
+	{
+		const {rawResponse, response} = makeMokedResponse();
+		//@ts-ignore
+		duplo.findRoute = () => {
+			throw response;
+		};
+		duplo.server.emit("request", rawRequest, rawResponse);
+	}
+	
+	{
+		const {rawResponse, response} = makeMokedResponse();
+		//@ts-ignore
+		duplo.findRoute = () => {
+			throw new String();
+		};
+		duplo.server.emit("request", rawRequest, rawResponse);
+	}
+
+	console.log = savedLog;
+	console.error = savedErrorLog;
 });
