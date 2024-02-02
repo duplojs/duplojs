@@ -48,6 +48,8 @@ export const routeFunctionString = (
 				/* before_no_respose_sent */
 				/* end_block */
 				response.code(503).info("NO_RESPONSE_SENT").send();
+				/* last_line_second_try */
+				/* end_block */
 			}
 			catch(error){
 				/* first_line_second_catch */
@@ -61,7 +63,11 @@ export const routeFunctionString = (
 					await this.errorHandlerFunction(request, response, error);
 				}
 				else throw error;
+				/* last_line_second_catch */
+				/* end_block */
 			}
+			/* last_line_first_try */
+			/* end_block */
 		}
 		catch(response){
 			/* first_line_first_catch */
@@ -100,7 +106,11 @@ export const routeFunctionString = (
 				/* end_block */
 			}
 			else throw response;
+			/* last_line_first_catch */
+			/* end_block */
 		}
+		/* last_line */
+		/* end_block */
 	}
 )
 `;
@@ -140,6 +150,8 @@ try{
 	/* first_line_extracted_try */
 	/* end_block */
 	${block}
+	/* last_line_extracted_try */
+	/* end_block */
 }
 catch(error) {
 	/* first_line_extracted_catch */
@@ -151,6 +163,8 @@ catch(error) {
 		error,
 	);
 	else throw error;
+	/* last_line_extracted_catch */
+	/* end_block */
 }
 /* after_extracted */
 /* end_block */

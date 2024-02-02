@@ -22,7 +22,8 @@ export const processFunctionString = (hasInput: boolean, hasOptions: boolean, bl
 		}
 		`
 	)}
-		
+		/* last_line */
+		/* end_block */	
 	}
 )
 `;
