@@ -44,6 +44,8 @@ const userExist = duplo
 
 Cette method permet de cloturé la création d'un checker. 
 
+**⚠️ Si la fonction build n'est pas appler le process n'est pas utilisable. ⚠️**
+
 ### .options(object, ...any?)
 
 ```ts
