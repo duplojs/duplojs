@@ -44,8 +44,8 @@ Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sa
 ```ts
 duplo
 .createProcess("UserHasRight")
-.options(/* ... */) // vous ne pouvez appler qu'une seul fois cette focntion
-.input(/* ... */) // vous ne pouvez appler qu'une seul fois cette focntion
+.options(/* ... */)
+.input(/* ... */)
 .hook(/* ... */) 
 .hook(/* ... */) 
 .extract(/* ... */) // hook et extract ne sont plus disponibles

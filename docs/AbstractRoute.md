@@ -6,6 +6,7 @@ Les abstract route sont faite sois pour créée des systéme d'autentification, 
 - [Propriétés du abstractRouteParams](#propriétés-du-abstractrouteparams)
 - [Construction d'une abstract route](#construction-dune-abstract-route)
 - [Build](#buildstring-any)
+- [Options](#optionsobject-any)
 - [Extract](#extractobject-function-any)
 - [Check](#checkobject-object-any)
 - [Cut](#cutfunction-array-any)
@@ -20,21 +21,8 @@ Les abstract route sont faite sois pour créée des systéme d'autentification, 
 Une route peut étre déclaré a partire de deux chose, sois depuis la `DuploInstance`, sois depuis une `AbstractRouteInstance`.
 
 ```ts
-duplo.declareAbstractRoute(
-    "MustBeConnected", 
-    {
-        options: { role: "admin" as "manager" | "admin" }, 
-        prefix: "/dashboard",
-    }
-)//...
+duplo.declareAbstractRoute("MustBeConnected")//...
 ```
-
-### Propriétés du abstractRouteParams
-propriétés|type|definition
----|---|---
-options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
-prefix|`string` \| `undefined`|Définit un préfix pour les route qui seront déclarer avec l'abstract route.
-allowExitProcess|`boolean` \| `undefined`|Permet d'activer la prise en charge de la fonction ExitProcess.
 
 ### Construction d'une abstract route
 La déclaration d'une abstract route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité.
@@ -42,6 +30,7 @@ La déclaration d'une abstract route à un pattern bien précis à respecter. Ce
 ```ts
 duplo
 .declareAbstractRoute("MustBeConnected")
+.options(/* ... */) // vous ne pouvez appler qu'une seul fois cette focntion
 .hook(/* ... */) // vous pouvez ajouter autant de Hook que vous souhaitez
 .extract(/* ... */) // vous ne pouvez avoir qu'un seul extract
 .process(/* ... */) // vous pouvez avoir autant de process que vous souhaitez
@@ -56,7 +45,7 @@ Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sa
 ```ts
 duplo
 .declareAbstractRoute("MustBeConnected")
-
+.options(/* ... */)
 .hook(/* ... */) 
 .hook(/* ... */) 
 .extract(/* ... */) // hook et extract ne sont plus disponibles
@@ -74,13 +63,7 @@ L'ordre des process, check et cut que vous définirez sera l'ordre d'exécution.
 
 ### .build(string[], ...any?)
 ```ts
-const mustBeConnected = duplo.declareAbstractRoute(
-    "MustBeConnected", 
-    {
-        options: { role: "admin" as "manager" | "admin" }, 
-        prefix: "/dashboard",
-    }
-)
+const mustBeConnected = duplo.declareAbstractRoute("MustBeConnected")
 .cut(
     () => ({ value: 25 }),
     ["value"]
@@ -90,6 +73,9 @@ const mustBeConnected = duplo.declareAbstractRoute(
 Cette method permet de cloturé la déclaration des abstract route. Elle prend en premiere argument un tableau des clés du floor de l'abstract route, cela permet de rendre c'est valeur accessible lors de son utilisation.
 
 **⚠️ Si la fonction build n'est pas appler l'abstract route n'est pas utilisable. ⚠️**
+
+### .options(object, ...any?)
+Cette fonction est exactement pareil que la methode [options des process](./Process.md#optionsobject-any).
 
 ### .extract(object, function?, ...any?)
 Cette fonction est exactement pareil que la methode [extract des route](./Route.md#extractobject-function-any).
@@ -114,7 +100,6 @@ Cette methode permet d'ajouter des [hooks](./Hook.md) a l'abstract route. C'est 
 mustBeConnected({
     pickup: ["value"],
     options: { role: "manager" },
-    ignorePrefix: true,
 })
 .declareRoute("PATCH", "/user/{id}")
 .extract({
@@ -138,7 +123,6 @@ propriétés|type|definition
 ---|---|---
 options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
 pickup|`string[]` \| `undefined`|Permet d'importerles les valeur du floor de l'abstract route.
-ignorePrefix|`true` \| `undefined`|Si true, cela n'appliquera pas le prefix de l'abstract route.
 
 ### Merge des abstract route
 ```ts
@@ -147,13 +131,7 @@ const baseAbstractRoute = duplo.mergeAbstractRoute([
     abstractCors, // abstract route issue d'un plugins
 ]);
 
-baseAbstractRoute.declareAbstractRoute(
-    "MustBeConnected", 
-    {
-        options: { role: "admin" as "manager" | "admin" }, 
-        prefix: "/dashboard",
-    }
-)
+baseAbstractRoute.declareAbstractRoute("MustBeConnected")
 .cut(
     () => ({ value: 25 }),
     ["value"]
