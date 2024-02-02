@@ -11,7 +11,7 @@ hooks|arguments|definition
 onConstructRequest|`(Request) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Request](./Request.md).
 onConstructResponse|`(Response) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Response](./Response.md).
 beforeRouteExecution|`(Request, Response) => {/* */}`|Ce lance avant l'éxécution des opération de la route.
-beforeParsingBody|`(Request, Response) => {/* */}`|Ce lance avant le [content type parser](./ContentTypeParser.md) dans le cas ou la clés "body" est dans l'[extract](#extractobject-function-any).
+parsingBody|`(Request, Response) => {/* */}`|Ce lance aprés l'éxécution de l'abstractRoute pour pars le body.
 onError|`(Request, Response, Error) => {/* */}`|Ce lance si une erreur est catch pendant l'execution des opération de la route.
 beforeSend|`(Request, Response) => {/* */}`|Ce lance avant avant l'envois d'un réponse.
 serializeBody|`(Request, Response) => {/* */}`|Ce lance aprés l'envois des headers pour sérialisé le body de la response et l'envoyer.

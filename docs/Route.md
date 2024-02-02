@@ -81,19 +81,20 @@ duplo
 Les route de duplojs son grosomodo des succesion d'execution de function ([Hook](./Hook.md), [AbstractRoute](./AbstractRoute.md), [Process](./Process.md), [Checker](./Checker.md), ...). Pour optimiser le raccord des différente fonction, duplojs fabrique une fonction surmesure. C'est donc cette fonction qui determine le cycle d'exécution.
 
 Ordres d'appel des fonctions:
-- [Hook](./Hook.md) "onConstructRequest"
-- [Hook](./Hook.md) "onConstructResponse"
-- [Hook](./Hook.md) "beforeRouteExecution"
+- [Hook](./Hook.md#hook-de-route) "onConstructRequest"
+- [Hook](./Hook.md#hook-de-route) "onConstructResponse"
+- [Hook](./Hook.md#hook-de-route) "beforeRouteExecution"
 - Make[Floor](./Floor.md)
 - [AbstractRoute](./AbstractRoute.md)
-- [Hook](./Hook.md) "beforeParsingBody"
+- [Hook](./Hook.md#hook-de-route) "parsingBody"
 - [Content Type Parser](./ContentTypeParser.md)
 - [Extract](#extractobject-function-any)
 - [Process](./Process.md), [Checker](./Checker.md) ou [cut](#cutfunction-array-any)
 - [Handler](#handlerfunction-any)
-- [Hook](./Hook.md) "beforeSend"
-- Envoi de la réponse
-- [Hook](./Hook.md) "afterSend"
+- [Hook](./Hook.md#hook-de-route) "beforeSend"
+- Envois des headers
+- [Hook](./Hook.md#hook-de-route) "serializeBody"
+- [Hook](./Hook.md#hook-de-route) "afterSend"
 
 Comme dit plus haut la fonction est sur mesure donc tout ne vas pas forcément s'exécuter mais tout s'executera dans cette ordre.
 
@@ -112,8 +113,7 @@ try{
         try{
             @ lance le hook beforeRouteExecution
             @ exécute abstract route
-            @ lance le hook beforeParsingBody
-            @ lance le content type parser
+            @ lance le hook parsingBody
             @ exécute extract, checker, cut, process, handler
         }
         // catch error
@@ -131,7 +131,8 @@ try{
     catch(exception) {
         if(exception === Reponse){
             @ lance le hook beforeSend
-            @ envoi la Reponse au client
+            @ envoi des headers
+			@ serialization et envoi du body
             @ lance le hook afterSend
         }
         else {
