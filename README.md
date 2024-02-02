@@ -98,28 +98,28 @@ const userExist = duplo
 .createChecker("userExist") // le nom du checker
 // valeur par défaut des options
 .options({ 
-	index: "id" as "id" | "firstname" 
+    index: "id" as "id" | "firstname" 
 })
-.handler((value: number | string, output, options) => {
-	const user = await myDataBase.user.findOne({
-		[options.index]: value
-	});
+.handler((input: number | string, output, options) => {
+    const user = await myDataBase.user.findOne({
+        [options.index]: input
+    });
 
-	if(!user) {
-		return output("user.notexist", null);
-	}
-	else {
-		return output("user.exist", user);
-	}
+    if(!user) {
+        return output("user.notexist", null);
+    }
+    else {
+        return output("user.exist", user);
+    }
 })
 // fonction non obligatoire
 .addPrecompleted( 
-	"wantUser",
-	{
-		result: "user.exist",
-		catch: (response, info) => response.code(404).info(info).send(),
-		indexing: "user",
-	}
+    "wantUser",
+    {
+        result: "user.exist",
+        catch: (response, info) => response.code(404).info(info).send(),
+        indexing: "user",
+    }
 )
 .build();
 ```
