@@ -21,7 +21,8 @@ export const abstractRouteFunctionString = (hasOptions: boolean, block: string, 
 		}
 		`
 	)}
-		
+		/* last_line */
+		/* end_block */
 	}
 )
 `;

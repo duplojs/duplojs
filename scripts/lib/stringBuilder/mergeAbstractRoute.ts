@@ -20,6 +20,8 @@ export const mergeAbstractRouteFunctionString = (block: string, returnArray: str
 		}
 		`
 	)}
+		/* last_line */
+		/* end_block */
 	}
 )
 `;
