@@ -26,6 +26,7 @@ export interface AddHooksLifeCycle<
 	addHook(name: "parsingBody", functionHook: ReturnType<HooksLifeCycle<request, response>["parsingBody"]["build"]>): returnType;
 	addHook(name: "onError", functionHook: ReturnType<HooksLifeCycle<request, response>["onError"]["build"]>): returnType;
 	addHook(name: "beforeSend", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeSend"]["build"]>): returnType;
+	addHook(name: "serializeBody", functionHook: ReturnType<HooksLifeCycle<request, response>["serializeBody"]["build"]>): returnType;
 	addHook(name: "afterSend", functionHook: ReturnType<HooksLifeCycle<request, response>["afterSend"]["build"]>): returnType;
 }
 
