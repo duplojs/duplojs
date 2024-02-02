@@ -94,25 +94,37 @@ Vous êtes peut-être tenté de faire toutes les vérifications dans le handler 
 
 **Mais comment faire alors ?** Simplement grâce au [checker](./docs/Checker.md):
 ```ts
-const userExist = duplo.createChecker(
-    "userExist", // le nom du checker
-    {
-        async handler(value: number | string, output, options){
-            const user = await myDataBase.user.findOne({
-                [options.type]: value
-            });
-            if(!user) return output("user.notexist");
-            else return output("user.exist", user);
-        },
-        outputInfo: ["user.exist", "user.notexist"], // différentes informations de sortie possible
-        options: { // valeur par défaut des options
-            type: "id" as "id" | "firstname" 
-        }, 
-    }
-);
+const userExist = duplo
+.createChecker("userExist") // le nom du checker
+// valeur par défaut des options
+.options({ 
+	index: "id" as "id" | "firstname" 
+})
+.handler((value: number | string, output, options) => {
+	const user = await myDataBase.user.findOne({
+		[options.index]: value
+	});
+
+	if(!user) {
+		return output("user.notexist", null);
+	}
+	else {
+		return output("user.exist", user);
+	}
+})
+// fonction non obligatoire
+.addPrecompleted( 
+	"wantUser",
+	{
+		result: "user.exist",
+		catch: (response, info) => response.code(404).info(info).send(),
+		indexing: "user",
+	}
+)
+.build();
 ```
 
-Un [checker](./docs/Checker.md) est un test unitaire qui prend en entrée une valeur et doit toujours renvoyer une information, pouvant éventuellement retourner des données. Son but est d'effectuer une vérification. Dans l'exemple ci-dessus, le [checker](./docs/Checker.md) indique prendre en entrée un nombre ou une chaîne de caractères. Il autorise comme informations de sortie : "user.exist", "user.notexist" et propose une option "type" qui, dans notre cas, permet de définir par quelle clé on cherche un utilisateur.
+Un [checker](./docs/Checker.md) est une fonction qui prend en entrée une valeur et doit toujours renvoyer une information et une données. Son implémentation permet d'effectuer une vérification. Dans l'exemple ci-dessus, le [checker](./docs/Checker.md) indique prendre en entrée un nombre ou une chaîne de caractères. Il propose une option "index" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. On aussi ajouter une précomplétion qui simplifi son implémentation.
 
 ### Implémenter un [checker](./docs/Checker.md)
 ```ts
@@ -133,7 +145,16 @@ duplo
         result: "user.exist", // info attendu pour continuer
         catch: (response, info) => response.code(404).info(info).send(), // action effectuer si l'info n'est pas c'elle attendu
         indexing: "user", // index de drop du resulta
-        options: {type: "id"} // option utiliser
+        options: {index: "id"} // option utiliser
+    }
+)
+// or
+.check(
+    userExist,
+    {
+        input: (pickup) => pickup("id"),
+        ...userExist.precomplete.wantUser, // utilisation de la précomplétion
+        options: {index: "id"}
     }
 )
 .handler((floor, response) => {
@@ -162,10 +183,8 @@ duplo
     userExist,
     {
         input: (pickup) => pickup("id"),
-        result: "user.exist",
-        catch: (response, info) => response.code(404).info(info).send(),
-        indexing: "user",
-        options: {type: "id"}
+        ...userExist.precomplete.wantUser, // utilisation de la précomplétion
+        options: {index: "id"}
     }
 )
 .handler((floor, response) => {
