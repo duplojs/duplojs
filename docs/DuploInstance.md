@@ -29,8 +29,6 @@ keepDescriptions|`boolean` \| `undefined`|Si True, cela ne supprimera pas les de
 ### Propriétés de la DuploInstance
 propriétés|type|definition
 ---|---|---
-Request|[Request](./Request.md)|Fait référence a l'objet [Request](./Request.md).
-Response|[Response](./Response.md)|Fait référence a l'objet [Response](./Response.md).
 server|[http serveur](https://nodejs.org/api/http.html#class-httpserver)|Objet [http serveur](https://nodejs.org/api/http.html#class-httpserver).
 config|[DuploConfig](#propriétés-de-la-duploconfig)|Correspont a la [config](#propriétés-de-la-duploconfig) utilisé pour obtenir l'instance.
 launch|`duplo.launch(onReady?: () => void): http.server`|Fonction qui serre a lancer le serveur. Le router sera build a l'appel de cette fonction. 
@@ -47,6 +45,7 @@ routes|`Object`|Objet contenant toute les route de l'application. Il sera vide j
 checkers|`Object`|Objet contenant toute les checkers.
 processes|`Object`|Objet contenant toute les process.
 abstractRoutes|`Object`|Objet contenant toute les abstractRoutes.
-plugins|`Object`|Objet contenant toute les plugins implémenter
+plugins|`Object`|Objet contenant toute les plugins implémenter.
+class|`Object`|Objet regroupan l'enssemble des class utilisais pars l'instance.
 
 #### Retour vers le [Sommaire](#sommaire).
