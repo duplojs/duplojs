@@ -22,10 +22,9 @@ port|`number`|Définit le port que vas utilisais le serveur.
 host|`string`|Définit les adresses que le server vas écouter. 
 onLaunch|`() => void` \| `undefined`|Fonction callback qui ce lancera aprés le lancement du serveur.
 onClose|`() => void` \| `undefined`|Fonction callback qui ce lancera aprés la fermeture du serveur.
-environment|`"DEV"` \| `"PROD"` \| `undefined`|Représente l'environment actuel.
+environment|`"DEV"` \| `"PROD"`|Représente l'environment actuel.
 prefix|`string` \| `undefined`|Serre a définir un préfix pour tout les path de l'API.
 keepDescriptions|`boolean` \| `undefined`|Si True, cela ne supprimera pas les descriptions.
-rebuildRoutes|`boolean` \| `undefined`|Si True, rebuildera toute les route avant la fabrication du routeur.
 
 ### Propriétés de la DuploInstance
 propriétés|type|definition

@@ -1,5 +1,5 @@
 # Hook
-les Hook son des fonction qui son assigner a des evénement.
+Les hooks son des event au qu'elle on peux atacher des fonction.
 
 ## Sommaire
 - [Hook de route](#hook-de-route)
@@ -14,6 +14,7 @@ beforeRouteExecution|`(Request, Response) => {/* */}`|Ce lance avant l'éxécuti
 beforeParsingBody|`(Request, Response) => {/* */}`|Ce lance avant le [content type parser](./ContentTypeParser.md) dans le cas ou la clés "body" est dans l'[extract](#extractobject-function-any).
 onError|`(Request, Response, Error) => {/* */}`|Ce lance si une erreur est catch pendant l'execution des opération de la route.
 beforeSend|`(Request, Response) => {/* */}`|Ce lance avant avant l'envois d'un réponse.
+serializeBody|`(Request, Response) => {/* */}`|Ce lance aprés l'envois des headers pour sérialisé le body de la response et l'envoyer.
 afterSend|`(Request, Response) => {/* */}`|Ce lance aprés l'envois d'un réponse.
 
 ### Hook du serveur
