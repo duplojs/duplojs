@@ -1,11 +1,10 @@
 import {ServerResponse} from "http";
-import {createReadStream, existsSync,} from "fs";
+import {existsSync} from "fs";
 import mime from "mime";
-import {basename, resolve} from "path";
+import {basename} from "path";
+import {AlreadySent} from "./error/alreadySent";
 
-export const __exec__ = Symbol("exec");
-
-export class Response{
+export abstract class Response{
 	constructor(response: InstanceType<typeof ServerResponse>){
 		this.rawResponse = response;
 	}
@@ -21,23 +20,35 @@ export class Response{
 
 	info(info: string){
 		this.information = info;
+		this.setHeader("info", info);
 		return this;
 	}
 
 	information?: string;
 
-	send(data?: any){
-		if(this.isSend === true) throw new SentError();
+	send(body?: unknown): never
+	{
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 		
-		this.data = data;
+		if(this.headers["content-type"] === undefined){
+			if(typeof body === "string" || typeof body === "number" || body === null){
+				this.headers["content-type"] = "text/plain; charset=utf-8";
+			}
+			else if(typeof body === "object" && body.constructor.name === "Object"){
+				this.headers["content-type"] = "application/json; charset=utf-8";
+			}
+		}
+		
+		this.body = body;
 		throw this;
 	}
 
-	sendFile(path: string){
+	sendFile(path: string): never
+	{
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 
-		if(this.isSend === true) throw new SentError();
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 
 		this.file = path;
@@ -45,10 +56,11 @@ export class Response{
 		throw this;
 	}
 
-	download(path: string, name?: string){
+	download(path: string, name?: string): never
+	{
 		if(!existsSync(path)) this.code(404).info("FILE.NOTFOUND").send();
 
-		if(this.isSend === true) throw new SentError();
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 
 		this.file = path;
@@ -57,12 +69,13 @@ export class Response{
 		throw this;
 	}
 
-	redirect(path: string){
-		if(this.isSend === true) throw new SentError();
+	redirect(path: string, code: number = 302): never
+	{
+		if(this.isSend === true) throw new AlreadySent();
 		this.isSend = true;
 
 		this.headers["Location"] = path;
-		this.status = this.status === 200 ? 302 : this.status;
+		this.status = code;
 		throw this;
 	}
 
@@ -72,89 +85,17 @@ export class Response{
 	}
 
 	setHeader(index: string, value: string | string[]){
-		this.headers[index.toLowerCase()] = value;
+		this.headers[index] = value;
 		return this;
 	}
 
 	headers: Record<string, string | string[]> = {};
 
-	data: unknown;
+	body: unknown;
 
 	file?: string;
 
 	isSend = false;
-
-	[__exec__](){
-		// Dans le cas ou un plugin a besoin d'un systéme de réponse 
-		// différent, il peut faire ça logique dans le hook "beforeSend"
-		// et répondre manuelment avec l'objet ServerReponse (rawResponse).
-		// Cette condition permet d'annuler la logique par défaut d'envois
-		// dans le cas ou une réponse serveur a déjà étais envoyer.
-		if(this.rawResponse.headersSent) return;
-
-		if(this.information) this.headers.info = this.information;
-		if(this.data !== undefined){
-			const contentType = this.headers["content-type"] as string;
-			const hasContentType = contentType !== undefined;
-			
-			if(
-				hasContentType === false && 
-				(typeof this.data === "string" || typeof this.data === "number")
-			){
-				this.headers["content-type"] = "text/plain; charset=utf-8";
-				this.data = this.data.toString();
-			}
-			else if(hasContentType === false && this.data instanceof ArrayBuffer){
-				this.headers["content-type"] = "application/octet-stream";
-			}
-			else if(
-				(hasContentType === false || /json/.test(contentType)) && 
-				typeof this.data === "object"
-			){
-				if(hasContentType === false){
-					this.headers["content-type"] = "application/json; charset=utf-8";
-				}
-				this.data = JSON.stringify(this.data);
-			}
-
-			this.rawResponse.writeHead(this.status, this.headers);
-			return new Promise((resolve, reject) => {
-				this.rawResponse
-				.once("error", reject)
-				.once("close", resolve)
-				.write(this.data);
-				
-				this.rawResponse.end();
-			});
-		}
-		else if(this.file){
-			this.rawResponse.writeHead(this.status, this.headers);
-
-			return new Promise((resolve, reject) => {
-				createReadStream(this.file as string)
-				.pipe(
-					this.rawResponse
-					.once("error", reject)
-					.once("close", resolve)
-				);
-			});
-		}
-		else {
-			this.rawResponse.writeHead(this.status, this.headers);
-			return new Promise((resolve, reject) => {
-				this.rawResponse
-				.once("error", reject)
-				.once("close", resolve)
-				.end();
-			});
-		}
-	}
 }
 
-export class SentError{
-	constructor(message = "There was a problem related to a response made outside the recommended context"){
-		this.error = new Error(message);
-	}
-
-	error: Error;
-}
+export class ExtendsResponse extends Response{}
