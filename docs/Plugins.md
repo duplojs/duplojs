@@ -1,5 +1,5 @@
 # Plugins
-DuploJS propose beaucoup possibilité pour être modifier afin de pouvoir toujour répondre au problématique.
+DuploJS propose beaucoup de possibilités pour être modifié afin de pouvoir toujours répondre aux problématiques.
 
 ## Sommaire
 - [Utiliser un plugin](#utiliser-un-plugin)
@@ -20,7 +20,7 @@ duplo.use(duploCookie, {/* plugin's options*/});
 duploCookie(duplo, {/* plugin's options*/});
 ```
 
-Vous pouvez utilisais la fonction `use` afin d'implémenter les plugins. Il est possible de sans passer mais pour une question de quoérence et d'organisation il est recommander de l'utilisais.
+Vous pouvez utiliser la fonction `use` afin d'implémenter les plugins. Il est possible de s'en passer mais pour une question de cohérence et d'organisation il est recommandé de l'utiliser.
 
 ### Créer un plugin
 ```ts
@@ -36,10 +36,10 @@ function myPlugin(instance: DuploInstance<DuploConfig>, options: MypluginOptions
 duplo.use(myPlugin, {option1: "test"});
 ```
 
-Les plugins son juste des fonctions qui seront exécuter pas la fonction `use` 
+Les plugins sont juste des fonctions qui seront exécutées par la fonction `use` .
 
 ### Exemple de plugin
-**Context :** J'ai créer un process qui extract depuis les parmas un id. 
+**Context :** J'ai créé un process qui extract un id depuis les params. 
 
 ```ts
 const userExistProcess = duplo.createProcess("userExist")
@@ -52,10 +52,10 @@ const userExistProcess = duplo.createProcess("userExist")
 .build(["user"])
 ```
 
-Malheuresemnt, si il est implémenter dans une route qui a un path sans params id c'est sur est certain que cela ne va pas fonction.  
+Malheureusemnt, s'il est implémenté dans une route qui a un path sans params id, il est certain que celà ne va pas fonctionner.  
 
 ```ts
-duplo.declareRoute("GET", "/user/{firstname}") // pas de paramétre id donc Erreur a coup sure 
+duplo.declareRoute("GET", "/user/{firstname}") // pas de paramètre id donc Erreur à coup sûr 
 .process(
 	userExistProcess,
 	{
@@ -65,7 +65,7 @@ duplo.declareRoute("GET", "/user/{firstname}") // pas de paramétre id donc Erre
 .handler(({pickup}, res) => res.send(pickup("user")));
 ```
 
-**solution :** Je voudrais creer un event qui ce déclanche quand une route implémente un process afin de pouvoir faire des vérification et peut-étre voirs en avance des potentiel erreur.
+**solution :** Je voudrais créer un event qui ce déclanche quand une route implémente un process, afin de pouvoir faire des vérifications et peut être voir en avance des potentielles erreurs.
 
 **réalisation :**
 ```ts
@@ -94,7 +94,7 @@ duplo.use(
 		handler(route){
 			route.paths.foreach((path) => {
 				if(!path.includes("{id}")){
-					throw new Error(`La route ${route.method}:${path} utilise le process userExist en éyan un path qui ne contien pas {id}`)
+					throw new Error(`La route ${route.method}:${path} utilise le process userExist en ayant un path qui ne contient pas {id}`)
 				}
 			})
 		}

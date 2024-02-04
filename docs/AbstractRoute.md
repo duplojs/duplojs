@@ -1,5 +1,5 @@
 # Abstract Route
-Les abstract route sont faite sois pour créée des systéme d'autentification, sois pour altérer les objets [Request](./Request.md) et [reponse](./Response.md) de manier local. Cela peux ressemblé a des middleware a l'éxéptions qu'il garentise un typage parfait sans devoir redéfinir quoi que ce sois.
+Les abstractRoutes sont faites soit pour créer des systèmes d'authentification, soit pour altérer les objets [Request](./Request.md) et [reponse](./Response.md) de manière locale. Celà peut ressembler à des middleware à l'exception qu'ils garantissent un typage parfait sans devoir redéfinir quoi que ce soit.
 
 ## Sommaire
 - [Déclarer une abstract route](#déclarer-une-abstract-route)
@@ -18,29 +18,29 @@ Les abstract route sont faite sois pour créée des systéme d'autentification, 
 - [Merge des abstract route](#merge-des-abstract-route)
 
 ### Déclarer une abstract route
-Une route peut étre déclaré a partire de deux chose, sois depuis la `DuploInstance`, sois depuis une `AbstractRouteInstance`.
+Une route peut être déclaré à partir de deux choses, soit depuis la `DuploInstance`, soit depuis une `AbstractRouteInstance`.
 
 ```ts
 duplo.declareAbstractRoute("MustBeConnected")//...
 ```
 
 ### Construction d'une abstract route
-La déclaration d'une abstract route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité.
+La déclaration d'une abstract route a un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité.
 
 ```ts
 duplo
 .declareAbstractRoute("MustBeConnected")
-.options(/* ... */) // vous ne pouvez appler qu'une seul fois cette focntion
+.options(/* ... */) // vous ne pouvez appeler qu'une seule fois cette fonction
 .hook(/* ... */) // vous pouvez ajouter autant de Hook que vous souhaitez
 .extract(/* ... */) // vous ne pouvez avoir qu'un seul extract
 .process(/* ... */) // vous pouvez avoir autant de process que vous souhaitez
 .check(/* ... */) // vous pouvez avoir autant de check que vous souhaitez
 .cut(/* ... */) // vous pouvez avoir autant de cut que vous souhaitez
-.handler(/* ... */) // ne laise plus que la possibilité d'utilisais la fonction build
-.build(/* ... */)// cette fonction marque l'arrét de la création du process
+.handler(/* ... */) // ne laise plus que la possibilité d'utiliser la fonction build
+.build(/* ... */)// cette fonction marque l'arrêt de la création du process
 ```
 
-Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour check, process et cut qui n'empêche pas de se rappeler entre eux):
+Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour check, process et cut qui n'empêchent pas de se rappeler entre eux):
 
 ```ts
 duplo
@@ -70,30 +70,30 @@ const mustBeConnected = duplo.declareAbstractRoute("MustBeConnected")
 )
 .build(["value"]);
 ```
-Cette method permet de cloturé la déclaration des abstract route. Elle prend en premiere argument un tableau des clés du floor de l'abstract route, cela permet de rendre c'est valeur accessible lors de son utilisation.
+Cette methode permet de clôturer la déclaration des abstract routes. Elle prend en premier argument un tableau des clés du floor de l'abstract route, celà permet de rendre ces valeurs accessibles lors de son utilisation.
 
-**⚠️ Si la fonction build n'est pas appler l'abstract route n'est pas utilisable. ⚠️**
+**⚠️ Si la fonction build n'est pas appelée, l'abstract route n'est pas utilisable. ⚠️**
 
 ### .options(object, ...any?)
-Cette fonction est exactement pareil que la methode [options des process](./Process.md#optionsobject-any).
+Cette fonction est identique à la méthode [options des process](./Process.md#optionsobject-any).
 
 ### .extract(object, function?, ...any?)
-Cette fonction est exactement pareil que la methode [extract des route](./Route.md#extractobject-function-any).
+Cette fonction est identique à la méthode [extract des route](./Route.md#extractobject-function-any).
 
 ### .check(object, object, ...any?)
-Cette fonction est exactement pareil que la methode [check des route](./Route.md#checkobject-object-any).
+Cette fonction est identique à la méthode [check des route](./Route.md#checkobject-object-any).
 
 ### .cut(function, array?, ...any?)
-Cette fonction est exactement pareil que la methode [cut des route](./Route.md#cutfunction-array-any).
+Cette fonction est identique à la méthode [cut des route](./Route.md#cutfunction-array-any).
 
 ### .process(object, object, ...any?)
-Cette fonction est exactement pareil que la methode [process des route](./Route.md#processobject-object-any).
+Cette fonction est identique à la méthode [process des route](./Route.md#processobject-object-any).
 
 ### .handler(function, ...any?)
-Cette fonction est exactement pareil que la methode [handler des route](./Route.md#handlerfunction-any) sauf qu'elle n'est pas obligatoire.
+Cette fonction est identique à la méthode [handler des route](./Route.md#handlerfunction-any) sauf qu'elle n'est pas obligatoire.
 
 ### .hook(string, function)
-Cette methode permet d'ajouter des [hooks](./Hook.md) a l'abstract route. C'est hook seront transmit au route, au abstract route qui utiliseront cette abstract route. Son utilisation est exactement pareille que la methode [hook des route](./Route.md#hookstring-function).
+Cette méthode permet d'ajouter des [hooks](./Hook.md) à l'abstract route. Ces hook seront transmis aux routes, aux abstractRoutes qui utiliseront cette abstract route. Son utilisation est identique à la méthode [hook des route](./Route.md#hookstring-function).
 
 ### Utiliser une abstract route
 ```ts
@@ -116,19 +116,19 @@ mustBeConnected({
 });
 ```
 
-Aprés avoir build votre abstract route vous obtenez une fonction. Cette fonction vous renvoi les methodes `declareRoute` et `declareAbstractRoute` quand vous l'appelez. La fonction peux prendre en argument un objet qui permet de personalisé l'utilisation de l'abstract route.
+Après avoir build votre abstract route vous obtenez une fonction. Cette fonction vous renvoie les méthodes `declareRoute` et `declareAbstractRoute` quand vous l'appelez. La fonction peux prendre en argument un objet qui permet de personaliser l'utilisation de l'abstract route.
 
 ### Propriétés du useAbstractRouteParams
 propriétés|type|definition
 ---|---|---
-options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder a traver le floor.
-pickup|`string[]` \| `undefined`|Permet d'importerles les valeur du floor de l'abstract route.
+options|`Record<string, any>` \| `undefined`|Permet de définir les options par défaut. Vous pouvez y accéder à travers le floor.
+pickup|`string[]` \| `undefined`|Permet d'importer les valeurs du floor de l'abstract route.
 
-### Merge des abstract route
+### Merge des abstract routes
 ```ts
 const baseAbstractRoute = duplo.mergeAbstractRoute([
-    abstractCookie,// abstract route issue d'un plugins
-    abstractCors, // abstract route issue d'un plugins
+    abstractCookie,// abstract route issue d'un plugin
+    abstractCors, // abstract route issue d'un plugin
 ]);
 
 baseAbstractRoute.declareAbstractRoute("MustBeConnected")
@@ -139,8 +139,8 @@ baseAbstractRoute.declareAbstractRoute("MustBeConnected")
 .build(["value"]);
 ```
 
-Certain plugins peuve fournir des abstract route pour effectuer des action en local. Dans l'exemple au dessus nous pouvons imaginer que les abstract route fourni server a lire les cookie et a ajouter les entéte cors. Grasse a la method `mergeAbstractRoute` vous pouvez combiner les deux pour obtenir une nouvel abstract route.
+Certains plugins peuvent fournir des abstract routes pour effectuer des actions en local. Dans l'exemple au-dessus, nous pouvons imaginer que les abstract routes fournies servaient à lire les cookies et à ajouter les en-têtes CORS. Grâce à la méthode `mergeAbstractRoute` vous pouvez combiner les deux pour obtenir une nouvelle abstract route.
 
-**⚠️ Cette methode a étais créer dans le bute de fusioner des abstract route que n'avez pas créer, favorisé la création d'abstract route a partire d'une autre plutot que de les merge. ⚠️**
+**⚠️ Cette méthode a été créé dans le but de fusionner des abstract routes que vous n'avez pas créées, favoriser la création d'abstract route à partir d'une autre abstract route plutôt que de les merge. ⚠️**
 
 #### Retour vers le [Sommaire](#sommaire).

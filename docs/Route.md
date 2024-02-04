@@ -13,17 +13,17 @@
 - [Hook](#hookstring-function)
 
 ### Déclarer une route
-Une route peut étre déclaré a partire de deux chose, sois depuis la `DuploInstance`, sois depuis une `AbstractRouteInstance`.
+Une route peut être déclarée à partir de deux choses, soit depuis la `DuploInstance`, soit depuis une `AbstractRouteInstance`.
 
 ```ts
 duplo.declareRoute("GET", "/")//...
-//or
+//ou
 duplo.declareRoute("POST", ["/user", "/post"])//...
 ```
-Le premier argument est une `string` qui représente la method de la route, les seule valeur possible sont `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` ou `HEAD`. Le second argument est sois une `string` sois une `Array<string>`, il représente tout les path qui seront accosier a la route.
+Le premier argument est une `string` qui représente la méthode de la route, les seules valeurs possibles sont `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` ou `HEAD`. Le second argument est soit une `string` soit une `Array<string>`, il représente tous les paths qui seront associés à la route.
 
 ### Construction d'une route
-La déclaration d'une route à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
+La déclaration d'une route a un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité. Ce principe sera le même pour la déclaration des routes abstraites et la création de process.
 
 ```ts
 duplo
@@ -36,7 +36,7 @@ duplo
 .handler(/* ... */) // cette fonction marque l'arrét de la déclaration de la route
 ```
 
-Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour check, process et cut qui n'empêche pas de se rappeler entre eux):
+Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour check, process et cut qui n'empêchent pas de se rappeler entre eux):
 
 ```ts
 duplo
@@ -66,19 +66,19 @@ duplo
 .handler(async (floor, response) => {
 
     // ✖ ne fonctionne pas
-    // cela provoquera une erreur qui indiquera que rien n'a été envoyé
+    // celà provoquera une erreur qui indiquera que rien n'a été envoyé
     new Promise(resolve => setTimeout(resolve, 1000))
     .then(() => response.code(200).info("j'effectue le dab").send());
 
     // ✔ fonctionne correctement
-    // l'exécution est en linéaire donc cela ne posera aucun problème
+    // l'exécution est linéaire donc celà ne pose aucun problème
     await new Promise(resolve => setTimeout(resolve, 1000));
     response.code(200).info("il est mort pioupiou").send();
 });
 ```
 
 ### Cycle d'exécution
-Les route de duplojs son grosomodo des succesion d'execution de function ([Hook](./Hook.md), [AbstractRoute](./AbstractRoute.md), [Process](./Process.md), [Checker](./Checker.md), ...). Pour optimiser le raccord des différente fonction, duplojs fabrique une fonction surmesure. C'est donc cette fonction qui determine le cycle d'exécution.
+Les route de duplojs sont grossomodo des succesions d'exécutions de functions ([Hook](./Hook.md), [AbstractRoute](./AbstractRoute.md), [Process](./Process.md), [Checker](./Checker.md), ...). Pour optimiser le raccord des différentes fonctions, duplojs fabrique une fonction sur mesure. C'est donc cette fonction qui détermine le cycle d'exécution.
 
 Ordres d'appel des fonctions:
 - [Hook](./Hook.md#hook-de-route) "onConstructRequest"
@@ -96,14 +96,14 @@ Ordres d'appel des fonctions:
 - [Hook](./Hook.md#hook-de-route) "serializeBody"
 - [Hook](./Hook.md#hook-de-route) "afterSend"
 
-Comme dit plus haut la fonction est sur mesure donc tout ne vas pas forcément s'exécuter mais tout s'executera dans cette ordre.
+Comme dit précédemment, la fonction est sur mesure donc tout ne va pas forcément s'exécuter mais tout s'executera dans cette ordre.
 
-Il n'est pas possible d'envoyer une réponse a n'importe qu'elle moment du cycle, le "code" si dessous montre de manier plus technique le cycle d'exécution.
+Il n'est pas possible d'envoyer une réponse à n'importe quel moment du cycle, le "code" ci-dessous montre de manière plus technique le cycle d'exécution.
 
 ```
 // try serveur
 try{
-    @ touve une route qui match
+    @ trouve une route qui match
     @ lance le hook onConstructRequest
     @ lance le hook onConstructResponse
 
@@ -120,7 +120,7 @@ try{
         catch(exception) {
             if(exception === Error){
                 @ lance le hook OnError
-                @ execute error handler
+                @ exécute error handler
             }
             else {
                 @ throw exception;
@@ -131,8 +131,8 @@ try{
     catch(exception) {
         if(exception === Reponse){
             @ lance le hook beforeSend
-            @ envoi des headers
-			@ serialization et envoi du body
+            @ envoie des headers
+			@ sérialisation et envoi du body
             @ lance le hook afterSend
         }
         else {
@@ -143,11 +143,11 @@ try{
 // catch serveur
 catch(exception) {
     @ lance le hook onServerError
-    @ envoi une Erreur 500 au client
+    @ envoie une Erreur 500 au client
 }
 
 ```
-Les différent trycatch serve de "goto" (d'ou l'exuction linéaire), cela permet d'intérompre l'éxécution du code de pandent les opération de la route. Cependent si une réponse est envoyer depuis le try serveur ou le catch reponse ça provoquera une erreur.
+Les différents trycatch servent de "goto" (d'où l'exécution linéaire), celà permet d'interrompre l'exécution depuis n'importe où (au sein des opérations). Cependant si une réponse est envoyée depuis le try serveur ou le catch réponse, ça provoquera une erreur.
 
 ### .handler(function, ...any?)
 ```ts
@@ -157,12 +157,12 @@ duplo
     response.send("fait le mou, fait le mou");
 });
 ```
-La fonction handler est la fonction qui cloture la définition d'une route. Elle prend en argument une fonction. Cette fonction est appler avec 2 arguments, le floor de la requête et l'objet [Response](./Response.md). Cette fonction est la dernierre action de la route, en théoris une fois arriver ici il n'y a plus rien a vérifier ! 
+La fonction handler est la fonction qui clôture la définition d'une route. Elle prend en argument une fonction. Cette fonction est appelée avec 2 arguments, le floor de la requête et l'objet [Response](./Response.md). Cette fonction est la dernière action de la route, en théorie une fois arrivé ici il n'y a plus rien à vérifier ! 
 
-**⚠️ Si la fonction handler n'est pas appler la route n'est pas déclaré. ⚠️**
+**⚠️ Si la fonction handler n'est pas applée, la route n'est pas déclarée. ⚠️**
 
 ### .extract(object, function?, ...any?)
-La fonction extract permet de récupéret et typés des valeurs dans l'objet [Request](./Request.md). Pour extraire les valeurs il nous faut définir un schéma dans l'objet passé en premier paramètre. Les index du premier niveau correspondent à des clés de l'objet [Request](./Request.md). La librairi [zod](https://github.com/colinhacks/zod) (qui est directement intégré a duplojs) est utilisé ici pour vérifier les types.
+La fonction extract permet de récupérer et typer des valeurs dans l'objet [Request](./Request.md). Pour extraire les valeurs, il nous faut définir un schéma dans l'objet passé en premier paramètre. Les index du premier niveau correspondent à des clés de l'objet [Request](./Request.md). La librairie [zod](https://github.com/colinhacks/zod) (qui est directement intégrée à duplojs) est utilisée ici pour vérifier les types.
 
 ```ts
 duplo
@@ -178,13 +178,13 @@ duplo
     })
 })
 .handler(({pickup}) => {
-    pickup("id"); // id en paramétre
+    pickup("id"); // id en paramètre
     pickup("body"); // body de la request
 
     //...
 });
 
-// equal to
+// égal à
 
 duplo
 .declareRoute("PATCH", "/post/{id}")
@@ -199,16 +199,16 @@ duplo
     },
 })
 .handler(({pickup}) => {
-    pickup("id"); // id en paramétre
-    pickup("title"); // title du body de la request
-    pickup("subtitle"); // subtitle du body de la request
-    pickup("text"); // text du body de la request
+    pickup("id"); // id en paramètre
+    pickup("title"); // titre du body de la request
+    pickup("subtitle"); // sous-titre du body de la request
+    pickup("text"); // texte du body de la request
 
     //...
 });
 ```
 
-En cas d'erreur de type une réponse est directement envoyée et l'exécution du code s'arrête à la fonction extract. Par défaut l'erreur a un code 400 et porte l'info `TYPE_ERROR.${type}[.${index}]`. Si vous souhaitez modifier le type de retour il vous suffit de passer une fonction en second paramètre.
+En cas d'erreur de type, une réponse est directement envoyée et l'exécution du code s'arrête à la fonction extract. Par défaut, l'erreur a un code 400 et porte l'info `TYPE_ERROR.${type}[.${index}]`. Si vous souhaitez modifier le type de retour, il vous suffit de passer une fonction en second paramètre.
 
 ```ts
 duplo
@@ -227,10 +227,10 @@ duplo
 });
 ```
 
-La fonction en second paramètre prend 4 argument, l'object [Response](./Response.md), la clé de premier niveau (type), la clé de second niveau (index) et l'erreur zod. 
+La fonction en second paramètre prend 4 arguments, l'object [Response](./Response.md), la clé de premier niveau (type), la clé de second niveau (index) et l'erreur zod. 
 
 ### .check(object, object, ...any?)
-La method check permet d'implémenter un [checker](./Checker.md) dans une route. Elle prends 2 arguments, le premier est de type `CheckerExport` et le second est un objet qui permet de configuré le checker implémenter.
+La méthode check permet d'implémenter un [checker](./Checker.md) dans une route. Elle prend 2 arguments, le premier est de type `Checker` et le second est un objet qui permet de configurer le checker implémenté.
 
 ```ts
 duplo
@@ -247,12 +247,12 @@ duplo
     userExist,
     {
         input: (pickup) => pickup("id"), // valeur d'entrée
-        result: "user.exist", // info attendu pour continuer
-        catch: (response, info) => response.code(404).info(info).send(), // action effectuer si l'info n'est pas c'elle attendu
-        indexing: "user", // index de drop du resulta
+        result: "user.exist", // info attendue pour continuer
+        catch: (response, info) => response.code(404).info(info).send(), // action effectuée si l'info n'est pas celle attendue
+        indexing: "user", // index de drop du resultat
 
-        options: {type: "id"} // option static
-        // or
+        options: {type: "id"} // option statique
+        // ou
         options: (pickup) => ({ // option dynamique
             type: pickup("type")
         })
@@ -263,19 +263,19 @@ duplo
 });
 ```
 
-Les propriéter `input` et `options` ce ressemble, elle serve toute les deux a envoyer des donnés pour l'exécution du checker. Cependant `input` doit obligatoirment étre défini contrairement aux `options` qui ont des valeurs par défaut. La propriété `result` représente l'information attendue, si le checker renvoie une autre information la fonction de la propriété `catch` sera lancée ce qui interrompera la requête. La propriété `indexing` représente la clé d'indexation dans floor de la data résultante du checker.
+Les propriétés `input` et `options` ce ressemblent, elles servent toutes les deux à envoyer des donnés pour l'exécution du checker. Cependant `input` doit obligatoirement être défini contrairement aux `options` qui ont des valeurs par défaut. La propriété `result` représente l'information attendue, si le checker renvoie une autre information, la fonction de la propriété `catch` sera lancée ce qui interrompra la requête. La propriété `indexing` représente la clé d'indexation dans le floor de la data résultante du checker.
 
 propriétés|valeur|definition
 ---|---|---
 input|`function`|Fonction qui permet d'envoyer une valeur au checker.
-result|`string` ou `string[]` ou `undefined`|Information attendu pour continuer la requéte.
-catch|`function`|Function appler si le resulta ne convient pas.
+result|`string` ou `string[]` ou `undefined`|Information attendue pour continuer la requête.
+catch|`function`|Fonction appelée si le resultat ne convient pas.
 indexing|`string` ou `undefined`|Propriété qui représente l'index dans le floor des data renvoyées par le checker en cas de resultat satisfaisant.
 options|`function` ou `objet` ou `undefined`|Options du checker.
-skip|`function` ou `undefined`|Propriété de sauter un checker sous certaine condition.
+skip|`function` ou `undefined`|Propriété qui permet de sauter l'exécution checker sous certaines conditions.
 
 ### .cut(function, array?, ...any?)
-La fonction cut est conseiller d'étre utiliser dans deux cas. Si vous avez une vérification unique qui ne sera utile que sur une seul route ou si vous avez besoin de manipuler l'objet [Request](./Request.md). La method cut prend 2 arguments, le premier est une fonction et le second argument est une array. L'array correspond explicitement au clé de l'objet renvoyer par la fonction.
+La fonction cut est conseillée d'être utilisée dans deux cas. Si vous avez une vérification unique qui ne sera utile que sur une seul route ou si vous avez besoin de manipuler l'objet [Request](./Request.md). La méthode cut prend 2 arguments, le premier est une fonction et le second argument est une array. L'array correspond explicitement aux clés de l'objet renvoyé par la fonction.
 
 ```ts
 duplo
@@ -324,10 +324,10 @@ duplo
     response.send(result);
 });
 ```
-La fonction sera appler avec 3 argument, le premier c'est le floor de la requête, le second c'est l'objet [Response](./Response.md) et le troisiéme c'est l'objet [Request](./Request.md).
+La fonction sera appelée avec 3 arguments, le premier c'est le floor de la requête, le second c'est l'objet [Response](./Response.md) et le troisième c'est l'objet [Request](./Request.md).
 
 ### .process(object, object, ...any?)
-La fonction process permet d'implémenter un process dans une route. Cette method prend 2 argument, le premier est de type `ProcessExport` et le second est un objet qui permet de configuré le process implémenter.
+La fonction process permet d'implémenter un process dans une route. Cette méthode prend 2 arguments, le premier est de type `Process` et le second est un objet qui permet de configurer le process implémenté.
 
 ```ts
 duplo
@@ -355,12 +355,12 @@ duplo
     userHasRightInOrganization,
     {
         input: (pickup) => pickup("article").organization_id,
-        pickup: ["currentUser"], // valeur récupérer du process
+        pickup: ["currentUser"], // valeur récupérée du process
 
-        options: { // option static
+        options: { // option statique
             right: "edit_post"
         }
-        // or
+        // ou
         options: (pickup) => ({ // option dynamique
             right: "edit_post"
         })
@@ -378,17 +378,17 @@ duplo
     response.send(result);
 });
 ```
-Les propriétés `input` et `options` permettent de passer des données pour l'éxécution du process, mais elles ne sont pas obligatoires. La propriété `pickup` permet de récupérer des valeurs du [floor](./Process.md) du process.
+Les propriétés `input` et `options` permettent de passer des données pour l'exécution du process, mais elles ne sont pas obligatoires. La propriété `pickup` permet de récupérer des valeurs du [floor](./Process.md) du process.
 
 propriétés|valeur|definition
 ---|---|---
 input|`function` ou `undefined`|Fonction qui permet d'envoyer une valeur au process.
-pickup|`string[]` ou `undefined`|Cette propriété représente des clé du floor du process qui on êtais drop, cela permet d'importer leur valeur dans la route.
+pickup|`string[]` ou `undefined`|Cette propriété représente des clés du floor du process qui ont été drop, celà permet d'importer leurs valeurs dans la route.
 options|`function` ou `objet` ou `undefined`|Options du process.
-skip|`function` ou `undefined`|Propriété de sauter un process sous certaine condition.
+skip|`function` ou `undefined`|Propriété qui permet de sauter l'exécution checker sous certaines conditions.
 
 ### .hook(string, function)
-La fonction hook permet d'ajouter des [hooks](./Hook.md) localment a une route.
+La fonction hook permet d'ajouter des [hooks](./Hook.md) localement à une route.
 
 ```ts
 duplo
@@ -399,7 +399,7 @@ duplo
 .hook("beforeParsingBody", (request, response) => {/* ... */})
 .handler(/* ... */);
 ```
-Tout les hook disponible pour les route son [ici](./Hook.md#hook-de-route) !
+Tous les hook disponibles pour les routes sont [ici](./Hook.md#hook-de-route) !
 
 
 #### Retour vers le [Sommaire](#sommaire).

@@ -1,5 +1,5 @@
 # Hook
-Les hooks son des event au qu'elle on peux atacher des fonction.
+Les hooks sont des events auxquels on peut attacher des fonctions.
 
 ## Sommaire
 - [Hook de route](#hook-de-route)
@@ -8,25 +8,25 @@ Les hooks son des event au qu'elle on peux atacher des fonction.
 ### Hook de route
 hooks|arguments|definition
 ---|---|---
-onConstructRequest|`(Request) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Request](./Request.md).
-onConstructResponse|`(Response) => {/* */}`|Ce lance aprés l'instanciation de l'objet [Response](./Response.md).
-beforeRouteExecution|`(Request, Response) => {/* */}`|Ce lance avant l'éxécution des opération de la route.
-parsingBody|`(Request, Response) => {/* */}`|Ce lance aprés l'éxécution de l'abstractRoute pour pars le body.
-onError|`(Request, Response, Error) => {/* */}`|Ce lance si une erreur est catch pendant l'execution des opération de la route.
-beforeSend|`(Request, Response) => {/* */}`|Ce lance avant avant l'envois d'un réponse.
-serializeBody|`(Request, Response) => {/* */}`|Ce lance aprés l'envois des headers pour sérialisé le body de la response et l'envoyer.
-afterSend|`(Request, Response) => {/* */}`|Ce lance aprés l'envois d'un réponse.
+onConstructRequest|`(Request) => {/* */}`|Se lance après l'instanciation de l'objet [Request](./Request.md).
+onConstructResponse|`(Response) => {/* */}`|Se lance après l'instanciation de l'objet [Response](./Response.md).
+beforeRouteExecution|`(Request, Response) => {/* */}`|Se lance avant l'exécution des opérations de la route.
+parsingBody|`(Request, Response) => {/* */}`|Se lance après l'éxécution de l'abstractRoute pour pars le body.
+onError|`(Request, Response, Error) => {/* */}`|Se lance si une erreur est catch pendant l'exécution des opérations de la route.
+beforeSend|`(Request, Response) => {/* */}`|Se lance avant l'envoi d'une réponse.
+serializeBody|`(Request, Response) => {/* */}`|Se lance après l'envoi des headers pour sérialiser le body de la réponse et l'envoyer.
+afterSend|`(Request, Response) => {/* */}`|Se lance après l'envoi d'une réponse.
 
 ### Hook du serveur
 hooks|arguments|definition
 ---|---|---
-onDeclareRoute|`(route: Route) => {/* */}`|Ce lance quand une route est déclaré.
-onDeclareAbstractRoute|`(abstractRoute: AbstractRoute) => {/* */}`|Ce lance quand une abstract route est déclaré.
-onCreateChecker|`(checker: CheckerExport) => {/* */}`|Ce lance quand un checker est créer.
-onCreateProcess|`(process: ProcessExport) => {/* */}`|Ce lance quand un process est créer.
-beforeBuildRouter|`() => {/* */}`|Ce lance avand que tout les objet sois figer et que le routeur sois construit.
-onServerError|`(serverRequest: IncomingMessage, serverResponse: ServerResponse, error: Error) => {/* */}`|Ce lance dans le cas d'une erreur sychrone qui a étais throw dans une boucle suppérieur. Plus de detail [ici](./Route.md#cycle-dexécution).
-onReady|`() => {/* */}`|Ce lance quand aprés que le serveur sois lancer.
-onClose|`() => {/* */}`|ce lance quand le serveur s'arréte.
+onDeclareRoute|`(route: Route) => {/* */}`|Se lance quand une route est déclarée.
+onDeclareAbstractRoute|`(abstractRoute: AbstractRoute) => {/* */}`|Se lance quand une abstract route est déclarée.
+onCreateChecker|`(checker: CheckerExport) => {/* */}`|Se lance quand un checker est créé.
+onCreateProcess|`(process: ProcessExport) => {/* */}`|Se lance quand un process est créé.
+beforeBuildRouter|`() => {/* */}`|Se lance avand que tous les objets soient figés et que le routeur soit construit.
+onServerError|`(serverRequest: IncomingMessage, serverResponse: ServerResponse, error: Error) => {/* */}`|Se lance dans le cas d'une erreur synchrone qui a été throw dans une boucle supérieure. Plus de detail [ici](./Route.md#cycle-dexécution).
+onReady|`() => {/* */}`|Se lance après que le serveur soit lancé.
+onClose|`() => {/* */}`|Se lance quand le serveur s'arrête.
 
 #### Retour vers le [Sommaire](#sommaire).

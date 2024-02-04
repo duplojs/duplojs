@@ -43,7 +43,7 @@ duplo
 });
 ```
 
-Comme vous pouvez le voir, vous n'avez pas un accès direct à la requête, et TANT MIEUX, car tel que je vous connais (bande de sagouin), vous auriez fait ça n'importe comment.
+Comme vous pouvez le voir, vous n'avez pas un accès direct à la requête, et TANT MIEUX, car tel que je vous connais (bande de sagouins), vous auriez fait ça n'importe comment.
 
 ### Comment accéder aux valeurs de la request
 ```ts
@@ -66,7 +66,7 @@ Grâce à la fonction [extract](./docs/Route.md#extractobject-function-any), vou
 - Le paramètre "id" n'acceptera qu'un nombre ou une chaîne de caractères contenant un nombre.
 - Le champ "role" des headers n'acceptera qu'une chaîne de caractères ayant entre 2 et 15 caractères.
 
-### Comment accéder au valeurs
+### Comment accéder aux valeurs
 ```ts
 duplo
 .declareRoute("GET", "/user/{id}")
@@ -88,8 +88,8 @@ duplo
 
 L'objet "[floor](./docs/Floor.md)" représente le sol de votre chambre. Tout comme les gros nerds que nous sommes, quand on a besoin de ranger quelque chose, on le jette par terre ``floor.drop("caleçons", "sale")``, puis on les ramasse plus tard avec ``floor.pickup("caleçons")`` (c'est juste un Map qui se balade à travers toutes les fonctions d'une route). Toutes les valeurs vérifiées dans l'extract sont automatiquement "drop" sur votre sol.
 
-### Comment faire plus de vérification
-Vous êtes peut-être tenté de faire toutes les vérifications dans le handler mais il faut que vous gardiez une chose en tête ! Le handler correspond à l'action finale, une fois arrivé ici en théorie il n'y a plus aucune vérification à faire. 
+### Comment faire plus de vérifications
+Vous êtes peut-être tentés de faire toutes les vérifications dans le handler mais il faut que vous gardiez une chose en tête ! Le handler correspond à l'action finale, une fois arrivé ici en théorie il n'y a plus aucune vérification à faire. 
 
 **Mais comment faire alors ?** Simplement grâce au [checker](./docs/Checker.md):
 ```ts
@@ -123,7 +123,7 @@ const userExist = duplo
 .build();
 ```
 
-Un [checker](./docs/Checker.md) est une fonction qui prend en entrée une valeur et doit toujours renvoyer une information et une données. Son implémentation permet d'effectuer une vérification. Dans l'exemple ci-dessus, le [checker](./docs/Checker.md) indique prendre en entrée un nombre ou une chaîne de caractères. Il propose une option "index" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. On aussi ajouter une précomplétion qui simplifi son implémentation.
+Un [checker](./docs/Checker.md) est une fonction qui prend en entrée une valeur et doit toujours renvoyer une information et une donnée. Son implémentation permet d'effectuer une vérification. Dans l'exemple ci-dessus, le [checker](./docs/Checker.md) indique prendre en entrée un nombre ou une chaîne de caractères. Il propose une option "index" qui dans notre cas permet de définir par quelle clé on cherche un utilisateur. On a aussi ajouté une précomplétion qui simplifie l'implémentation du [checker](./docs/Checker.md).
 
 ### Implémenter un [checker](./docs/Checker.md)
 ```ts
@@ -141,13 +141,13 @@ duplo
     userExist,
     {
         input: (pickup) => pickup("id"), // valeur d'entrée
-        result: "user.exist", // info attendu pour continuer
-        catch: (response, info) => response.code(404).info(info).send(), // action effectuer si l'info n'est pas c'elle attendu
-        indexing: "user", // index de drop du resulta
-        options: {index: "id"} // option utiliser
+        result: "user.exist", // info attendue pour continuer
+        catch: (response, info) => response.code(404).info(info).send(), // action effectuée si l'info n'est pas celle attendue
+        indexing: "user", // index de drop du resultat
+        options: {index: "id"} // option utilisée
     }
 )
-// or
+// ou
 .check(
     userExist,
     {
@@ -190,7 +190,7 @@ duplo
     response.code(200).info("quoicoubeh").send(floor.pickup("user"));
 });
 ```
-Les [checkers](./docs/Checker.md) sont conçus pour être utilisés à de nombreux endroits, mais il peut arriver d'avoir quelque chose de très spécifique. C'est pour cela que les [cuts](./docs/Route.md#cutfunction-array-any) ont été créés.
+Les [checkers](./docs/Checker.md) sont conçus pour être utilisés à plusieurs endroits, mais il peut arriver de devoir effectuer une opération très spécifique. C'est pour celà que les [cuts](./docs/Route.md#cutfunction-array-any) ont été créés.
 
 **⚠️ Attention à ne pas abuser des [cuts](./docs/Route.md#cutfunction-array-any), sinon vous vous éloignerez de l'utilité première, qui est la construction de code à base de briques réutilisables. ⚠️**
 
@@ -204,19 +204,19 @@ duplo
 .handler(async (floor, response) => {
 
     // ✖ ne fonctionne pas (ti é con ou koi ?)
-    // cela provoquera une erreur qui indiquera que rien n'a été envoyé
+    // celà provoquera une erreur qui indiquera que rien n'a été envoyé
     new Promise(resolve => setTimeout(resolve, 1000))
     .then(() => response.code(200).info("j'effectue le dab").send());
 
     // ✔ fonctionne correctement (y comprend vite mais y faut lui expliquer longtemps)
-    // l'exécution est en linéaire donc cela ne posera aucun problème
+    // l'exécution est linéaire donc celà ne pose aucun problème
     await new Promise(resolve => setTimeout(resolve, 1000));
     response.code(200).info("il est mort pioupiou").send();
 });
 ```
 
 ### Répondre est une erreur
-Quand les fonctions send, sendFile, redirect et download sont appelées, elles créent une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant, cela peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
+Quand les fonctions send, sendFile, redirect et download sont appelées, elles créent une exception qui permet de stopper court au processus pour enchaîner sur le reste du cycle de vie de la request. Cependant, celà peut poser problème si vous appelez l'une de ces fonctions dans un try catch.
 
 ```ts
 duplo

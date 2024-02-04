@@ -1,5 +1,5 @@
 # Checker
-Les checker son des block de code qui on pour bute de faire une vérification. Il prenne une valeur en entré et retourne une info qui peut-étre accompagner d'une donner. Leur implémentation est explicique et peu ce faire que d'une seul manier donc impossible de ne pas comprendre leurs comportement !
+Les checker sont des blocks de code qui ont pour but de faire une vérification. Il prennent une valeur en entrée et retournent une info qui peut être accompagnée d'une donnée. Leur implémentation est explicique et ne peut se faire d'une seule manière, donc impossible de ne pas comprendre leur comportement !
 
 ## Sommaire
 - [Créer un checker](#créer-un-checker)
@@ -10,25 +10,25 @@ Les checker son des block de code qui on pour bute de faire une vérification. I
 - [Implémenter un checker](#implémenter-un-checker)
 
 ### Créer un checker
-Un checker doit étre créer a partire de la `DuploInstance`.
+Un checker doit être créé à partir de la `DuploInstance`.
 
 ```ts
 const userExist = duplo.createChecker("userExist")//...
 ```
 ### Construction d'un checker
 
-La création d'un checker à un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité.
+La création d'un checker a un pattern bien précis à respecter. Cet ordre imposé permettra une meilleure lisibilité.
 
 ```ts
 duplo
 .createChecker("userExist")
-.options(/* ... */) // vous ne pouvez appler qu'une seul fois cette focntion
-.handler(/* ... */) // vous ne pouvez appler qu'une seul fois cette focntion
+.options(/* ... */) // vous ne pouvez appeler qu'une seule fois cette fonction
+.handler(/* ... */) // vous ne pouvez appeler qu'une seule fois cette fonction
 
 .addPrecompleted(/* ... */) // vous pouvez avoir autant de précompletion que vous souhaitez
 .addPrecompleted(/* ... */)
 
-.build(/* ... */) // cette fonction marque l'arrét de la création du checker
+.build(/* ... */) // cette fonction marque l'arrêt de la création du checker
 ```
 
 Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour addPrecompleted qui n'empêche pas de se rappeler).
@@ -42,9 +42,9 @@ const userExist = duplo
 .build();
 ```
 
-Cette method permet de cloturé la création d'un checker. 
+Cette méthode permet de clôturer la création d'un checker. 
 
-**⚠️ Si la fonction build n'est pas appler le process n'est pas utilisable. ⚠️**
+**⚠️ Si la fonction build n'est pas appelée, le process n'est pas utilisable. ⚠️**
 
 ### .options(object, ...any?)
 
@@ -58,7 +58,7 @@ const userExist = duplo
 .build();
 ```
 
-Cette method ajoute des options au checker qui peuve étre redéfinit a son implémentation.
+Cette méthode ajoute des options au checker qui peuvent être redéfinies à son implémentation.
 
 ### .handler(function, ...any?)
 
@@ -83,7 +83,7 @@ const userExist = duplo
 .build();
 ```
 
-La methods handler permet de définir la fonction qui sera la logique du checker. L'argument `input` définit le type de donnés d'entrer du checker, L'argument `output` est une function qui doit étre utiliser OBLIGATOIREMENT en retour de la fonction, elle associ le type de donné de sortie avec une information. `options` correspond au options utilisais du checker.
+La méthode handler permet de définir la fonction qui sera la logique du checker. L'argument `input` définit le type de donnée d'entrée du checker, l'argument `output` est une fonction qui doit être utilisée OBLIGATOIREMENT en retour de la fonction, elle associe le type de donnée de sortie avec une information. `options` correspond aux options utilisées du checker.
 
 ### .addPrecompleted(string, object, ...any?)
 
@@ -123,10 +123,10 @@ const userExist = duplo
 .build();
 ```
 
-Cette method permet de définir de la précomplétions pour l'implémentation d'un checker. Vous pouvais en voir autent que vous le souhétais.
+Cette méthode permet de définir de la précomplétion pour l'implémentation d'un checker. Vous pouvez en avoir autant que vous le souhaitez.
 
 ### Implémenter un checker
-Les checker s'utilise uniquement avec la method `check` des route, process et abstractRoute.
+Les checkers s'utilisent uniquement avec la méthode `check` des routes, process et abstractRoute.
 
 ```ts
 // route, process ou abstractRoute
@@ -134,10 +134,9 @@ Les checker s'utilise uniquement avec la method `check` des route, process et ab
     userExist,
     {
         input: (pickup) => pickup("id"), // valeur d'entrée
-        result: "user.exist", // info attendu pour continuer
-        catch: (response, info) => response.code(404).info(info).send(), // action effectuer si l'info n'est pas c'elle attendu
-        indexing: "user", // index de drop du resulta
-    }
+        result: "user.exist", // info attendue pour continuer
+        catch: (response, info) => response.code(404).info(info).send(), // action effectuée si l'info n'est pas celle attendue
+        indexing: "user", // index de drop du resultat
 )
 //
 .check(
