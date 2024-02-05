@@ -25,12 +25,12 @@ Vous pouvez utiliser la fonction `use` afin d'implémenter les plugins. Il est p
 ### Créer un plugin
 ```ts
 interface MypluginOptions{
-	option1?: string,
-	option2?: number,
+    option1?: string,
+    option2?: number,
 }
 
 function myPlugin(instance: DuploInstance<DuploConfig>, options: MypluginOptions){
-	/* ... */
+    /* ... */
 }
 
 duplo.use(myPlugin, {option1: "test"});
@@ -44,9 +44,9 @@ Les plugins sont juste des fonctions qui seront exécutées par la fonction `use
 ```ts
 const userExistProcess = duplo.createProcess("userExist")
 .extract({
-	params: {
-		id: zod.coerce.number(),
-	},
+    params: {
+        id: zod.coerce.number(),
+    },
 })
 //...
 .build(["user"])
@@ -57,10 +57,10 @@ Malheureusemnt, s'il est implémenté dans une route qui a un path sans params i
 ```ts
 duplo.declareRoute("GET", "/user/{firstname}") // pas de paramètre id donc Erreur à coup sûr 
 .process(
-	userExistProcess,
-	{
-		pickup: ["user"],
-	}
+    userExistProcess,
+    {
+        pickup: ["user"],
+    }
 )
 .handler(({pickup}, res) => res.send(pickup("user")));
 ```
@@ -70,35 +70,35 @@ duplo.declareRoute("GET", "/user/{firstname}") // pas de paramètre id donc Erre
 **réalisation :**
 ```ts
 interface OnRouteUseProcessOptions{
-	process: Process,
-	handler(route: Route): void,
+    process: Process,
+    handler(route: Route): void,
 }
 
 function onRouteUseProcess(instance: DuploInstance<DuploConfig>, options: OnRouteUseProcessOptions){
-	instance.addHook("onDeclareRoute", (route) => {
-		route.steps.foreach((step) => {
-			if(
-				step instanceof ProcessStep && 
-				step.process === options.process
-			){
-				options.handler(route);
-			}
-		})
-	})
+    instance.addHook("onDeclareRoute", (route) => {
+        route.steps.foreach((step) => {
+            if(
+                step instanceof ProcessStep && 
+                step.process === options.process
+            ){
+                options.handler(route);
+            }
+        })
+    })
 }
 
 duplo.use(
-	onRouteUseProcess,
-	{
-		process: userExistProcess,
-		handler(route){
-			route.paths.foreach((path) => {
-				if(!path.includes("{id}")){
-					throw new Error(`La route ${route.method}:${path} utilise le process userExist en ayant un path qui ne contient pas {id}`)
-				}
-			})
-		}
-	}
+    onRouteUseProcess,
+    {
+        process: userExistProcess,
+        handler(route){
+            route.paths.foreach((path) => {
+                if(!path.includes("{id}")){
+                    throw new Error(`La route ${route.method}:${path} utilise le process userExist en ayant un path qui ne contient pas {id}`)
+                }
+            })
+        }
+    }
 )
 ```
 
