@@ -80,15 +80,15 @@ Cette méthode permet de cloturer la création d'un process. Elle prend en premi
 const userHasRight = duplo
 .createProcess("userHasRight")
 .options({
-	right: "write" as "write" | "read" 
+    right: "write" as "write" | "read" 
 })
 .cut(
     ({pickup}) => {
-		return {
-			right: pickup("options").right,
-			value: 25,
-		}
-	},
+        return {
+            right: pickup("options").right,
+            value: 25,
+        }
+    },
     ["value", "right"]
 )
 .build(["value"]);
@@ -101,18 +101,18 @@ Cette méthode ajoute des options au process, qui peuvent être redéfinies à s
 const userHasRight = duplo
 .createProcess("userHasRight")
 .options({
-	right: "write" as "write" | "read" 
+    right: "write" as "write" | "read" 
 })
 // le floor de input est celui du parent dans lequel le process est implémenté
 .input((pickup) => pickup<number | undefined>("userId") || null)
 .cut(
     ({pickup}) => {
-		return {
-			userId: pickup("input"),
-			right: pickup("options").right,
-			value: 25,
-		}
-	},
+        return {
+            userId: pickup("input"),
+            right: pickup("options").right,
+            value: 25,
+        }
+    },
     ["value", "right"]
 )
 .build(["value"]);

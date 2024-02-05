@@ -132,7 +132,7 @@ try{
         if(exception === Reponse){
             @ lance le hook beforeSend
             @ envoie des headers
-			@ sérialisation et envoi du body
+            @ sérialisation et envoi du body
             @ lance le hook afterSend
         }
         else {
