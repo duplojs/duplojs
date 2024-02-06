@@ -1,4 +1,4 @@
-import {Checker, makeRouteBuilder, makeServerHooksLifeCycle} from "../../../../scripts";
+import {Checker, CheckerStep, CutStep, ProcessStep, makeRouteBuilder, makeServerHooksLifeCycle} from "../../../../scripts";
 import {AbstractRoute} from "../../mocks/duplose/abstractRoute";
 import {Process} from "../../mocks/duplose/process";
 import {Route} from "../../mocks/duplose/route";
@@ -83,7 +83,7 @@ describe("route builder", () => {
 		.process(process, {}, "test")
 		.handler(() => {});
 
-		expect((route.steps[0] as any).process).toBe(process);
+		expect((route.steps[0] as ProcessStep).parent).toBe(process);
 		expect(route.descs).toEqual([
 			{
 				type: "process",
@@ -99,7 +99,7 @@ describe("route builder", () => {
 		.check(checker, {} as any, "test")
 		.handler(() => {});
 
-		expect((route.steps[0] as any).checker).toBe(checker);
+		expect((route.steps[0] as CheckerStep).parent).toBe(checker);
 		expect(route.descs).toEqual([
 			{
 				type: "checker",
@@ -115,7 +115,7 @@ describe("route builder", () => {
 		.cut(fnc, [], "test")
 		.handler(() => {});
 
-		expect((route.steps[0] as any).short).toBe(fnc);
+		expect((route.steps[0] as CutStep).parent).toBe(fnc);
 		expect(route.descs).toEqual([
 			{
 				type: "cut",

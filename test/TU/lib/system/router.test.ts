@@ -17,11 +17,18 @@ it("systeme router", async() => {
 	expect(result.routeFunction).toBeTypeOf("function");
 	await result.routeFunction(request, response);
 
-	const f = () => {};
+	//test notfound handler is launch
+	expect(response.status).toBe(404);
+	expect(response.headers.info).toBe("NOTFOUND");
+	expect(response.body).toBe("GET:/ not found");
+
+	let testPass = false;
+	const f = () => {testPass = true;};
 	rs.setNotfoundHandler(f);
 
 	rs.buildRouter();
 	await result.routeFunction(request, response);
+	expect(testPass).toBe(true);
 
 	routes.GET.push(new Route("GET", ["/{id}"], undefined, []));	
 	rs.buildRouter();

@@ -98,7 +98,7 @@ export abstract class AbstractRoute<
 						this.steps,
 						(step, index) => step instanceof CutStep ?
 							cutStep(
-								(step.short as () => {}).constructor.name === "AsyncFunction", 
+								(step.parent as () => {}).constructor.name === "AsyncFunction", 
 								index,
 								mapped(
 									step.drop,

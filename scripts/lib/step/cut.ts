@@ -10,12 +10,12 @@ export type CutFunction<
 	floor extends {},
 > = (floor: Floor<floor>, response: response, request: request) => PromiseOrNot<returnFloor | undefined | void>;
 
-export class CutStep extends Step{
+export class CutStep extends Step<CutFunction<Request, Response, any, any>>{
 	constructor(
-		public short: CutFunction<Request, Response, any, any>,
+		short: CutFunction<Request, Response, any, any>,
 		public drop: string[]
 	){
-		super("cut");
+		super("cut", short);
 	}
 
 	build(){}
