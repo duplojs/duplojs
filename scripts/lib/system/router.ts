@@ -45,7 +45,7 @@ export function makeRouterSystem(
 	);
 
 	const setNotfoundHandler = (notfoundFunction: RouteNotfoundHandlerFunction) => {
-		cutStep.short = async({}, response, request) => {
+		cutStep.parent = async({}, response, request) => {
 			await notfoundFunction(request, response);
 		};
 	};

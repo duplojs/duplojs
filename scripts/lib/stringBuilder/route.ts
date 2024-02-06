@@ -199,7 +199,7 @@ floor.drop(
 export const cutStep = (async: boolean, index: number, block: string) => /* js */`
 /* before_step_[${index}] */
 /* end_block */
-result = ${async ? "await " : ""}this.steps[${index}].short(floor, response, request);
+result = ${async ? "await " : ""}this.steps[${index}].parent(floor, response, request);
 /* after_step_[${index}] */
 /* end_block */
 ${block}

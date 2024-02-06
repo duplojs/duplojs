@@ -12,7 +12,7 @@ export interface ProcessParamsStep<
 	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<process["input"], undefined>>;
 }
 
-export class ProcessStep extends Step{
+export class ProcessStep extends Step<Process>{
 	options: Record<string, any> | AnyFunction = {};
 	/* istanbul ignore next */
 	input?: AnyFunction = () => undefined;
@@ -22,25 +22,25 @@ export class ProcessStep extends Step{
 	skip?: AnyFunction;
 
 	constructor(
-		public process: Process,
+		process: Process,
 		public params: ProcessParamsStep<any, any, any> & {skip?: AnyFunction}
 	){
-		super(process.name);
+		super(process.name, process);
 	}
 
 	build(){
 		if(this.params.options){
 			if(typeof this.params.options === "function") this.options = (pickup: any) => ({
-				...this.process.options,
+				...this.parent.options,
 				...(this.params.options as AnyFunction)(pickup)
 			});
-			else this.options = {...this.process.options, ...this.params.options};
+			else this.options = {...this.parent.options, ...this.params.options};
 		}
-		else this.options = this.process.options;
+		else this.options = this.parent.options;
 
 		this.skip = this.params.skip;
 		this.pickup = this.params.pickup;
-		this.input = this.params.input || this.process?.input;
-		this.processFunction = this.process.duploseFunction;
+		this.input = this.params.input || this.parent?.input;
+		this.processFunction = this.parent.duploseFunction;
 	}
 }
