@@ -21,16 +21,12 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "nodemon --exec 'npm run test:speed'",
-    "build": "rollup --config && npx tsc",
-    "test": "npm run test:e2e",
-    "test:speed": "npm run test:e2e:speed",
-    "test:e2e": "ts-node test/E2E",
+    "build": "rollup --config && npx tsc -p tsconfig.build.json",
     "test:tu": "vitest --config test/TU/vitest.config.mts",
     "test:tu:coverage": "vitest --config test/TU/vitest.config.mts --coverage",
     "test:tu:watch": "vitest --config test/TU/vitest.config.mts --watch --coverage",
-    "test:e2e:speed": "ts-node --transpiler sucrase/ts-node-plugin test/E2E --speed",
-	"test:type": "tsc --noEmit --emitDeclarationOnly false"
+    "test:e2e": "node --require sucrase/register test/E2E",
+	"test:types": "tsc"
   },
   "dependencies": {
     "fast-querystring": "^1.1.2",
@@ -38,7 +34,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@duplojs/worker-testing": "^0.2.5",
+    "@duplojs/worker-testing": "^0.2.6",
     "@types/mime": "^3.0.1",
     "@types/mock-fs": "^4.13.4",
     "@types/node": "^18.15.11",
@@ -49,13 +45,10 @@
     "eslint": "^8.45.0",
     "mock-fs": "^5.2.0",
     "node-mocks-http": "^1.14.1",
-    "nodemon": "^3.0.1",
     "rollup": "^3.26.2",
     "rollup-plugin-dts": "^5.3.0",
     "rollup-plugin-esbuild": "^5.0.0",
     "sucrase": "^3.34.0",
-    "ts-node": "^10.9.1",
-    "tslib": "^2.5.0",
     "typescript": "^5.0.2",
     "vitest": "^1.2.1"
   },
