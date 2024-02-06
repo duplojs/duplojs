@@ -42,6 +42,7 @@ it("duploInstance", () => {
 	expect(duplo.class.hooksLifeCyle.afterSend.hasSubscriber(fnc1)).toBe(true);
 	expect(duplo.class.serverHooksLifeCycle.onCreateChecker.hasSubscriber(fnc1)).toBe(true);
 	
+	const abstract = duplo.declareAbstractRoute("test");
 	const route = duplo.declareRoute("POST", []).extract({body: {}}).handler(() => {});
 	
 	duplo.launch();

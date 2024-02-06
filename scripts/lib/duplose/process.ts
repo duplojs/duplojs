@@ -76,7 +76,7 @@ export abstract class Process<
 						this.steps,
 						(step, index) => step instanceof CutStep ?
 							cutStep(
-								step.short.constructor.name === "AsyncFunction", 
+								step.parent.constructor.name === "AsyncFunction", 
 								index,
 								mapped(
 									step.drop,

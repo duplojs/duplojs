@@ -62,7 +62,7 @@ export abstract class Duplose<_duploseFunction, _editingDuploseFunctions>{
 	addStepProcess(processStep: ProcessStep, desc: any[]){
 		Object.keys(this.hooksLifeCyle).forEach((key) => {
 			this.hooksLifeCyle[key].addSubscriber(
-				processStep.process.hooksLifeCyle[key] as Hook,
+				processStep.parent.hooksLifeCyle[key] as Hook,
 			);
 		});
 

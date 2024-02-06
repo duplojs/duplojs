@@ -23,7 +23,7 @@ export interface CheckerParamsStep<
 	options?: Partial<checkerParams["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerParams["options"]>);
 }
 
-export class CheckerStep extends Step{
+export class CheckerStep extends Step<Checker>{
 	/* istanbul ignore next */ 
 	public handler: AnyFunction = () => {};
 	public options: Record<string, any> | AnyFunction = {};
@@ -36,27 +36,27 @@ export class CheckerStep extends Step{
 	public indexing?: string;
 
 	constructor(
-		public checker: Checker,
+		checker: Checker,
 		public params: CheckerParamsStep<any, any, any, any, any> & {skip?: AnyFunction}
 	){
-		super(checker.name);
+		super(checker.name, checker);
 	}
 	
 	build(){
 		if(this.params.options){
 			if(typeof this.params.options === "function") this.options = (pickup: any) => ({
-				...this.checker.options,
+				...this.parent.options,
 				...(this.params.options as AnyFunction)(pickup)
 			});
-			else this.options = {...this.checker.options, ...this.params.options};
+			else this.options = {...this.parent.options, ...this.params.options};
 		}
-		else this.options = this.checker.options;
+		else this.options = this.parent.options;
 
 		this.result = this.params.result;
 		this.indexing = this.params.indexing;
 		this.input = this.params.input;
 		this.catch = this.params.catch;
 		this.skip = this.params.skip;
-		this.handler = this.checker.handler;
+		this.handler = this.parent.handler;
 	}
 }

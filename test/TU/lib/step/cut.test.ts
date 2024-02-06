@@ -5,5 +5,5 @@ it("cut step", () => {
 	const cut = new CutStep(c, ["test"]);
 	
 	cut.build();
-	expect(cut.short).toBe(c);
+	expect(cut.parent).toBe(c);
 });
