@@ -46,7 +46,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	public processes: ReturnType<typeof makeProcessSystem>["processes"];
 	protected Process: ReturnType<typeof makeProcessSystem>["Process"];
 
-	public declareRoute: ReturnType<typeof makeRouteSystem>["declareRoute"];
+	public declareRoute: (method: methods, paths: string | string[], ...desc: any[]) => ReturnType<ReturnType<typeof makeRouteSystem>["declareRoute"]>;
 	public setErrorHandler: ReturnType<typeof makeRouteSystem>["setErrorHandler"];
 	protected routeSetDefaultErrorExtract: ReturnType<typeof makeRouteSystem>["setDefaultErrorExtract"];
 	public routes: ReturnType<typeof makeRouteSystem>["routes"];
@@ -56,7 +56,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	protected AbstractRouteInstance: ReturnType<typeof makeAbstractRouteSystem>["AbstractRouteInstance"];
 	protected AbstractRoute: ReturnType<typeof makeAbstractRouteSystem>["AbstractRoute"];
 	protected MergeAbstractRoute: ReturnType<typeof makeAbstractRouteSystem>["MergeAbstractRoute"];
-	public declareAbstractRoute: ReturnType<typeof makeAbstractRouteSystem>["declareAbstractRoute"];
+	public declareAbstractRoute: (name: string, ...desc: any[]) => ReturnType<ReturnType<typeof makeAbstractRouteSystem>["declareAbstractRoute"]>;
 	public mergeAbstractRoute: ReturnType<typeof makeAbstractRouteSystem>["mergeAbstractRoute"];
 	protected abstractRouteSetDefaultErrorExtract:  ReturnType<typeof makeAbstractRouteSystem>["setDefaultErrorExtract"];
 	public abstractRoutes: ReturnType<typeof makeAbstractRouteSystem>["abstractRoutes"];
@@ -126,7 +126,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 			routes, 
 			Route,
 		} = makeRouteSystem(config, this.hooksLifeCyle, this.serverHooksLifeCycle);
-		this.declareRoute = declareRoute;
+		this.declareRoute = (method, paths, ...desc) => declareRoute(method, paths, undefined, ...desc);
 		this.setErrorHandler = setErrorHandler;
 		this.routeSetDefaultErrorExtract = routeSetDefaultErrorExtract;
 		this.routes = routes;
@@ -146,7 +146,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		this.AbstractRouteInstance = AbstractRouteInstance;
 		this.AbstractRoute = AbstractRoute;
 		this.MergeAbstractRoute = MergeAbstractRoute;
-		this.declareAbstractRoute = declareAbstractRoute;
+		this.declareAbstractRoute = (name, ...desc) => declareAbstractRoute(name, undefined, ...desc);
 		this.mergeAbstractRoute = mergeAbstractRoute;
 		this.abstractRouteSetDefaultErrorExtract = abstractRouteSetDefaultErrorExtract;
 		this.abstractRoutes = abstractRoutes;
