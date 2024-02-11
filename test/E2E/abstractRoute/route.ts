@@ -1,6 +1,6 @@
 import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
-import {Abstract1, Abstract2, Abstract3, Abstract6} from "./abstractRoute";
+import {Abstract1, Abstract2, Abstract3, Abstract6, Abstract10} from "./abstractRoute";
 
 const duplo = Duplo({
 	port: 1506, 
@@ -12,6 +12,7 @@ const abstract1 = Abstract1(duplo);
 const abstract2 = Abstract2(duplo);
 const abstract3 = Abstract3(duplo);
 const abstract6 = Abstract6(duplo);
+const abstract10 = Abstract10(duplo);
 
 abstract1({pickup: ["number", "result", "right"]})
 .declareRoute("GET", "/abstract/test/1")
@@ -34,5 +35,16 @@ abstract3()
 abstract6()
 .declareRoute("GET", "/abstract/test/6")
 .handler(({}, res) => res.code(204).info("result").send());
+
+abstract10()
+.declareRoute("GET", [])
+.extract({
+	test: {}
+})
+.cut(({}, res, req) => {
+	res.test;
+	req.test;
+})
+.handler(() => {});
 
 duplo.launch(() => parentPort?.postMessage("ready"));

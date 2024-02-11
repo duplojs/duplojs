@@ -1,4 +1,4 @@
-import {DuploConfig, DuploInstance, zod} from "../../../scripts/index";
+import {DuploConfig, DuploInstance, ExtractObject, Request, Response, zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 import {IsOdd} from "../checker/checker";
 import {HasRight} from "../process/process";
@@ -134,7 +134,21 @@ export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 })
 .build(["test", "toto"]);
 
-export const Abstract9 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute("abstract8")
+export const Abstract9 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute("abstract9")
 .cut(() => ({yyy: 1}), ["yyy"])
 .build(["yyy"]);
+
+export const Abstract10 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute<
+	{test: any} & Request, 
+	{test: any} & Response, 
+	{test: any} & ExtractObject
+>("abstract10")
+.extract({
+	test: {}
+})
+.cut(({}, res, req) => {
+	res.test;
+	req.test;
+})
+.build([]);
 
