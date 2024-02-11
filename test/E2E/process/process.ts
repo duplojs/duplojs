@@ -1,5 +1,5 @@
 import {parentPort} from "worker_threads";
-import {DuploConfig, DuploInstance, zod} from "../../../scripts";
+import {DuploConfig, DuploInstance, ExtractObject, Request, Response, zod} from "../../../scripts";
 import {IsOdd} from "../checker/checker";
 
 export const IsAdmin = (duplo: DuploInstance<DuploConfig>) => {
@@ -185,3 +185,17 @@ export const HasRight = (duplo: DuploInstance<DuploConfig>) =>
 		["right"]
 	)
 	.build(["right"]);
+
+export const processTestType = (duplo: DuploInstance<DuploConfig>) => duplo.createProcess<
+	{test: any} & Request, 
+	{test: any} & Response, 
+	{test: any} & ExtractObject
+>("abstract10")
+.extract({
+	test: {}
+})
+.cut(({}, res, req) => {
+	res.test;
+	req.test;
+})
+.build([]);

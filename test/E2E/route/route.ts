@@ -1,4 +1,4 @@
-import Duplo, {zod} from "../../../scripts/index";
+import Duplo, {ExtractObject, Request, Response, zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
 
 const duplo = Duplo({
@@ -112,5 +112,15 @@ duplo.declareRoute("GET", "/test/12/{test}")
 	}
 })
 .handler(({}, res) => res.code(200).send());
+
+duplo.declareRoute<{test: any} & Request, {test: any} & Response, {test: any} & ExtractObject>("GET", [])
+.extract({
+	test: {}
+})
+.cut(({}, res, req) => {
+	res.test;
+	req.test;
+})
+.handler(({}) => {});
 
 duplo.launch(() => parentPort?.postMessage("ready"));

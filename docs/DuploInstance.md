@@ -10,7 +10,7 @@ La DuploInstance est l'objet pricipal de duplojs, c'est à partir de lui que nou
 ```ts
 import Duplo from "@duplojs/duplojs";
 
-const duplo = Duplo({port: 1506, host: "0.0.0.0"} /* DuploConfig */);
+const duplo = Duplo({port: 1506, host: "localhost", environment: "DEV"} /* DuploConfig */);
 
 // duplo === DuploInstance
 ```
