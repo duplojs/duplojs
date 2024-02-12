@@ -1,7 +1,7 @@
 # DuploJS
 [![NPM version](https://img.shields.io/npm/v/@duplojs/duplojs)](https://www.npmjs.com/package/@duplojs/duplojs)
 
-DuploJS est un framework TypeScript back-end orienté fonctionnel simple d'utilisation qui pourrait même être compris par des développeurs front-end ;).
+DuploJS est un framework TypeScript (Type-safe) back-end orienté fonctionnel simple d'utilisation qui pourrait même être compris par des développeurs front-end ;).
 
 Duplojs est conçu pour les développeurs qui accordent de l'importance à la clarté. Le framework a été pensé pour rendre toutes les opérations de vérification d'une route explicites, sans pour autant être trop "verbeux". Duplojs encourage la segmentation et la flexibilité afin que vos routes ne soient plus qu'un assemblage de briques. Chaque route deviendra une belle monade qui vous racontera une histoire sans erreurs et où chaque personnage joue correctement et successivement son rôle.
 
