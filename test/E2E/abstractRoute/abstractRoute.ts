@@ -2,6 +2,7 @@ import {DuploConfig, DuploInstance, ExtractObject, Request, Response, zod} from 
 import {parentPort} from "worker_threads";
 import {IsOdd} from "../checker/checker";
 import {HasRight} from "../process/process";
+import {ZodType} from "zod";
 
 export const Abstract1 = (duplo: DuploInstance<DuploConfig>) => {
 	const isOdd = IsOdd(duplo);
@@ -138,17 +139,55 @@ export const Abstract9 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbs
 .cut(() => ({yyy: 1}), ["yyy"])
 .build(["yyy"]);
 
+interface requestTest extends Request{
+	test(): this
+}
+
+interface responseTest extends Response{
+	test(): this
+}
+
+interface extractObjectTest extends ExtractObject{
+	test?: Record<string, ZodType> | ZodType,
+}
+
 export const Abstract10 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute<
-	{test: any} & Request, 
-	{test: any} & Response, 
-	{test: any} & ExtractObject
+	requestTest, 
+	responseTest, 
+	extractObjectTest
 >("abstract10")
 .extract({
-	test: {}
+	test: zod.string()
 })
 .cut(({}, res, req) => {
 	res.test;
 	req.test;
 })
-.build([]);
+.build();
+
+interface requestTest1 extends Request{
+	test1(): this
+}
+
+interface responseTest1 extends Response{
+	test1(): this
+}
+
+interface extractObjectTest1 extends ExtractObject{
+	test1?: Record<string, ZodType> | ZodType,
+}
+
+export const Abstract11 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute<
+	requestTest1, 
+	responseTest1, 
+	extractObjectTest1
+>("abstract11")
+.extract({
+	test1: zod.string()
+})
+.cut(({}, res, req) => {
+	res.test1;
+	req.test1;
+})
+.build();
 

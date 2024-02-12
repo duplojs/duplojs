@@ -44,10 +44,11 @@ export default function makeMergeAbstractRouteBuilder(
 		abstractRouteInstances: abstractRouteInstance[],
 		...desc: any[]
 	): AbstractRouteInstance<
-		SubAbstractRoute<mergeFloor>,
-		request extends Request ? UnionToIntersection<request> : never,
-		response extends Response ? UnionToIntersection<response> : never,
-		extractObj extends ExtractObject ? UnionToIntersection<extractObj> : never		
+		SubAbstractRoute,
+		UnionToIntersection<request> extends Request ? UnionToIntersection<request> : never,
+		UnionToIntersection<response> extends Response ? UnionToIntersection<response> : never,
+		UnionToIntersection<extractObj> extends ExtractObject ? UnionToIntersection<extractObj> : never,
+		mergeFloor
 	>
 	{	
 		const currentMergeAbstractRoute = new MergeAbstractRoute(

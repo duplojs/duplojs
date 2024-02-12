@@ -36,7 +36,15 @@ export interface AbstractRouteUseFunction<
 	options extends {},
 	floor extends {},
 >{
-	<pickup extends string>(
+	<
+		pickup extends string,
+		// celà sert à régler un bug de vscode qui empèche de
+		// créer une union sur la fonction mergeAbstractRoute
+		// qui clc uniquement quand les abstract routes utilisées
+		// ne drop pas de valeur de leur floor
+		key extends string = Exclude<keyof request | keyof extractObj, symbol | number | keyof Request | keyof Response | keyof ExtractObject>, 
+		localFloor extends {} = Pick<floor & {[-1]?: key}, pickup extends keyof floor? pickup : -1>
+	>(
 		params?: SubAbstractRouteParams<
 			Exclude<keyof floor, symbol | number>,
 			pickup, 
@@ -44,12 +52,11 @@ export interface AbstractRouteUseFunction<
 		>, 
 		...desc: any[]
 	): AbstractRouteInstance<
-		SubAbstractRoute<
-			Pick<floor & {[-1]?: undefined}, pickup extends keyof floor? pickup : -1>
-		>,
+		SubAbstractRoute,
 		request,
 		response,
-		extractObj
+		extractObj,
+		localFloor
 	>;
 }
 
