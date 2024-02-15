@@ -79,7 +79,7 @@ function onRouteUseProcess(instance: DuploInstance<DuploConfig>, options: OnRout
         route.steps.foreach((step) => {
             if(
                 step instanceof ProcessStep && 
-                step.process === options.process
+                step.parent === options.process
             ){
                 options.handler(route);
             }
