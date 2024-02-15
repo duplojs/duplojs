@@ -36,7 +36,7 @@ const tt = duplo.declareRoute("POST", "/test/4")
 .extract({
 	body: zod.string(),
 })
-.handler(({pickup}, res) => res.code(200).info("s").send(pickup("body")));
+.handler(({pickup}, res) => res.code(200).info(undefined).send(pickup("body")));
 
 duplo.declareRoute("PUT", "/test/5")
 .extract({

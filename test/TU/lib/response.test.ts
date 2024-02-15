@@ -31,7 +31,9 @@ describe("request", () => {
 		.setHeaders({
 			"My-Header-2": "value2",
 			"My-Header-3": "value3",
+			"My-Header-4": undefined,
 		})
+		.setHeader("My-Header-1", undefined)
 		.info("test1");
 		
 		expect(response.status).toBe(400);
@@ -207,5 +209,13 @@ describe("request", () => {
 		} catch (error){
 			expect(error).instanceOf(AlreadySent);
 		}
+	});
+
+	it("undefined info", () => {
+		const {response} = makeMokedResponse();
+
+		response.info(undefined);
+
+		expect(Object.keys(response.headers)).toEqual([]);
 	});
 });
