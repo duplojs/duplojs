@@ -18,9 +18,11 @@ export abstract class Response{
 
 	status = 200;
 
-	info(info: string){
-		this.information = info;
-		this.setHeader("info", info);
+	info(info?: string){
+		if(info !== undefined){
+			this.information = info;
+			this.setHeader("info", info);
+		}
 		return this;
 	}
 
@@ -79,13 +81,19 @@ export abstract class Response{
 		throw this;
 	}
 
-	setHeaders(headers: Record<string, string | string[]>){
-		this.headers = {...this.headers, ...headers};
+	setHeaders(headers: Record<string, undefined | string | string[]>){
+		Object.entries(headers).forEach(([key, value]) => {
+			if(value !== undefined){
+				this.headers[key] = value;
+			}
+		});
 		return this;
 	}
 
-	setHeader(index: string, value: string | string[]){
-		this.headers[index] = value;
+	setHeader(key: string, value?: string | string[]){
+		if(value !== undefined){
+			this.headers[key] = value;
+		}
 		return this;
 	}
 

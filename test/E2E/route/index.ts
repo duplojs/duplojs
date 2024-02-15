@@ -64,7 +64,7 @@ export default workerTesting(
 			body: "test post text body",
 			response: {
 				code: 200,
-				info: "s",
+				info: undefined,
 				body: zod.literal("test post text body"),
 			}
 		},
