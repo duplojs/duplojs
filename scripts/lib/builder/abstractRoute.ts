@@ -1,6 +1,6 @@
 import {SubAbstractRoute, SubAbstractRouteParams} from "../duplose/abstractRoute/sub";
 import {ErrorExtractFunction, ExtractObject, HandlerFunction} from "../duplose";
-import {DeclareRoute, RouteStepParamsSkip} from "./route";
+import {RouteStepParamsSkip} from "./route";
 import {Request} from "../request";
 import {Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
@@ -10,12 +10,10 @@ import {CheckerParamsStep, CheckerStep} from "../step/checker";
 import {Process} from "../duplose/process";
 import {ProcessParamsStep, ProcessStep} from "../step/process";
 import {PickupDropProcess} from "./process";
-import {ExtendsAbstractRoute} from "../duplose/abstractRoute";
+import {AbstractRoute, ExtendsAbstractRoute} from "../duplose/abstractRoute";
 import {AbstractRoutes} from "../system/abstractRoute";
 import {CutFunction, CutStep} from "../step/cut";
 import {AbstractRouteInstance} from "../duplose/abstractRoute/instance";
-
-export const __abstractRoute__ = Symbol("abstractRoute");
 
 export type DeclareAbstractRoute<
 	request extends Request = Request, 
@@ -58,6 +56,8 @@ export interface AbstractRouteUseFunction<
 		extractObj,
 		localFloor
 	>;
+
+	abstractRoute: AbstractRoute;
 }
 
 export interface BuilderPatternAbstractRoute<
@@ -312,7 +312,12 @@ export function makeAbstractRouteBuilder(
 			abstractRoutes.push(currentAbstractRoute);
 			serverHooksLifeCycle.onDeclareAbstractRoute.launchSubscriber(currentAbstractRoute);
 
-			return (params, ...desc) => currentAbstractRoute.createInstance(params || {}, desc) as any;
+			const abstractRouteUseFunction: AbstractRouteUseFunction<any, any, any, any, any> = function(params, ...desc){
+				return currentAbstractRoute.createInstance(params || {}, desc) as any;
+			};
+			abstractRouteUseFunction.abstractRoute = currentAbstractRoute;
+
+			return abstractRouteUseFunction;
 		};
 
 		return {
