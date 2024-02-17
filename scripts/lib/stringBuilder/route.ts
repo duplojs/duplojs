@@ -60,6 +60,7 @@ export const routeFunctionString = (
 					${hasHookOnError ? "await this.hooks.launchOnError(request, response, error);" : ""}
 					/* after_hook_on_error */
 					/* end_block */
+					response.isSend = false;
 					await this.errorHandlerFunction(request, response, error);
 				}
 				else throw error;
