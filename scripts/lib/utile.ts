@@ -166,16 +166,22 @@ export function makeFloor(): Floor<{}>
 
 declare global {
 	interface ObjectConstructor {
-		hasProp<anyObject extends Record<string, unknown>>(o: anyObject, key: symbol | number | string): key is keyof anyObject;
-		entries<anyObject extends object>(o: anyObject): Array<
+		hasProp<anyObject extends object>(o: anyObject, key: symbol | number | string): key is keyof anyObject;
+		entries<
+			anyObject extends object, 
+			anyKey extends Exclude<keyof anyObject, symbol> = Exclude<keyof anyObject, symbol>
+		>(o: anyObject): Array<
 			Exclude<
 				{
-					[p in keyof anyObject]: [p, anyObject[p]] 
-				}[keyof anyObject],
+					[p in anyKey]: [`${p}`, anyObject[p]] 
+				}[anyKey],
 				undefined
 			>
 		>;
-		keys<anyObject extends object>(o: anyObject): (keyof anyObject)[];
+		keys<
+			anyObject extends object,
+			anyKey extends Exclude<keyof anyObject, symbol> = Exclude<keyof anyObject, symbol>
+		>(o: anyObject): (`${anyKey}`)[];
 	}
 }
 
