@@ -222,5 +222,17 @@ export default workerTesting(
 				body: zod.literal("error extract"),
 			}
 		},
+		{
+			title: "send string with custom header",
+			url: "http://localhost:1506/route/test/13",
+			method: "GET",
+			response: {
+				code: 200,
+				headers: {
+					"content-type": "text/html"
+				},
+				body: zod.literal("test"),
+			}
+		},
 	]
 );
