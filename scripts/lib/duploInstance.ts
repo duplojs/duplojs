@@ -20,10 +20,22 @@ import {BuilderPatternAbstractRoute} from "./builder/abstractRoute";
 import {BuilderPatternRoute} from "./builder/route";
 import {BuilderPatternProcess} from "./builder/process";
 
+export interface DuploInterfaceEnvironment {
+	DEV: true,
+	PROD: true,
+}
+
+export type DuploEnvironment = Exclude<
+	{
+		[prop in keyof DuploInterfaceEnvironment]: DuploInterfaceEnvironment[prop] extends true? prop : undefined 
+	}[keyof DuploInterfaceEnvironment],
+	undefined
+>
+
 export interface DuploConfig{
 	port: number,
 	host: string,
-	environment: "DEV" | "PROD";
+	environment: DuploEnvironment;
 	onLaunch?: () => void;
 	onClose?: () => void;
 	prefix?: string;

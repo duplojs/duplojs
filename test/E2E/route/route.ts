@@ -40,7 +40,9 @@ const tt = duplo.declareRoute("POST", "/test/4")
 
 duplo.declareRoute("PUT", "/test/5")
 .extract({
-	body: zod.object({test: zod.number()}).strict(),
+	body: zod.object({
+		test: zod.number()
+	}).strict(),
 })
 .handler(({pickup}, res) => res.code(200).info("s").send(pickup("body")));
 
@@ -122,5 +124,10 @@ duplo.declareRoute<{test: any} & Request, {test: any} & Response, {test: any} & 
 	req.test;
 })
 .handler(({}) => {});
+
+duplo.declareRoute("GET", "/test/13")
+.handler(({}, res) => {
+	res.code(200).setHeader("content-type", "text/html").send("test");
+});
 
 duplo.launch(() => parentPort?.postMessage("ready"));
