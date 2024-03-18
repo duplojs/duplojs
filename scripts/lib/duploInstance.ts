@@ -40,6 +40,7 @@ export interface DuploConfig{
 	onClose?: () => void;
 	prefix?: string;
 	keepDescriptions?: boolean;
+	globals?: boolean | string;
 }
 
 export interface Plugins {}
@@ -200,6 +201,15 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		};
 
 		this.server = http.createServer();
+
+		if(config.globals){
+			//@ts-ignore
+			global[
+			typeof config.globals === "string" 
+				? config.globals 
+				: "duplo"
+			] = this;
+		}
 	}
 
 	protected async serverHandler(serverRequest: http.IncomingMessage, serverResponse: http.ServerResponse){

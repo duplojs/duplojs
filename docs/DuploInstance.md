@@ -5,6 +5,7 @@ La DuploInstance est l'objet pricipal de duplojs, c'est à partir de lui que nou
 - [Avoir la DuploInstance](#avoir-la-duploinstance)
 - [Propriétés de la DuploConfig](#propriétés-de-la-duploconfig)
 - [Propriétés de la DuploInstance](#propriétés-de-la-duploinstance)
+- [DuploInstance en variable global](#propriétés-de-la-duploinstance)
 
 ### Avoir la DuploInstance
 ```ts
@@ -25,6 +26,7 @@ onClose|`() => void` \| `undefined`|Fonction callback qui se lancera après la f
 environment|`"DEV"` \| `"PROD"`|Représente l'environnement actuel.
 prefix|`string` \| `undefined`|Sert à définir un préfixe pour tous les paths de l'API.
 keepDescriptions|`boolean` \| `undefined`|Si True, celà ne supprimera pas les descriptions.
+globals|`boolean` \| `string` \| `undefined`| Permet de définir l'instance en variable globale à une clé choisie. Si True, celà la définit à la clé `duplo`. (`global.duplo = this;`)
 
 ### Propriétés de la DuploInstance
 propriétés|type|definition
@@ -47,5 +49,21 @@ processes|`Object`|Objet contenant tous les process.
 abstractRoutes|`Object`|Objet contenant toutes les abstractRoutes.
 plugins|`Object`|Objet contenant toutes les informations des plugins implémentés.
 class|`Object`|Objet regroupant l'ensemble des classes utilisées par l'instance.
+
+## DuploInstance en variable global
+```ts
+import Duplo from "@duplojs/duplojs";
+
+export default Duplo({
+    ...
+    globals: true,
+});
+
+declare global {
+    const duplo: typeof import("./{currentFile}")["default"];
+}
+
+duplo.use(...);
+```
 
 #### Retour vers le [Sommaire](#sommaire).
