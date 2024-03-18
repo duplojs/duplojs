@@ -25,8 +25,12 @@ it("duploInstance", () => {
 		environment: "DEV", 
 		host: "localhost", 
 		onClose: () => {},
-		onLaunch: () => {}
+		onLaunch: () => {},
+		globals: true
 	});
+
+	//@ts-ignore
+	expect(global.duplo).toBe(duplo);
 
 	const fnc1 = () => {};
 
