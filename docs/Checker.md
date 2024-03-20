@@ -6,7 +6,7 @@ Les checker sont des blocks de code qui ont pour but de faire une vérification.
 - [Construction d'un checker](#construction-dun-checker)
 - [Build](#buildany)
 - [Options](#optionsobject-any)
-- [AddPrecompleted](#addprecompletedstring-object-any)
+- [PreCompletion](#precompletionstring-object-any)
 - [Implémenter un checker](#implémenter-un-checker)
 
 ### Créer un checker
@@ -25,13 +25,13 @@ duplo
 .options(/* ... */) // vous ne pouvez appeler qu'une seule fois cette fonction
 .handler(/* ... */) // vous ne pouvez appeler qu'une seule fois cette fonction
 
-.addPrecompleted(/* ... */) // vous pouvez avoir autant de précompletion que vous souhaitez
-.addPrecompleted(/* ... */)
+.preCompletion(/* ... */) // vous pouvez avoir autant de précompletion que vous souhaitez
+.preCompletion(/* ... */)
 
 .build(/* ... */) // cette fonction marque l'arrêt de la création du checker
 ```
 
-Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour addPrecompleted qui n'empêche pas de se rappeler).
+Chaque fonction en dessous d'une autre empêche de rappeler celles du dessus (sauf pour preCompletion qui n'empêche pas de se rappeler).
 
 ### .build(...any?)
 
@@ -85,7 +85,7 @@ const userExist = duplo
 
 La méthode handler permet de définir la fonction qui sera la logique du checker. L'argument `input` définit le type de donnée d'entrée du checker, l'argument `output` est une fonction qui doit être utilisée OBLIGATOIREMENT en retour de la fonction, elle associe le type de donnée de sortie avec une information. `options` correspond aux options utilisées du checker.
 
-### .addPrecompleted(string, object, ...any?)
+### .preCompletion(string, object, ...any?)
 
 ```ts
 const userExist = duplo
@@ -105,7 +105,7 @@ const userExist = duplo
         return output("user.exist", user);
     }
 })
-.addPrecompleted( 
+.preCompletion( 
     "wantUser",
     {
         result: "user.exist",
@@ -113,7 +113,7 @@ const userExist = duplo
         indexing: "user",
     }
 )
-.addPrecompleted( 
+.preCompletion( 
     "wantNotfoundUser",
     {
         result: "user.notexist",
@@ -143,7 +143,7 @@ Les checkers s'utilisent uniquement avec la méthode `check` des routes, process
     userExist,
     {
         input: (pickup) => pickup("firstname"), // valeur d'entrée
-        ...userExist.precomplete.wantNotfoundUser,
+        ...userExist.preCompletions.wantNotfoundUser,
         options: {
             index: "firstname"
         }

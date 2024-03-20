@@ -1,6 +1,5 @@
-import {Checker as DefaultChecker, CheckerOutput, Checker, CheckerOutputFunction, CheckerPreComplated} from "../duplose/checker";
+import {Checker as DefaultChecker, CheckerOutput, Checker, CheckerOutputFunction, CheckerPrecompletion, CheckerCatchFunction} from "../duplose/checker";
 import {ServerHooksLifeCycle} from "../hook";
-import {Response} from "../response";
 import {Checkers} from "../system/checker";
 import {AnyFunction, Floor, PromiseOrNot} from "../utile";
 
@@ -16,21 +15,11 @@ export type CreateChecker<
 	"options" | "handler"
 >;
 
-export type CheckerCatchFunction<
-	outputHandler extends CheckerOutput,
-	result extends CheckerOutput["info"],
-> = (
-	response: Response, 
-	info: Exclude<outputHandler, {info: result}>["info"], 
-	data: Exclude<outputHandler, {info: result}>["data"],
-	pickup: Floor<Record<string, unknown>>["pickup"]
-) => void
-
 export interface BuilderPatternChecker<
 	_options extends Record<string, any> = never,
 	input extends unknown = unknown,
 	outputHandler extends CheckerOutput = never,
-	allPrecompleted extends Record<string, any> = {},
+	_preCompletions extends Record<string, any> = {},
 >{
 	options<
 		options extends Record<string, any>
@@ -56,24 +45,24 @@ export interface BuilderPatternChecker<
 			input,
 			outputHandler
 		>, 
-		"addPrecompleted" | "build"
+		"preCompletion" | "build"
 	>;
 
-	addPrecompleted<
+	preCompletion<
 		name extends string,
 		result extends outputHandler["info"] = never,
 		indexing extends string = never,
 		catchBlock extends {catch?: CheckerCatchFunction<outputHandler, result>} = {catch?: CheckerCatchFunction<outputHandler, result>},
 	>(
 		name: name,
-		params: CheckerPreComplated<outputHandler, result, indexing> & catchBlock, 
+		params: CheckerPrecompletion<outputHandler, result, indexing> & catchBlock, 
 		...desc: any[]
 	): Pick<
 		BuilderPatternChecker<
 			_options,
 			input,
 			outputHandler,
-			allPrecompleted & {
+			_preCompletions & {
 				[p in name]: {
 					result: result extends string ? result : undefined,
 					indexing: indexing extends string ? indexing : undefined,
@@ -81,14 +70,14 @@ export interface BuilderPatternChecker<
 				}
 			}
 		>, 
-		"build" | "addPrecompleted"
+		"build" | "preCompletion"
 	>;
 
 	build(...desc: any[]): Checker<
 		_options,
 		input,
 		outputHandler,
-		allPrecompleted
+		_preCompletions
 	>
 }
 
@@ -113,16 +102,16 @@ export default function makeCheckerBuilder(
 			currentChecker.setHandler(handler, desc);
 
 			return {
-				addPrecompleted,
+				preCompletion,
 				build,
 			};
 		};
 
-		const addPrecompleted: BuilderPatternChecker<any, any, any, any>["addPrecompleted"] = (name, params, ...desc) => {
-			currentChecker.addPrecompleted(name, params, desc);
+		const preCompletion: BuilderPatternChecker<any, any, any, any>["preCompletion"] = (name, params, ...desc) => {
+			currentChecker.preCompletion(name, params, desc);
 
 			return {
-				addPrecompleted,
+				preCompletion,
 				build
 			};
 		};

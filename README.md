@@ -114,7 +114,7 @@ const userExist = duplo
     }
 })
 // fonction non obligatoire
-.addPrecompleted( 
+.preCompletion( 
     "wantUser",
     {
         result: "user.exist",
@@ -154,7 +154,7 @@ duplo
     userExist,
     {
         input: (pickup) => pickup("id"),
-        ...userExist.precomplete.wantUser, // utilisation de la précomplétion
+        ...userExist.preCompletions.wantUser, // utilisation de la précomplétion
         options: {index: "id"}
     }
 )
@@ -184,7 +184,7 @@ duplo
     userExist,
     {
         input: (pickup) => pickup("id"),
-        ...userExist.precomplete.wantUser, // utilisation de la précomplétion
+        ...userExist.preCompletions.wantUser, // utilisation de la précomplétion
         options: {index: "id"}
     }
 )

@@ -74,8 +74,8 @@ export interface DescriptionInput{
 	descStep: any[],
 }
 
-export interface DescriptionPrecomplete{
-	type: "precomplete",
+export interface DescriptionPrecompletion{
+	type: "precompletion",
 	descStep: any[],
 }
 
@@ -88,7 +88,7 @@ export type DescriptionAll =
 	| DescriptionAbstract 
 	| DescriptionOptions 
 	| DescriptionInput
-	| DescriptionPrecomplete;
+	| DescriptionPrecompletion;
 
 export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): void => {
 	deep === 0 ||
