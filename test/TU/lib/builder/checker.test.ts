@@ -8,7 +8,7 @@ it("checker builder", () => {
 	const checker = createChecker("test", "test")
 	.options({test: "value"}, "test")
 	.handler(fnc, "test")
-	.addPrecompleted(
+	.preCompletion(
 		"test",
 		{},
 		"test"
@@ -17,7 +17,7 @@ it("checker builder", () => {
 
 	expect(checker.options).toEqual({test: "value"});
 	expect(checker.handler).toBe(fnc);
-	expect(checker.precomplete.test).toEqual({});
+	expect(checker.preCompletions.test).toEqual({});
 	expect(checker.descs).toEqual([
 		{
 			type: "first",
@@ -32,7 +32,7 @@ it("checker builder", () => {
 			descStep: ["test"]
 		},
 		{
-			type: "precomplete",
+			type: "precompletion",
 			descStep: ["test"]
 		},
 		{

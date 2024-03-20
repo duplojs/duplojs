@@ -27,12 +27,12 @@ describe("checker", () => {
 		expect(checker.descs).toEqual([{type: "handler", descStep: ["test"]}]);
 	});
 
-	it("add precompleted", () => {
+	it("add precompletion", () => {
 		const checker = new Checker("test", []);
 
-		checker.addPrecompleted("test1", {result: "r"}, ["test"]);
+		checker.preCompletion("test1", {result: "r"}, ["test"]);
 
-		expect(checker.precomplete).toEqual({test1: {result: "r"}});
-		expect(checker.descs).toEqual([{type: "precomplete", descStep: ["test"]}]);
+		expect(checker.preCompletions).toEqual({test1: {result: "r"}});
+		expect(checker.descs).toEqual([{type: "precompletion", descStep: ["test"]}]);
 	});
 });

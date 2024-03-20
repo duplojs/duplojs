@@ -5,7 +5,7 @@ La DuploInstance est l'objet pricipal de duplojs, c'est à partir de lui que nou
 - [Avoir la DuploInstance](#avoir-la-duploinstance)
 - [Propriétés de la DuploConfig](#propriétés-de-la-duploconfig)
 - [Propriétés de la DuploInstance](#propriétés-de-la-duploinstance)
-- [DuploInstance en variable global](#propriétés-de-la-duploinstance)
+- [DuploInstance en variable global](#duploinstance-en-variable-global)
 
 ### Avoir la DuploInstance
 ```ts

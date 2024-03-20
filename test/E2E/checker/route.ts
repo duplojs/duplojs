@@ -92,7 +92,7 @@ duplo.declareRoute("GET", "/checker/test/5")
 	isOdd,
 	{
 		input: p => 2,
-		...isOdd.precomplete.wantOdd,
+		...isOdd.preCompletions.wantOdd,
 	}
 )
 .handler(({pickup: p}, res) => res.info("odd").code(200).send(p("number")));
