@@ -17,7 +17,7 @@ export const IsOdd = (duplo: DuploInstance<DuploConfig>) =>
 			return output("notOdd", null);
 		}
 	})
-	.addPrecompleted(
+	.preCompletion(
 		"wantOdd",
 		{
 			result: "odd",
@@ -27,7 +27,7 @@ export const IsOdd = (duplo: DuploInstance<DuploConfig>) =>
 			indexing: "number",
 		}
 	)
-	.addPrecompleted(
+	.preCompletion(
 		"wantNotOdd",
 		{
 			result: "notOdd",

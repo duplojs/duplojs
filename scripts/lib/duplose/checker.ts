@@ -1,4 +1,5 @@
-import {AnyFunction, DescriptionAll, PromiseOrNot} from "../utile";
+import {Response} from "../response";
+import {DescriptionAll, Floor, PromiseOrNot} from "../utile";
 
 export type CheckerOutput<
 	info extends string = string, 
@@ -29,26 +30,36 @@ export type CheckerHandler<
 	outputHandler extends CheckerOutput
 > = (input: input, output: CheckerOutputFunction, options: any) => PromiseOrNot<outputHandler>;
 
-export interface CheckerPreComplated<
+export type CheckerCatchFunction<
+	outputHandler extends CheckerOutput,
+	result extends CheckerOutput["info"],
+> = (
+	response: Response, 
+	info: Exclude<outputHandler, {info: result}>["info"], 
+	data: Exclude<outputHandler, {info: result}>["data"],
+	pickup: Floor<Record<string, unknown>>["pickup"]
+) => void
+
+export interface CheckerPrecompletion<
 	outputHandler extends CheckerOutput,
 	result extends CheckerOutput["info"],
 	indexing extends string
 >{
 	result?: (result & outputHandler["info"]) | (result[] & outputHandler["info"][]),
 	indexing?: indexing,
-	catch?: AnyFunction,
+	catch?: CheckerCatchFunction<outputHandler, result>,
 }
 
 export class Checker<
 	options extends Record<string, any> = any,
 	input extends unknown = any,
 	outputHandler extends CheckerOutput = CheckerOutput,
-	allPreCompleted extends Record<string, any> = {},
+	_preCompletions extends Record<string, any> = {},
 >{
 	public options = {} as options;
 	/* istanbul ignore next */ 
 	public handler: CheckerHandler<input, outputHandler> = () => ({} as any);
-	public precomplete = {} as allPreCompleted;
+	public preCompletions = {} as _preCompletions;
 	public descs: DescriptionAll[] = [];
 
 	constructor(
@@ -70,10 +81,10 @@ export class Checker<
 		this.addDesc("handler", desc);
 	}
 
-	addPrecompleted(name: string, params: CheckerPreComplated<any, any, any>, desc: any[]){
-		(this.precomplete as any)[name] = params;
+	preCompletion(name: string, params: CheckerPrecompletion<any, any, any>, desc: any[]){
+		(this.preCompletions as any)[name] = params;
 
-		this.addDesc("precomplete", desc);
+		this.addDesc("precompletion", desc);
 	}
 
 	addDesc(type: DescriptionAll["type"], desc: any[]){
