@@ -234,5 +234,14 @@ export default workerTesting(
 				body: zod.literal("test"),
 			}
 		},
+		{
+			title: "send array",
+			url: "http://localhost:1506/route/test/14",
+			method: "GET",
+			response: {
+				code: 200,
+				body: zod.string().array(),
+			}
+		},
 	]
 );
