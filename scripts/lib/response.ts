@@ -37,7 +37,7 @@ export abstract class Response{
 			if(typeof body === "string" || typeof body === "number" || body === null){
 				this.headers["content-type"] = "text/plain; charset=utf-8";
 			}
-			else if(typeof body === "object" && body.constructor.name === "Object"){
+			else if(typeof body === "object"){
 				this.headers["content-type"] = "application/json; charset=utf-8";
 			}
 		}

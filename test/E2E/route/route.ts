@@ -130,4 +130,9 @@ duplo.declareRoute("GET", "/test/13")
 	res.code(200).setHeader("content-type", "text/html").send("test");
 });
 
+duplo.declareRoute("GET", "/test/14")
+.handler(({}, res) => {
+	res.code(200).send(["test"]);
+});
+
 duplo.launch(() => parentPort?.postMessage("ready"));
