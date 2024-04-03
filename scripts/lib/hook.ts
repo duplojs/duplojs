@@ -39,6 +39,8 @@ export interface AddServerHooksLifeCycle<returnType extends any = any>{
 	addHook(name: "onReady", functionHook: ReturnType<ServerHooksLifeCycle["onReady"]["build"]>): returnType;
 	addHook(name: "onServerError", functionHook: ReturnType<ServerHooksLifeCycle["onServerError"]["build"]>): returnType;
 	addHook(name: "beforeBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["beforeBuildRouter"]["build"]>): returnType;
+	addHook(name: "afterBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["afterBuildRouter"]["build"]>): returnType;
+	addHook(name: "beforeListenHttpServer", functionHook: ReturnType<ServerHooksLifeCycle["beforeListenHttpServer"]["build"]>): returnType;
 }
 
 export class Hook<
@@ -90,7 +92,32 @@ export class Hook<
 				if(await subscriber(...args) === true) return true;
 			}
 		}
-	} 
+	}
+
+	launchAllSubscriberAsync(...args: args): Promise<unknown>
+	{
+		return Promise.all(
+			(
+				function lauchDeepFunctionSubscriber(subscribers: Array<subscriber | Hook<args, subscriber>>): unknown[]
+				{
+					const PromiseSubscribersCollection: unknown[] = [];
+
+					subscribers.forEach((subscriber) => {
+						if(typeof subscriber === "function"){
+							PromiseSubscribersCollection.push(subscriber(...args));
+						}
+						else {
+							PromiseSubscribersCollection.push(
+								...lauchDeepFunctionSubscriber(subscriber.subscribers)
+							);
+						}
+					});
+
+					return PromiseSubscribersCollection;
+				}
+			)(this.subscribers)
+		);
+	}
 
 	hasSubscriber(subscriber:  subscriber | Hook<args, subscriber>){
 		return !!this.subscribers.find(f => f === subscriber);
@@ -150,5 +177,7 @@ export function makeServerHooksLifeCycle(){
 		onClose: new Hook(0),
 		onServerError: new Hook<[serverRequest: IncomingMessage, serverResponse: ServerResponse, error: Error]>(3),
 		beforeBuildRouter: new Hook(0),
+		afterBuildRouter: new Hook(0),
+		beforeListenHttpServer: new Hook(0),
 	};
 }

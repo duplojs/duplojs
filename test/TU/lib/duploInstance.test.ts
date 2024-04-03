@@ -7,7 +7,7 @@ import {serializeString} from "../../../scripts/lib/defaultHooks/serializeString
 import {makeMokedRequest} from "../mocks/request";
 import {makeMokedResponse} from "../mocks/response";
 
-it("duploInstance", () => {
+it("duploInstance", async() => {
 	const saveProcess = process;
 	class MyEmitter extends EventEmitter{
 		exit(){}
@@ -49,7 +49,7 @@ it("duploInstance", () => {
 	const abstract = duplo.declareAbstractRoute("test");
 	const route = duplo.declareRoute("POST", []).extract({body: {}}).handler(() => {});
 	
-	duplo.launch();
+	await duplo.launch();
 
 	expect(route.hooksLifeCyle.parsingBody.hasSubscriber(parsingBody)).toBe(true);
 	expect(route.hooksLifeCyle.serializeBody.hasSubscriber(serializeJSON)).toBe(true);

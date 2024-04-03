@@ -94,5 +94,11 @@ export default workerTesting(
 				info: "NOTFOUND",
 			}
 		},
+	],
+	[
+		"beforeBuildRouter",
+		"afterBuildRouter",
+		"beforeListenHttpServer",
+		"onReady",
 	]
 );
