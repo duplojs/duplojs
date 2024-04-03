@@ -74,4 +74,20 @@ mergeAbstractRoute1
 .process(process1)
 .handler(({}, res) => {throw new Error("fake error");});
 
+duplo.addHook("beforeBuildRouter", () => {
+	parentPort?.postMessage("beforeBuildRouter");
+});
+
+duplo.addHook("afterBuildRouter", () => {
+	parentPort?.postMessage("afterBuildRouter");
+});
+
+duplo.addHook("beforeListenHttpServer", () => {
+	parentPort?.postMessage("beforeListenHttpServer");
+});
+
+duplo.addHook("onReady", () => {
+	parentPort?.postMessage("onReady");
+});
+
 duplo.launch(() => parentPort?.postMessage("ready"));

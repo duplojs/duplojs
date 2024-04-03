@@ -51,6 +51,30 @@ describe("hook", () => {
 		expect(testlaunch).toBe(true);
 	});
 
+	it("launch all subscriber async", async() => {
+		let testlaunch = false;
+		const fnc = async() => {
+			await new Promise((r) => {setTimeout(r);});
+			testlaunch = true;
+		};
+
+		let testlaunch1 = false;
+		const fnc1 = async() => {
+			await new Promise((r) => {setTimeout(r);});
+			testlaunch1 = true;
+		};
+
+		const hook1 = new Hook(0);
+
+		hook.addSubscriber(fnc, hook1);
+		hook1.addSubscriber(fnc1);
+
+		await hook.launchAllSubscriberAsync();
+
+		expect(testlaunch).toBe(true);
+		expect(testlaunch1).toBe(true);
+	});
+
 	it("launch subscriber return", () => {
 		let testlaunch = false;
 		const fnc1 = () => true;

@@ -234,7 +234,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		}
 	}
 
-	public launch(onLaunch = () => console.log("Ready !")){
+	public async launch(onLaunch = () => console.log("Ready !")){
 		this.addHook("beforeBuildRouter", () => {
 			Object.entries(this.routes).forEach(([key, value]) => {
 				value.forEach((route) => {
@@ -247,7 +247,8 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 				});
 			});
 		});
-		this.serverHooksLifeCycle.beforeBuildRouter.launchSubscriber();
+
+		await this.serverHooksLifeCycle.beforeBuildRouter.launchSubscriberAsync();
 		
 		buildProcesses(this.processes);
 		buildAbstractRoutes(this.abstractRoutes);
@@ -262,8 +263,11 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		deepFreeze(this.abstractRoutes, 2);
 		
 		this.buildRouter();
+		await this.serverHooksLifeCycle.afterBuildRouter.launchSubscriberAsync();
 
-		this.serverHooksLifeCycle.onServerError.addSubscriber((serverRequest, serverResponse, error) => console.error(error));
+		this.serverHooksLifeCycle.onServerError.addSubscriber(
+			(serverRequest, serverResponse, error) => console.error(error)
+		);
 
 		const onReady = this.serverHooksLifeCycle.onReady.build();
 		this.server.on("listening", onReady);
@@ -279,6 +283,8 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		}
 
 		this.server.on("request", this.serverHandler.bind(this));
+
+		await this.serverHooksLifeCycle.beforeListenHttpServer.launchAllSubscriberAsync();
 		this.server.listen(this.config.port, this.config.host);
 
 		process.on("uncaughtException", (error: any, origin) => {
