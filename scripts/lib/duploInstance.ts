@@ -269,6 +269,19 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 			(serverRequest, serverResponse, error) => console.error(error)
 		);
 
+		await this.serverHooksLifeCycle.beforeListenHttpServer.launchAllSubscriberAsync();
+
+		this.serverHooksLifeCycle.onReady.addSubscriber(
+			() => this.serverHooksLifeCycle.onReady.removeAllSubscriber()
+		);
+		this.serverHooksLifeCycle.afterBuildRouter.removeAllSubscriber();
+		this.serverHooksLifeCycle.beforeBuildRouter.removeAllSubscriber();
+		this.serverHooksLifeCycle.onCreateChecker.removeAllSubscriber();
+		this.serverHooksLifeCycle.onCreateProcess.removeAllSubscriber();
+		this.serverHooksLifeCycle.onDeclareRoute.removeAllSubscriber();
+		this.serverHooksLifeCycle.onDeclareAbstractRoute.removeAllSubscriber();
+		this.serverHooksLifeCycle.beforeListenHttpServer.removeAllSubscriber();
+
 		const onReady = this.serverHooksLifeCycle.onReady.build();
 		this.server.on("listening", onReady);
 		this.server.on("listening", onLaunch);
@@ -284,7 +297,6 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 
 		this.server.on("request", this.serverHandler.bind(this));
 
-		await this.serverHooksLifeCycle.beforeListenHttpServer.launchAllSubscriberAsync();
 		this.server.listen(this.config.port, this.config.host);
 
 		process.on("uncaughtException", (error: any, origin) => {
