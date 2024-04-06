@@ -1,7 +1,7 @@
 import {condition, mapped, spread} from "../stringBuilder";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hookBody, processDrop, processStep, routeFunctionString, skipStep, subAbstractRouteString} from "../stringBuilder/route";
 import {Hook, HooksLifeCycle} from "../hook";
-import {Request, methods} from "../request";
+import {Request, HttpMethods} from "../request";
 import {Response} from "../response";
 import {AnyFunction, PromiseOrNot, correctPath, makeFloor} from "../utile";
 import {ZodError, ZodType} from "zod";
@@ -21,7 +21,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 	public abstract get mainHooksLifeCyle(): HooksLifeCycle<Request, Response>;
 
 	constructor(
-		public method: methods,
+		public method: HttpMethods,
 		public paths: string[],
 		public subAbstractRoute: SubAbstractRoute | undefined,
 		desc: any[],

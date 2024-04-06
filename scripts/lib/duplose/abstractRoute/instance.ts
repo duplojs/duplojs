@@ -1,7 +1,7 @@
 import {ExtractObject} from "..";
 import {BuilderPatternAbstractRoute} from "../../builder/abstractRoute";
 import {BuilderPatternRoute,} from "../../builder/route";
-import {Request, methods} from "../../request";
+import {Request, HttpMethods} from "../../request";
 import {Response} from "../../response";
 import {SubAbstractRoute} from "./sub";
 
@@ -16,7 +16,7 @@ export abstract class AbstractRouteInstance<
 		req extends Request = request, 
 		res extends Response = response,
 		extObj extends ExtractObject = ExtractObject,
-	>(method: methods, path: string | string[], ...desc: any[]): BuilderPatternRoute<request & req, response & res, extractObj & extObj, floor>;
+	>(method: HttpMethods, path: string | string[], ...desc: any[]): BuilderPatternRoute<request & req, response & res, extractObj & extObj, floor>;
 	abstract declareAbstractRoute<
 		req extends Request = request, 
 		res extends Response = response,

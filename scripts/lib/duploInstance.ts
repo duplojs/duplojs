@@ -6,7 +6,7 @@ import {makeProcessSystem} from "./system/process";
 import {makeRouteSystem} from "./system/route";
 import {makeRouterSystem} from "./system/router";
 import {AnyFunction, buildAbstractRoutes, buildProcesses, buildRoutes, correctPath, deepFreeze, deleteDescriptions} from "./utile";
-import {ExtendsRequest, Request, methods} from "./request";
+import {ExtendsRequest, Request, HttpMethods} from "./request";
 import {ExtendsResponse, Response} from "./response";
 import {ErrorExtractFunction, ExtractObject} from "./duplose";
 import {parsingBody} from "./defaultHooks/parsingBody";
@@ -70,7 +70,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		_request extends Request = Request,
 		_response extends Response = Response,
 		_extractObject extends ExtractObject = ExtractObject,
-	>(method: methods, paths: string | string[], ...desc: any[]) => BuilderPatternRoute<_request, _response, _extractObject>;
+	>(method: HttpMethods, paths: string | string[], ...desc: any[]) => BuilderPatternRoute<_request, _response, _extractObject>;
 	public setErrorHandler: ReturnType<typeof makeRouteSystem>["setErrorHandler"];
 	protected routeSetDefaultErrorExtract: ReturnType<typeof makeRouteSystem>["setDefaultErrorExtract"];
 	public routes: ReturnType<typeof makeRouteSystem>["routes"];
@@ -214,7 +214,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 
 	protected async serverHandler(serverRequest: http.IncomingMessage, serverResponse: http.ServerResponse){
 		try {
-			const {routeFunction, params, matchedPath} = this.findRoute(serverRequest.method as methods, serverRequest.url as string);
+			const {routeFunction, params, matchedPath} = this.findRoute(serverRequest.method as HttpMethods, serverRequest.url as string);
 
 			await routeFunction(new this.Request(serverRequest, params, matchedPath), new this.Response(serverResponse));
 		}

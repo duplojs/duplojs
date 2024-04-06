@@ -1,12 +1,12 @@
 import {HooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {Route as DefaultRoute, RouteErrorHandlerFunction} from "../duplose/route";
-import {methods} from "../request";
+import {HttpMethods} from "../request";
 import {makeRouteBuilder} from "../builder/route";
 import {Response} from "../response";
 import {ErrorExtractFunction} from "../duplose";
 import {DuploConfig} from "../duploInstance";
 
-export type Routes = Record<methods, DefaultRoute[]>;
+export type Routes = Record<HttpMethods, DefaultRoute[]>;
 
 export interface RouteEditableProperty{
 	errorHandlerFunction: RouteErrorHandlerFunction,

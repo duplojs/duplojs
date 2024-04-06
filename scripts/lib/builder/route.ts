@@ -1,4 +1,4 @@
-import {methods, Request} from "../request";
+import {HttpMethods, Request} from "../request";
 import {Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {PickupDropProcess} from "../builder/process";
@@ -19,7 +19,7 @@ export type DeclareRoute<
 	extractObj extends ExtractObject = ExtractObject,
 	floor extends {} = {},
 > = (
-	method: methods, 
+	method: HttpMethods, 
 	path: string | string[], 
 	subAbstractRoute?: SubAbstractRoute, 
 	...desc: any[]
