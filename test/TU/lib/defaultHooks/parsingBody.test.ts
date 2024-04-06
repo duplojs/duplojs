@@ -27,4 +27,17 @@ describe("parsing body", () => {
 		expect(result).toBe(true);
 		expect(request.body).toEqual({test: "value"});
 	});
+
+	it("parsing error json", async() => {
+		const {rawRequest, request} = makeMokedRequest({method: "POST", matchedPath: "/", url: "/"});
+		request.headers["content-type"] = "application/json";
+		const result = await new Promise(r => {
+			parsingBody(request).then(r).catch(r);
+			rawRequest.emit("data", "test");
+			rawRequest.emit("end");
+		});
+
+		expect(result).instanceOf(Error);
+		expect(request.body).toEqual(undefined);
+	});
 });

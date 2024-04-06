@@ -1,7 +1,12 @@
 import {IncomingHttpHeaders, IncomingMessage} from "http";
 import fastQueryString from "fast-querystring";
 
-export type methods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
+export type HttpMethods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
+
+/**
+ * @deprecated The method should not be used
+ */
+export type methods = HttpMethods;
 
 export abstract class Request{
 	constructor(
@@ -11,7 +16,7 @@ export abstract class Request{
 	){
 		const [path, query] = (request.url ?? "").split("?");
 		this.rawRequest = request;
-		this.method = request.method as methods;
+		this.method = request.method as HttpMethods;
 		this.headers = request.headers;
 		this.url = request.url || "";
 		this.host = request.headers.host || "";
@@ -24,7 +29,7 @@ export abstract class Request{
 
 	rawRequest: InstanceType<typeof IncomingMessage>;
 
-	method: methods;
+	method: HttpMethods;
 
 	headers: IncomingHttpHeaders;
 

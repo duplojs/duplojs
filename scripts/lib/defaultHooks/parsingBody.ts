@@ -11,17 +11,21 @@ export const parsingBody = async(request: Request) => {
 		await new Promise<void>(
 			(resolve, reject) => {
 				let stringBody = "";
-				request.rawRequest.once("error", reject);
+				request.rawRequest.on("error", reject);
 				request.rawRequest.on("data", chunck => stringBody += chunck);
 				request.rawRequest.on("end", () => {
-					if(/text\/plain/.test(contentType)){
-						request.body = stringBody;
+					try {
+						if(/text\/plain/.test(contentType)){
+							request.body = stringBody;
+						}
+						else {
+							request.body = JSON.parse(stringBody);
+						}
+						request.rawRequest.removeListener("error", reject);
+						resolve();
+					} catch (error){
+						reject(error);
 					}
-					else {
-						request.body = JSON.parse(stringBody);
-					}
-					request.rawRequest.removeListener("error", reject);
-					resolve();
 				});
 			}
 		);
