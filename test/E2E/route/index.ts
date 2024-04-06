@@ -243,5 +243,15 @@ export default workerTesting(
 				body: zod.string().array(),
 			}
 		},
+		{
+			title: "wrong content-type",
+			url: "http://localhost:1506/route/test/4",
+			method: "POST",
+			headers: {"content-type": "application/json"},
+			body: "test",
+			response: {
+				code: 500,
+			}
+		},
 	]
 );

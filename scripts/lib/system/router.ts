@@ -1,7 +1,7 @@
 import {ExtendsRoute, RouteFunction} from "../duplose/route";
 import {mapped} from "../stringBuilder";
 import {matchRoute, routerStringFunction} from "../stringBuilder/router";
-import {Request, methods} from "../request";
+import {Request, HttpMethods} from "../request";
 import {Response} from "../response";
 import {Routes} from "../system/route";
 import {pathToStringRegExp, PromiseOrNot} from "../utile";
@@ -50,7 +50,7 @@ export function makeRouterSystem(
 		};
 	};
 
-	const findRoute = (method: methods, path: string) => {
+	const findRoute = (method: HttpMethods, path: string) => {
 		if(!buildedRouter[method]) return {
 			routeFunction: notfoundRoute.duploseFunction,
 			params: {},

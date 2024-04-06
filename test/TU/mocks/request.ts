@@ -1,9 +1,9 @@
 import httpMocks from "node-mocks-http";
-import {ExtendsRequest, methods} from "../../../scripts/lib/request";
+import {ExtendsRequest, HttpMethods} from "../../../scripts/lib/request";
 import {pathToStringRegExp} from "../../../scripts/lib/utile";
 
 export interface makeMokedRequestParams{
-	method: methods
+	method: HttpMethods
 	url: string
 	matchedPath: string
 }

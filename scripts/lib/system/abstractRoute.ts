@@ -9,7 +9,7 @@ import {SubAbstractRoute as DefaultSubAbstractRoute} from "../duplose/abstractRo
 import {MergeAbstractRoute as DefaultMergeAbstractRoute} from "../duplose/abstractRoute/merge";
 import makeMergeAbstractRouteBuilder from "../builder/mergeAbstractRoute";
 import {AbstractRouteInstance as DefaultAbstractRouteInstance} from "../duplose/abstractRoute/instance";
-import {methods} from "../request";
+import {HttpMethods} from "../request";
 import {DuploConfig} from "../duploInstance";
 
 export type AbstractRoutes = (DefaultAbstractRoute | MergeAbstractRoute)[];
@@ -26,7 +26,7 @@ export function makeAbstractRouteSystem(
 	class SubAbstractRoute extends DefaultSubAbstractRoute{}
 
 	class AbstractRouteInstance extends DefaultAbstractRouteInstance{
-		declareRoute(method: methods, paths: string | string[], ...desc: any[]){
+		declareRoute(method: HttpMethods, paths: string | string[], ...desc: any[]){
 			return declareRoute(method, paths, this.subAbstractRoute, desc) as any;
 		}
 		
