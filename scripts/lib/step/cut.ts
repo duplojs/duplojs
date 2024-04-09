@@ -6,9 +6,9 @@ import {Floor, PromiseOrNot} from "../utile";
 export type CutFunction<
 	request extends Request, 
 	response extends Response,
-	returnFloor extends Record<string, unknown>,
 	floor extends {},
-> = (floor: Floor<floor>, response: response, request: request) => PromiseOrNot<returnFloor | undefined | void>;
+	returnFloor extends Record<string, unknown>,
+> = (floor: Floor<floor>, response: response, request: request) => PromiseOrNot<returnFloor>;
 
 export class CutStep extends Step<CutFunction<Request, Response, any, any>>{
 	constructor(

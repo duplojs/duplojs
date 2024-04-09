@@ -90,31 +90,19 @@ export type DescriptionAll =
 	| DescriptionInput
 	| DescriptionPrecompletion;
 
-export const deepFreeze = (object: Record<any, any>, deep: number = Infinity): void => {
-	deep === 0 ||
-	Object.values(Object.freeze(object)).forEach(
-		object => 
-			typeof object !== "object" ||
-			object === null || 
-			deepFreeze(object, deep - 1)
-	);
-};
-
-export const buildRoutes = (routes: Routes) => {
-	Object.values(routes).forEach(routes => 
-		routes.forEach(route => 
-			route.build()
+export function buildDuplose(
+	routes: Routes,
+	processes: Processes,
+	abstractRoutes: AbstractRoutes,
+){
+	processes.forEach(m => m.build());
+	abstractRoutes.forEach(m => m.build());
+	Object.values(routes).forEach(
+		routes => routes.forEach(
+			route => route.build()
 		)
 	);
-};
-
-export const buildAbstractRoutes = (abstractRoutes: AbstractRoutes) => {
-	abstractRoutes.forEach(m => m.build());
-};
-
-export const buildProcesses = (processes: Processes) => {
-	processes.forEach(m => m.build());
-};
+}
 
 export function deleteDescriptions(
 	routes: Routes,
@@ -123,21 +111,32 @@ export function deleteDescriptions(
 	abstractRoutes: AbstractRoutes,
 ){
 	Object.values(routes).forEach(
-		routes => Object.values(routes).forEach(
+		routes => routes.forEach(
 			route => route.descs = []
 		)
 	);
-
 	Object.values(checkers).forEach(
 		checker => checker.descs = []
 	);
+	processes.forEach(process => process.descs = []);
+	abstractRoutes.forEach(abstractRoute => abstractRoute.descs = []);
+}
 
-	Object.values(processes).forEach(
-		process => process.descs = []
+export function deleteEditingDuploseFunctions(
+	routes: Routes,
+	processes: Processes,
+	abstractRoutes: AbstractRoutes,
+){
+	Object.values(routes).forEach(
+		routes => routes.forEach(
+			route => route.editingDuploseFunctions = []
+		)
 	);
-
+	Object.values(processes).forEach(
+		process => process.editingDuploseFunctions = []
+	);
 	Object.values(abstractRoutes).forEach(
-		abstractRoute => abstractRoute.descs = []
+		abstractRoute => abstractRoute.editingDuploseFunctions = []
 	);
 }
 

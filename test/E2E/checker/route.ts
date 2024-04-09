@@ -1,5 +1,6 @@
 import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
+import {AssertType} from "../index.d";
 import {IsOdd} from "./checker";
 
 const duplo = Duplo({
@@ -37,6 +38,10 @@ duplo.declareRoute("GET", "/checker/test/1")
 		parentPort?.postMessage("skip test");
 		res.info("skipTest").code(204).send();
 	}
+
+	type testType = AssertType<typeof result, number | undefined>;
+
+	return {};
 })
 .handler(({pickup: p}, res) => res.info("odd").code(200).send(p("result")));
 
@@ -53,7 +58,11 @@ duplo.declareRoute("GET", "/checker/test/2")
 		}
 	}
 )
-.handler(({pickup: p}, res) => res.info("odd").code(200).send(p("result")));
+.handler(({pickup: p}, res) => {
+	const result = p("result");
+	type testType = AssertType<typeof result, number>;
+	res.info("odd").code(200).send(p("result"));
+});
 
 duplo.declareRoute("GET", "/checker/test/3")
 .extract({
@@ -95,6 +104,11 @@ duplo.declareRoute("GET", "/checker/test/5")
 		...isOdd.preCompletions.wantOdd,
 	}
 )
-.handler(({pickup: p}, res) => res.info("odd").code(200).send(p("number")));
+.handler(({pickup: p}, res) => {
+	const result = p("number");
+	type testType = AssertType<typeof result, number>;
+
+	res.info("odd").code(200).send(p("number"));
+});
 
 duplo.launch(() => parentPort?.postMessage("ready"));

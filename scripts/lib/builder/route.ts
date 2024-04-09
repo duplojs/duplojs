@@ -94,7 +94,7 @@ export interface BuilderPatternRoute<
 		localFloor extends Record<string, unknown>, 
 		drop extends Exclude<keyof localFloor, symbol | number> = never
 	>(
-		short: CutFunction<request, response, localFloor, floor>,
+		short: CutFunction<request, response, floor, localFloor>,
 		drop?: drop[],
 		...desc: any[]
 	): Omit<

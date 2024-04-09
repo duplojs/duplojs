@@ -10,7 +10,8 @@
   "exports": {
     "default": {
       "import": "./dist/duplo.mjs",
-      "require": "./dist/duplo.cjs"
+      "require": "./dist/duplo.cjs",
+	  "types": "./types/index.d.ts"
     }
   },
   "files": [

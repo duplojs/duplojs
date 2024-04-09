@@ -5,7 +5,7 @@ import makeCheckerSystem from "./system/checker";
 import {makeProcessSystem} from "./system/process";
 import {makeRouteSystem} from "./system/route";
 import {makeRouterSystem} from "./system/router";
-import {AnyFunction, buildAbstractRoutes, buildProcesses, buildRoutes, correctPath, deepFreeze, deleteDescriptions} from "./utile";
+import {AnyFunction, buildDuplose, correctPath, deleteDescriptions, deleteEditingDuploseFunctions} from "./utile";
 import {ExtendsRequest, Request, HttpMethods} from "./request";
 import {ExtendsResponse, Response} from "./response";
 import {ErrorExtractFunction, ExtractObject} from "./duplose";
@@ -19,6 +19,7 @@ import {OutOfContextResponse} from "./error/outOfContextResponse";
 import {BuilderPatternAbstractRoute} from "./builder/abstractRoute";
 import {BuilderPatternRoute} from "./builder/route";
 import {BuilderPatternProcess} from "./builder/process";
+import {z as zod} from "zod";
 
 export interface DuploInterfaceEnvironment {
 	DEV: true,
@@ -209,6 +210,9 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 				? config.globals 
 				: "duplo"
 			] = this;
+
+			//@ts-ignore
+			global.zod = zod;
 		}
 	}
 
@@ -250,24 +254,18 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 
 		await this.serverHooksLifeCycle.beforeBuildRouter.launchSubscriberAsync();
 		
-		buildProcesses(this.processes);
-		buildAbstractRoutes(this.abstractRoutes);
-		buildRoutes(this.routes);
+		buildDuplose(this.routes, this.processes, this.abstractRoutes);
 		
 		if(this.config.keepDescriptions !== true){
 			deleteDescriptions(this.routes, this.checkers, this.processes, this.abstractRoutes);
 		}
-		deepFreeze(this.routes, 3);
-		deepFreeze(this.checkers);
-		deepFreeze(this.processes, 2);
-		deepFreeze(this.abstractRoutes, 2);
 		
 		this.buildRouter();
 		await this.serverHooksLifeCycle.afterBuildRouter.launchSubscriberAsync();
 
-		this.serverHooksLifeCycle.onServerError.addSubscriber(
-			(serverRequest, serverResponse, error) => console.error(error)
-		);
+		this.addHook("beforeListenHttpServer", () => {
+			deleteEditingDuploseFunctions(this.routes, this.processes, this.abstractRoutes);
+		});
 
 		await this.serverHooksLifeCycle.beforeListenHttpServer.launchAllSubscriberAsync();
 
@@ -294,6 +292,10 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 		if(this.config.onClose){
 			this.server.on("close", this.config.onClose);
 		}
+
+		this.serverHooksLifeCycle.onServerError.addSubscriber(
+			(serverRequest, serverResponse, error) => console.error(error)
+		);
 
 		this.server.on("request", this.serverHandler.bind(this));
 
