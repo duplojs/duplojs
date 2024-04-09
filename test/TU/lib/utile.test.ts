@@ -1,18 +1,10 @@
-import {Checker, Floor, buildAbstractRoutes, buildProcesses, buildRoutes, correctPath, deepFreeze, deleteDescriptions, makeFloor, pathToStringRegExp} from "../../../scripts";
+import {Checker, Floor, buildDuplose, correctPath, deleteDescriptions, deleteEditingDuploseFunctions, makeFloor, pathToStringRegExp} from "../../../scripts";
 import {AbstractRoute} from "../mocks/duplose/abstractRoute";
 import {Process} from "../mocks/duplose/process";
 import {Route} from "../mocks/duplose/route";
 
 describe("utile", () => {
-	it("deepFreeze", () => {
-		const test = {test: {}};
-		deepFreeze(test, 2);
-
-		expect(Object.isFrozen(test)).toBe(true);
-		expect(Object.isFrozen(test.test)).toBe(true);
-	});
-
-	it("buildRoutes", () => {
+	it("build duplose", () => {
 		const routes = {
 			GET: [new Route("GET", ["/"], undefined, [])],
 			POST: [],
@@ -23,24 +15,13 @@ describe("utile", () => {
 			OPTIONS: [],
 		};
 		routes.GET[0].handler = () => {};
-		buildRoutes(routes);
+		const abss = [new AbstractRoute("test", undefined, [])];
+		const processes = [new Process("test", [])];
+		buildDuplose(routes, processes, abss);
 
 		expect(routes.GET[0].stringDuploseFunction !== "").toBe(true);
-	});
-
-	it("buildAbstractRoutes", () => {
-		const abss = [new AbstractRoute("test", undefined, [])];
-		buildAbstractRoutes(abss);
-
-		expect(abss[0].stringDuploseFunction !== "").toBe(true);
-
-	});
-
-	it("buildProcesses", () => {
-		const processes = [new Process("test", [])];
-		buildProcesses(processes);
-
 		expect(processes[0].stringDuploseFunction !== "").toBe(true);
+		expect(abss[0].stringDuploseFunction !== "").toBe(true);
 	});
 
 	it("deleteDescriptions", () => {
@@ -62,6 +43,31 @@ describe("utile", () => {
 		expect(processes[0].descs).toEqual([]);
 		expect(checkers[0].descs).toEqual([]);
 		expect(abss[0].descs).toEqual([]);
+	});
+
+	it("deleteEditingDuploseFunctions", () => {
+		const routes = {
+			GET: [new Route("GET", ["/"], undefined, ["test"])],
+			POST: [],
+			PATCH: [],
+			PUT: [],
+			HEAD: [],
+			DELETE: [],
+			OPTIONS: [],
+		};
+		const abss = [new AbstractRoute("test", undefined, ["test"])];
+		const processes = [new Process("test", ["test"])];
+		const checkers = [new Checker("test", ["test"])];
+
+		routes.GET[0].editingDuploseFunctions.push(() => {});
+		processes[0].editingDuploseFunctions.push(() => {});
+		abss[0].editingDuploseFunctions.push(() => {});
+
+		deleteEditingDuploseFunctions(routes, processes, abss);
+
+		expect(routes.GET[0].editingDuploseFunctions).toEqual([]);
+		expect(processes[0].editingDuploseFunctions).toEqual([]);
+		expect(abss[0].editingDuploseFunctions).toEqual([]);
 	});
 
 	it("correctPath", () => {
