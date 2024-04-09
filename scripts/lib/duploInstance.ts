@@ -19,6 +19,7 @@ import {OutOfContextResponse} from "./error/outOfContextResponse";
 import {BuilderPatternAbstractRoute} from "./builder/abstractRoute";
 import {BuilderPatternRoute} from "./builder/route";
 import {BuilderPatternProcess} from "./builder/process";
+import {z as zod} from "zod";
 
 export interface DuploInterfaceEnvironment {
 	DEV: true,
@@ -209,6 +210,9 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 				? config.globals 
 				: "duplo"
 			] = this;
+
+			//@ts-ignore
+			global.zod = zod;
 		}
 	}
 
