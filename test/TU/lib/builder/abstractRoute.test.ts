@@ -128,7 +128,7 @@ describe("route builder", () => {
 	});
 
 	it("cut", () => {
-		const fnc = () => {};
+		const fnc = () => ({});
 		const abstract = declareAbstractRoute("test", undefined)
 		.cut(fnc, [], "test")
 		.build();

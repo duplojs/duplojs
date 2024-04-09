@@ -125,7 +125,7 @@ describe("route builder", () => {
 	});
 
 	it("cut", () => {
-		const fnc = () => {};
+		const fnc = () => ({});
 		const process = createProcess("test")
 		.cut(fnc, [], "test")
 		.build();

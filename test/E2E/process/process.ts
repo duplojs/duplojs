@@ -1,5 +1,6 @@
 import {parentPort} from "worker_threads";
 import {DuploConfig, DuploInstance, ExtractObject, Request, Response, zod} from "../../../scripts";
+import {AssertType} from "../index.d";
 import {IsOdd} from "../checker/checker";
 
 export const IsAdmin = (duplo: DuploInstance<DuploConfig>) => {
@@ -115,6 +116,8 @@ export const IsOwner = (duplo: DuploInstance<DuploConfig>) => {
 	})
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("process options " + p("options").option1);
+
+		return {};
 	})
 	.process(
 		hasRight,
@@ -137,6 +140,8 @@ export const IsUser = (duplo: DuploInstance<DuploConfig>) => {
 	})
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("process options " + p("options").option1);
+
+		return {};
 	})
 	.process(
 		hasRight,
@@ -160,6 +165,9 @@ export const IsUser = (duplo: DuploInstance<DuploConfig>) => {
 	)
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("checker result " + p("result"));
+		const result = p("result");
+		type testType = AssertType<typeof result, number>;
+		return {};
 	})
 	.build();
 };
@@ -177,6 +185,10 @@ export const HasRight = (duplo: DuploInstance<DuploConfig>) =>
 			parentPort?.postMessage("process options1 " + p("options").option1);
 			parentPort?.postMessage("process options2 " + p("options").option2);
 			parentPort?.postMessage("process input " + p("input"));
+			const options = p("options");
+			type testType = AssertType<typeof options, {option1: number, option2: number}>;
+			const input = p("input");
+			type testType1 = AssertType<typeof input, number>;
 
 			return {
 				right: true,
@@ -197,5 +209,7 @@ export const processTestType = (duplo: DuploInstance<DuploConfig>) => duplo.crea
 .cut(({}, res, req) => {
 	res.test;
 	req.test;
+
+	return {};
 })
 .build([]);

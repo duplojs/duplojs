@@ -1,5 +1,6 @@
 import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
+import {AssertType} from "../index.d";
 import {MergeAbstractRoute1, MergeAbstractRoute2, MergeAbstractRoute3} from "./mergeAbstractRoute";
 
 const duplo = Duplo({
@@ -17,6 +18,12 @@ mergeAbstractRoute1.declareRoute("GET", "/mergeAbstract/test/1")
 	parentPort?.postMessage("mergeAbstract pickup test " + p("test"));
 	parentPort?.postMessage("mergeAbstract pickup yyy " + p("yyy"));
 	res.code(204).info("result").send();
+
+	const test = p("test");
+	const yyy = p("yyy");
+
+	type testType = AssertType<typeof test, number>;
+	type testType1 = AssertType<typeof yyy, number>;
 });
 
 mergeAbstractRoute2.declareRoute("GET", "/mergeAbstract/test/2")
@@ -31,8 +38,13 @@ mergeAbstractRoute3.declareRoute("GET", [])
 	res.test().test1();
 	req.test().test1();
 
-	pickup("test");
-	pickup("test1");
+	const test = pickup("test");
+	const test1 = pickup("test1");
+
+	type testType = AssertType<typeof test, string>;
+	type testType1 = AssertType<typeof test1, number>;
+
+	return {};
 })
 .handler(() => {});
 

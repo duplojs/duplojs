@@ -1,5 +1,6 @@
 import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
+import {AssertType} from "../index.d";
 import {Abstract1, Abstract2, Abstract3, Abstract6, Abstract10} from "./abstractRoute";
 
 const duplo = Duplo({
@@ -17,9 +18,17 @@ const abstract10 = Abstract10(duplo);
 abstract1({pickup: ["number", "result", "right"]})
 .declareRoute("GET", "/abstract/test/1")
 .handler(({pickup: p}, res) => {
+	const number = p("number");
+	const result = p("result");
+	const right = p("right");
+
 	parentPort?.postMessage("abstract pickup number " + p("number"));
 	parentPort?.postMessage("abstract pickup result " + p("result"));
 	parentPort?.postMessage("abstract pickup right " + p("right"));
+
+	type testType = AssertType<typeof number, number>;
+	type testType1 = AssertType<typeof result, number>;
+	type testType2 = AssertType<typeof right, boolean>;
 
 	res.code(204).info("result").send();
 });
@@ -44,6 +53,8 @@ abstract10()
 .cut(({}, res, req) => {
 	res.test;
 	req.test;
+
+	return {};
 })
 .handler(() => {});
 
