@@ -52,15 +52,18 @@ class|`Object`|Objet regroupant l'ensemble des classes utilisées par l'instance
 
 ## DuploInstance en variable global
 ```ts
-import Duplo from "@duplojs/duplojs";
+import Duplo, {zod} from "@duplojs/duplojs";
 
 export default Duplo({
     ...
     globals: true,
 });
 
+export { zod };
+
 declare global {
     const duplo: typeof import("./{currentFile}")["default"];
+	const zod: typeof import("./{currentFile}")["zod"];
 }
 
 duplo.use(...);
