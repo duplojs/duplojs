@@ -110,7 +110,7 @@ describe("route builder", () => {
 	});
 
 	it("cut", () => {
-		const fnc = () => {};
+		const fnc = () => ({});
 		const route = declareRoute("GET", "/")
 		.cut(fnc, [], "test")
 		.handler(() => {});

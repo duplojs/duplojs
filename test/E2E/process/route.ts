@@ -1,5 +1,6 @@
 import Duplo, {zod} from "../../../scripts/index";
 import {parentPort} from "worker_threads";
+import {AssertType} from "../index.d";
 import {IsAdmin, IsCustomer, IsManager, IsOwner, IsUser} from "./process";
 
 const duplo = Duplo({
@@ -21,7 +22,20 @@ duplo.declareRoute("GET", "/process/test/1")
 		pickup: ["pick"],
 	}
 )
-.handler(({pickup: p}, res) => res.code(200).info("result").send(p("pick")));
+.handler(({pickup: p}, res) => {
+	const pick = p("pick");
+	type testType = AssertType<typeof pick, {
+		input: number;
+		options: {
+			testOption1: string;
+			testOption2: string;
+		};
+		result: number;
+		admin: "true";
+		right: boolean;
+	}>;
+	res.code(200).info("result").send(p("pick"));
+});
 
 duplo.declareRoute("GET", "/process/test/2")
 .extract({

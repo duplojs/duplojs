@@ -1,4 +1,5 @@
 import Duplo, {ExtractObject, Request, Response, zod} from "../../../scripts/index";
+import {AssertType} from "../index.d";
 import {parentPort} from "worker_threads";
 
 const duplo = Duplo({
@@ -122,8 +123,28 @@ duplo.declareRoute<{test: any} & Request, {test: any} & Response, {test: any} & 
 .cut(({}, res, req) => {
 	res.test;
 	req.test;
+
+	return {};
 })
 .handler(({}) => {});
+
+duplo.declareRoute("GET", [])
+.cut(
+	(floor, res, req) => {
+		if(!true){
+			return {};
+		}
+		return {
+			test: ""
+		};
+	},
+	["test"]
+)
+.handler(({pickup}) => {
+	const test = pickup("test");
+
+	type testType = AssertType<typeof test, undefined | string>;
+});
 
 duplo.declareRoute("GET", "/test/13")
 .handler(({}, res) => {

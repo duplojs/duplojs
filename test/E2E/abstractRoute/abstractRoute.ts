@@ -2,6 +2,7 @@ import {DuploConfig, DuploInstance, ExtractObject, Request, Response, zod} from 
 import {parentPort} from "worker_threads";
 import {IsOdd} from "../checker/checker";
 import {HasRight} from "../process/process";
+import {AssertType} from "../index.d";
 import {ZodType} from "zod";
 
 export const Abstract1 = (duplo: DuploInstance<DuploConfig>) => {
@@ -60,6 +61,9 @@ export const Abstract2 = (duplo: DuploInstance<DuploConfig>) => {
 	)
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("abstract result " + p("result"));
+		const result = p("result");
+		type testType = AssertType<typeof result, number>;
+		return {};
 	})
 	.process(
 		hasRight,
@@ -73,6 +77,9 @@ export const Abstract2 = (duplo: DuploInstance<DuploConfig>) => {
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("abstract options test1 " + p("options").test1);
 		parentPort?.postMessage("abstract options test2 " + p("options").test2);
+		const options = p("options");
+		type testType = AssertType<typeof options, {test1: number, test2: number}>;
+		return {};
 	})
 	.build();
 };
@@ -103,6 +110,8 @@ export const Abstract3 = (duplo: DuploInstance<DuploConfig>) => {
 	)
 	.cut(({pickup: p}) => {
 		parentPort?.postMessage("abstract result " + p("result"));
+
+		return {};
 	})
 	.process(
 		hasRight,
@@ -132,6 +141,9 @@ export const Abstract6 = (duplo: DuploInstance<DuploConfig>) => duplo
 .declareAbstractRoute("abstract6")
 .cut(({pickup: p}) => {
 	parentPort?.postMessage("deepAbstract pickup test " + p("test"));
+	const test = p("test");
+	type testType = AssertType<typeof test, number>;
+	return {};
 })
 .build(["test", "toto"]);
 
@@ -162,6 +174,8 @@ export const Abstract10 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAb
 .cut(({}, res, req) => {
 	res.test;
 	req.test;
+
+	return {};
 })
 .build();
 
@@ -188,6 +202,8 @@ export const Abstract11 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAb
 .cut(({}, res, req) => {
 	res.test1;
 	req.test1;
+
+	return {};
 })
 .build();
 
