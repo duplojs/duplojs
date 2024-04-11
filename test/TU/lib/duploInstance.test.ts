@@ -58,6 +58,24 @@ it("duploInstance", async() => {
 
 	duplo.use((instance) => expect(instance).instanceof(DuploInstance));
 
+	duplo.advancedUse(
+		(instance, options: {test1?: string, test2?: number}) => {
+			expect(options).toStrictEqual({
+				test1: "zzz",
+				test2: 2
+			});
+		},
+		{
+			default: {
+				test1: "test",
+			},
+			DEV: {
+				test1: "zzz",
+				test2: 2
+			}
+		}
+	);
+
 	console.error = () => {};
 
 	const {rawRequest, request} = makeMokedRequest({method: "GET", url: "/", matchedPath: "/"});

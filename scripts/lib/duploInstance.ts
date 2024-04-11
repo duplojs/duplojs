@@ -24,6 +24,7 @@ import {z as zod} from "zod";
 export interface DuploInterfaceEnvironment {
 	DEV: true,
 	PROD: true,
+	TEST: true,
 }
 
 export type DuploEnvironment = Exclude<
@@ -322,5 +323,29 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	>(input: duploInputFunction, options?: Parameters<duploInputFunction>[1]): ReturnType<duploInputFunction>
 	{
 		return input(this, options);
+	}
+
+	public advancedUse<
+		duploPluginFunction extends((instance: DuploInstance<duploConfig>, options: any) => any)
+	>(
+		plugins: duploPluginFunction, 
+		options?: Partial<
+			{default: Parameters<duploPluginFunction>[1]} &
+			Record<
+				DuploEnvironment, 
+				Partial<Parameters<duploPluginFunction>[1]>
+			>
+		>
+	){
+		let pluginsOptions: Parameters<duploPluginFunction>[1] | undefined;
+
+		if(options){
+			pluginsOptions = {
+				...options.default,
+				...options[this.config.environment]
+			};
+		}
+
+		return plugins(this, pluginsOptions);
 	}
 }
