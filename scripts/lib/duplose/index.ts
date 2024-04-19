@@ -1,11 +1,11 @@
 import {ZodError, ZodType} from "zod";
-import {Hook, HooksLifeCycle, makeHooksLifeCycle} from "../hook";
+import {Hook, HooksLifeCycle, copyHooksLifeCycle, makeHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
 import {ProcessStep} from "../step/process";
-import {DescriptionAll, Floor} from "../utile";
+import {DescriptionAll, Floor} from "../utils";
 import {DuploConfig} from "../duploInstance";
 
 export interface ExtractObject{
@@ -60,12 +60,6 @@ export abstract class Duplose<_duploseFunction, _editingDuploseFunctions>{
 	}
 
 	addStepProcess(processStep: ProcessStep, desc: any[]){
-		Object.keys(this.hooksLifeCyle).forEach((key) => {
-			this.hooksLifeCyle[key].addSubscriber(
-				processStep.parent.hooksLifeCyle[key] as Hook,
-			);
-		});
-
 		this.steps.push(processStep);
 
 		if(desc.length !== 0){
@@ -114,6 +108,14 @@ export abstract class Duplose<_duploseFunction, _editingDuploseFunctions>{
 				descStep: desc
 			});
 		}
+	}
+
+	copyStepHooks(base: HooksLifeCycle){
+		this.steps.forEach(step => {
+			if(step instanceof ProcessStep){
+				step.parent.copyHook(base);
+			}
+		});
 	}
 
 	abstract build(): void

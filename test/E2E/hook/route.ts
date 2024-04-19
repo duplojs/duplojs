@@ -37,19 +37,7 @@ const process1 = duplo.createProcess("process1")
 .process(deepProcess1)
 .build();
 
-const abstractRoute1 = duplo.declareAbstractRoute("abstractRoute1")
-.hook("onConstructRequest", () => {parentPort?.postMessage("abstract onConstructRequest");})
-.hook("onConstructResponse", () => {parentPort?.postMessage("abstract onConstructResponse");})
-.hook("beforeRouteExecution", () => {parentPort?.postMessage("abstract beforeRouteExecution");})
-.hook("parsingBody", () => {parentPort?.postMessage("abstract parsingBody");})
-.hook("beforeSend", () => {parentPort?.postMessage("abstract beforeSend");})
-.hook("afterSend", () => {parentPort?.postMessage("abstract afterSend");})
-.hook("onError", () => {parentPort?.postMessage("abstract onError");})
-.process(process1)
-.build();
-
-const deepAbstractRoute1 = abstractRoute1()
-.declareAbstractRoute("deepAbstractRoute1")
+const deepAbstractRoute1 = duplo.declareAbstractRoute("deepAbstractRoute1")
 .hook("onConstructRequest", () => {parentPort?.postMessage("deepAbstract onConstructRequest");})
 .hook("onConstructResponse", () => {parentPort?.postMessage("deepAbstract onConstructResponse");})
 .hook("beforeRouteExecution", () => {parentPort?.postMessage("deepAbstract beforeRouteExecution");})
@@ -57,9 +45,21 @@ const deepAbstractRoute1 = abstractRoute1()
 .hook("beforeSend", () => {parentPort?.postMessage("deepAbstract beforeSend");})
 .hook("afterSend", () => {parentPort?.postMessage("deepAbstract afterSend");})
 .hook("onError", () => {parentPort?.postMessage("deepAbstract onError");})
+.process(process1)
 .build();
 
-const mergeAbstractRoute1 = duplo.mergeAbstractRoute([deepAbstractRoute1()]);
+const abstractRoute1 = deepAbstractRoute1()
+.declareAbstractRoute("abstractRoute1")
+.hook("onConstructRequest", () => {parentPort?.postMessage("abstract onConstructRequest");})
+.hook("onConstructResponse", () => {parentPort?.postMessage("abstract onConstructResponse");})
+.hook("beforeRouteExecution", () => {parentPort?.postMessage("abstract beforeRouteExecution");})
+.hook("parsingBody", () => {parentPort?.postMessage("abstract parsingBody");})
+.hook("beforeSend", () => {parentPort?.postMessage("abstract beforeSend");})
+.hook("afterSend", () => {parentPort?.postMessage("abstract afterSend");})
+.hook("onError", () => {parentPort?.postMessage("abstract onError");})
+.build();
+
+const mergeAbstractRoute1 = duplo.mergeAbstractRoute([abstractRoute1()]);
 
 mergeAbstractRoute1
 .declareRoute("GET", "/hook/test/1")

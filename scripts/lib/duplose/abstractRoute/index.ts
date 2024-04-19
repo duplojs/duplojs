@@ -7,11 +7,11 @@ import {CutStep} from "../../step/cut";
 import {condition, mapped, spread} from "../../stringBuilder";
 import {abstractRouteFunctionString} from "../../stringBuilder/abstractRoute";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, processDrop, processStep, skipStep, subAbstractRouteString} from "../../stringBuilder/route";
-import {makeFloor} from "../../utile";
+import {makeFloor} from "../../utils";
 import {handlerFunctionString} from "../../stringBuilder/process";
 import {ExtendsSubAbstractRoute, SubAbstractRoute, SubAbstractRouteParams} from "./sub";
 import {ExtendsAbstractRouteInstance} from "./instance";
-import {Hook} from "../../hook";
+import {Hook, HooksLifeCycle, copyHooksLifeCycle} from "../../hook";
 
 export type AbstractRouteFunction = (request: Request, response: Response, options: any) => Record<string, any> | Promise<Record<string, any>>;
 
@@ -35,11 +35,6 @@ export abstract class AbstractRoute<
 	){	
 		super(desc);
 		if(subAbstractRoute){
-			Object.keys(this.hooksLifeCyle).forEach((key) => {
-				this.hooksLifeCyle[key].addSubscriber(
-					subAbstractRoute.hooksLifeCyle[key] as Hook
-				);
-			});
 			this.addDesc("abstract", subAbstractRoute.desc);
 		}
 	}
@@ -60,6 +55,12 @@ export abstract class AbstractRoute<
 		const sub = new this.SubAbstractRoute(this, params, desc);
 		this.children.push(sub);
 		return new this.AbstractRouteInstance(sub);
+	}
+
+	copyHook(base: HooksLifeCycle){
+		copyHooksLifeCycle(base, this.hooksLifeCyle);
+		this.copyStepHooks(base);
+		this.subAbstractRoute?.parent.copyHook(base);
 	}
 
 	build(){

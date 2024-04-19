@@ -2,7 +2,7 @@ import {RouteStepParamsSkip} from "../builder/route";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
-import {AnyFunction, FlatExtract, Floor} from "../utile";
+import {AnyFunction, FlatExtract, Floor} from "../utils";
 import {Process as DefaultProcess, ExtendsProcess} from "../duplose/process";
 import {Processes} from "../system/process";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
@@ -85,7 +85,7 @@ export interface BuilderPatternProcess<
 		>, 
 		request, 
 		response
-	>["addHook"];
+	>;
 
 	extract<
 		localeExtractObj extends extractObj,

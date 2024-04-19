@@ -1,3 +1,4 @@
+import hook from "../../test/E2E/hook";
 import {AbstractRoute} from "./duplose/abstractRoute";
 import {MergeAbstractRoute} from "./duplose/abstractRoute/merge";
 import {Checker} from "./duplose/checker";
@@ -5,7 +6,7 @@ import {Process} from "./duplose/process";
 import {Route} from "./duplose/route";
 import {Request} from "./request";
 import {Response} from "./response";
-import {AnyFunction, PromiseOrNot} from "./utile";
+import {AnyFunction, PromiseOrNot} from "./utils";
 import {IncomingMessage, ServerResponse} from "http";
 
 export type HooksLifeCycle<
@@ -20,27 +21,27 @@ export interface AddHooksLifeCycle<
 	request extends Request = Request, 
 	response extends Response = Response,
 >{
-	addHook(name: "onConstructRequest", functionHook: ReturnType<HooksLifeCycle<request, response>["onConstructRequest"]["build"]>): returnType;
-	addHook(name: "onConstructResponse", functionHook: ReturnType<HooksLifeCycle<request, response>["onConstructResponse"]["build"]>): returnType;
-	addHook(name: "beforeRouteExecution", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeRouteExecution"]["build"]>): returnType;
-	addHook(name: "parsingBody", functionHook: ReturnType<HooksLifeCycle<request, response>["parsingBody"]["build"]>): returnType;
-	addHook(name: "onError", functionHook: ReturnType<HooksLifeCycle<request, response>["onError"]["build"]>): returnType;
-	addHook(name: "beforeSend", functionHook: ReturnType<HooksLifeCycle<request, response>["beforeSend"]["build"]>): returnType;
-	addHook(name: "serializeBody", functionHook: ReturnType<HooksLifeCycle<request, response>["serializeBody"]["build"]>): returnType;
-	addHook(name: "afterSend", functionHook: ReturnType<HooksLifeCycle<request, response>["afterSend"]["build"]>): returnType;
+	(name: "onConstructRequest", callback: ReturnType<HooksLifeCycle<request, response>["onConstructRequest"]["build"]>): returnType;
+	(name: "onConstructResponse", callback: ReturnType<HooksLifeCycle<request, response>["onConstructResponse"]["build"]>): returnType;
+	(name: "beforeRouteExecution", callback: ReturnType<HooksLifeCycle<request, response>["beforeRouteExecution"]["build"]>): returnType;
+	(name: "parsingBody", callback: ReturnType<HooksLifeCycle<request, response>["parsingBody"]["build"]>): returnType;
+	(name: "onError", callback: ReturnType<HooksLifeCycle<request, response>["onError"]["build"]>): returnType;
+	(name: "beforeSend", callback: ReturnType<HooksLifeCycle<request, response>["beforeSend"]["build"]>): returnType;
+	(name: "serializeBody", callback: ReturnType<HooksLifeCycle<request, response>["serializeBody"]["build"]>): returnType;
+	(name: "afterSend", callback: ReturnType<HooksLifeCycle<request, response>["afterSend"]["build"]>): returnType;
 }
 
 export interface AddServerHooksLifeCycle<returnType extends any = any>{
-	addHook(name: "onClose", functionHook: ReturnType<ServerHooksLifeCycle["onClose"]["build"]>): returnType;
-	addHook(name: "onCreateChecker", functionHook: ReturnType<ServerHooksLifeCycle["onCreateChecker"]["build"]>): returnType;
-	addHook(name: "onCreateProcess", functionHook: ReturnType<ServerHooksLifeCycle["onCreateProcess"]["build"]>): returnType;
-	addHook(name: "onDeclareAbstractRoute", functionHook: ReturnType<ServerHooksLifeCycle["onDeclareAbstractRoute"]["build"]>): returnType;
-	addHook(name: "onDeclareRoute", functionHook: ReturnType<ServerHooksLifeCycle["onDeclareRoute"]["build"]>): returnType;
-	addHook(name: "onReady", functionHook: ReturnType<ServerHooksLifeCycle["onReady"]["build"]>): returnType;
-	addHook(name: "onServerError", functionHook: ReturnType<ServerHooksLifeCycle["onServerError"]["build"]>): returnType;
-	addHook(name: "beforeBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["beforeBuildRouter"]["build"]>): returnType;
-	addHook(name: "afterBuildRouter", functionHook: ReturnType<ServerHooksLifeCycle["afterBuildRouter"]["build"]>): returnType;
-	addHook(name: "beforeListenHttpServer", functionHook: ReturnType<ServerHooksLifeCycle["beforeListenHttpServer"]["build"]>): returnType;
+	(name: "onClose", callback: ReturnType<ServerHooksLifeCycle["onClose"]["build"]>): returnType;
+	(name: "onCreateChecker", callback: ReturnType<ServerHooksLifeCycle["onCreateChecker"]["build"]>): returnType;
+	(name: "onCreateProcess", callback: ReturnType<ServerHooksLifeCycle["onCreateProcess"]["build"]>): returnType;
+	(name: "onDeclareAbstractRoute", callback: ReturnType<ServerHooksLifeCycle["onDeclareAbstractRoute"]["build"]>): returnType;
+	(name: "onDeclareRoute", callback: ReturnType<ServerHooksLifeCycle["onDeclareRoute"]["build"]>): returnType;
+	(name: "onReady", callback: ReturnType<ServerHooksLifeCycle["onReady"]["build"]>): returnType;
+	(name: "onServerError", callback: ReturnType<ServerHooksLifeCycle["onServerError"]["build"]>): returnType;
+	(name: "beforeBuildRouter", callback: ReturnType<ServerHooksLifeCycle["beforeBuildRouter"]["build"]>): returnType;
+	(name: "afterBuildRouter", callback: ReturnType<ServerHooksLifeCycle["afterBuildRouter"]["build"]>): returnType;
+	(name: "beforeListenHttpServer", callback: ReturnType<ServerHooksLifeCycle["beforeListenHttpServer"]["build"]>): returnType;
 }
 
 export class Hook<
@@ -180,4 +181,15 @@ export function makeServerHooksLifeCycle(){
 		afterBuildRouter: new Hook(0),
 		beforeListenHttpServer: new Hook(0),
 	};
+}
+
+export function copyHooksLifeCycle(
+	base: HooksLifeCycle, 
+	copy: HooksLifeCycle, 
+){
+	Object.keys(base).forEach((key) => {
+		base[key].addSubscriber(
+			copy[key] as Hook,
+		);
+	});
 }

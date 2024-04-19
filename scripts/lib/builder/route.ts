@@ -2,7 +2,7 @@ import {HttpMethods, Request} from "../request";
 import {Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {PickupDropProcess} from "../builder/process";
-import {AnyFunction, FlatExtract, Floor} from "../utile";
+import {AnyFunction, FlatExtract, Floor} from "../utils";
 import {Route as DefaultRoute, ExtendsRoute} from "../duplose/route";
 import {Process} from "../duplose/process";
 import {Routes} from "../system/route";
@@ -33,7 +33,7 @@ export interface BuilderPatternRoute<
 	extractObj extends ExtractObject = ExtractObject,
 	floor extends {} = {},
 >{
-	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj, floor>, request, response>["addHook"];
+	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj, floor>, request, response>;
 
 	extract<
 		localeExtractObj extends extractObj,
