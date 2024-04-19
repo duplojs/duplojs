@@ -5,7 +5,7 @@ import makeCheckerSystem from "./system/checker";
 import {makeProcessSystem} from "./system/process";
 import {makeRouteSystem} from "./system/route";
 import {makeRouterSystem} from "./system/router";
-import {AnyFunction, buildDuplose, correctPath, deleteDescriptions, deleteEditingDuploseFunctions} from "./utile";
+import {AnyFunction, buildDuplose, correctPath, deleteDescriptions, deleteEditingDuploseFunctions} from "./utils";
 import {ExtendsRequest, Request, HttpMethods} from "./request";
 import {ExtendsResponse, Response} from "./response";
 import {ErrorExtractFunction, ExtractObject} from "./duplose";
@@ -103,7 +103,7 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 	}
 	
 	public plugins: Plugins = {};
-	public addHook: AddHooksLifeCycle<this>["addHook"] & AddServerHooksLifeCycle<this>["addHook"];
+	public addHook: AddHooksLifeCycle<this> & AddServerHooksLifeCycle<this>;
 
 	get class(){
 		return {

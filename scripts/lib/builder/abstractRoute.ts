@@ -4,7 +4,7 @@ import {RouteStepParamsSkip} from "./route";
 import {Request} from "../request";
 import {Response} from "../response";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
-import {AnyFunction, FlatExtract} from "../utile";
+import {AnyFunction, FlatExtract} from "../utils";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
 import {CheckerParamsStep, CheckerStep} from "../step/checker";
 import {Process} from "../duplose/process";
@@ -96,7 +96,7 @@ export interface BuilderPatternAbstractRoute<
 		>,
 		request, 
 		response
-	>["addHook"];
+	>;
 
 	extract<
 		localeExtractObj extends Omit<extractObj, "body">,

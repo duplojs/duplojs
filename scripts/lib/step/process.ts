@@ -1,6 +1,6 @@
 import {Step} from ".";
 import {Process} from "../duplose/process";
-import {AnyFunction, Floor} from "../utile";
+import {AnyFunction, Floor} from "../utils";
 
 export interface ProcessParamsStep<
 	process extends Process,

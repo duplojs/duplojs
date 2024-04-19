@@ -1,12 +1,12 @@
 import {AbstractRouteFunction} from ".";
 import {DuploConfig} from "../../duploInstance";
-import {Hook, HooksLifeCycle, makeHooksLifeCycle} from "../../hook";
+import {Hook, HooksLifeCycle, copyHooksLifeCycle, makeHooksLifeCycle} from "../../hook";
 import {Request} from "../../request";
 import {Response} from "../../response";
 import {mapped} from "../../stringBuilder";
 import {mergeAbstractRouteFunctionString, subAbstractRoutesString} from "../../stringBuilder/mergeAbstractRoute";
 import {processDrop} from "../../stringBuilder/route";
-import {AnyFunction, DescriptionAll, makeFloor} from "../../utile";
+import {AnyFunction, DescriptionAll, makeFloor} from "../../utils";
 import {ExtendsAbstractRouteInstance} from "./instance";
 import {ExtendsSubAbstractRoute, SubAbstractRoute} from "./sub";
 
@@ -49,6 +49,12 @@ export abstract class MergeAbstractRoute{
 		const sub = new this.SubAbstractRoute(this, {}, desc);
 		this.children.push(sub);
 		return new this.AbstractRouteInstance(sub);
+	}
+
+	copyHook(base: HooksLifeCycle){
+		this.subAbstractRoutes.forEach(subAbstractRoute => {
+			subAbstractRoute.parent.copyHook(base);
+		});
 	}
 
 	build(){

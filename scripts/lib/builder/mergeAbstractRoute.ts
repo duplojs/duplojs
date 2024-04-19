@@ -6,7 +6,7 @@ import {ServerHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
 import {AbstractRoutes} from "../system/abstractRoute";
-import {UnionToIntersection} from "../utile";
+import {UnionToIntersection} from "../utils";
 
 export default function makeMergeAbstractRouteBuilder(
 	serverHooksLifeCycle: ServerHooksLifeCycle,

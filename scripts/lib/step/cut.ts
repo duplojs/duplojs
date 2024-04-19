@@ -1,7 +1,7 @@
 import {Step} from ".";
 import {Request} from "../request";
 import {Response} from "../response";
-import {Floor, PromiseOrNot} from "../utile";
+import {Floor, PromiseOrNot} from "../utils";
 
 export type CutFunction<
 	request extends Request, 

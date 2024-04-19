@@ -1,4 +1,4 @@
-import {Checker, zod} from "../../../../scripts";
+import {Checker, makeHooksLifeCycle, zod} from "../../../../scripts";
 import {CheckerStep} from "../../../../scripts/lib/step/checker";
 import {CutStep} from "../../../../scripts/lib/step/cut";
 import {ProcessStep} from "../../../../scripts/lib/step/process";
@@ -53,6 +53,19 @@ describe("duplose", () => {
 		
 		expect(duplose.steps[0]).toBe(processStep);
 		expect(duplose.descs).toEqual([{type: "process", index: 0, descStep: ["test"]}]);
+	});
+
+	it("copy hook step", () => {
+		const duplose = new Duplose([]);
+
+		const process = new Process("test", []);
+		const processStep = new ProcessStep(process, {});
+		duplose.addStepProcess(processStep, ["test"]);
+		
+		const localHooksLifeCycle = makeHooksLifeCycle();
+		duplose.copyStepHooks(localHooksLifeCycle);
+
+		expect(localHooksLifeCycle.afterSend.subscribers[0]).toBe(process.hooksLifeCyle.afterSend);
 	});
 
 	it("set extract", () => {

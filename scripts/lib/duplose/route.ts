@@ -1,14 +1,15 @@
 import {condition, mapped, spread} from "../stringBuilder";
 import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, hookBody, processDrop, processStep, routeFunctionString, skipStep, subAbstractRouteString} from "../stringBuilder/route";
-import {Hook, HooksLifeCycle} from "../hook";
+import {Hook, HooksLifeCycle, copyHooksLifeCycle, makeHooksLifeCycle} from "../hook";
 import {Request, HttpMethods} from "../request";
 import {Response} from "../response";
-import {AnyFunction, PromiseOrNot, correctPath, makeFloor} from "../utile";
+import {AnyFunction, PromiseOrNot, correctPath, makeFloor} from "../utils";
 import {ZodError, ZodType} from "zod";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
 import {Duplose} from ".";
 import {SubAbstractRoute} from "./abstractRoute/sub";
+import {ProcessStep} from "../step/process";
 
 export type EditingFunctionRoute = (route: Route) => void;
 
@@ -28,17 +29,7 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 	){
 		super(desc);
 		this.paths = this.paths.map(path => correctPath(path));
-		Object.keys(this.hooksLifeCyle).forEach((key) => {
-			this.hooksLifeCyle[key].addSubscriber(
-				this.mainHooksLifeCyle[key] as Hook
-			);
 
-			if(subAbstractRoute){
-				this.hooksLifeCyle[key].addSubscriber(
-					subAbstractRoute.hooksLifeCyle[key] as Hook
-				);
-			}
-		});
 		if(subAbstractRoute){
 			this.addDesc("abstract", subAbstractRoute.desc);
 		}
@@ -48,17 +39,23 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 		if(!this.handler){
 			throw new Error("Route Need handler");
 		}
-		
+
 		this.steps.forEach(value => value.build());
+
+		const localHooksLifeCycle = makeHooksLifeCycle();
+		copyHooksLifeCycle(localHooksLifeCycle, this.hooksLifeCyle);
+		this.copyStepHooks(localHooksLifeCycle);
+		this.subAbstractRoute?.parent.copyHook(localHooksLifeCycle);
+		copyHooksLifeCycle(localHooksLifeCycle, this.mainHooksLifeCyle);
 
 		this.stringDuploseFunction = routeFunctionString(
 			this.handler.constructor.name === "AsyncFunction",
-			!!this.hooksLifeCyle.onConstructRequest.subscribers.length,
-			!!this.hooksLifeCyle.onConstructResponse.subscribers.length,
-			!!this.hooksLifeCyle.beforeRouteExecution.subscribers.length,
-			!!this.hooksLifeCyle.onError.subscribers.length,
-			!!this.hooksLifeCyle.beforeSend.subscribers.length,
-			!!this.hooksLifeCyle.afterSend.subscribers.length,
+			!!localHooksLifeCycle.onConstructRequest.subscribers.length,
+			!!localHooksLifeCycle.onConstructResponse.subscribers.length,
+			!!localHooksLifeCycle.beforeRouteExecution.subscribers.length,
+			!!localHooksLifeCycle.onError.subscribers.length,
+			!!localHooksLifeCycle.beforeSend.subscribers.length,
+			!!localHooksLifeCycle.afterSend.subscribers.length,
 			spread(
 				condition(
 					!!this.subAbstractRoute,
@@ -143,14 +140,14 @@ export abstract class Route extends Duplose<RouteFunction, EditingFunctionRoute>
 			handler: this.handler,
 			extensions: this.extensions,
 			hooks: {
-				launchAfterSend: this.hooksLifeCyle.afterSend.build(),
-				launchParsingBody: this.hooksLifeCyle.parsingBody.build(),
-				launchBeforeSend: this.hooksLifeCyle.beforeSend.build(),
-				launchOnConstructRequest: this.hooksLifeCyle.onConstructRequest.build(),
-				launchOnConstructResponse: this.hooksLifeCyle.onConstructResponse.build(),
-				launchOnError: this.hooksLifeCyle.onError.build(),
-				launchBeforeRouteExecution: this.hooksLifeCyle.beforeRouteExecution.build(),
-				launchSerializeBody: this.hooksLifeCyle.serializeBody.build(),
+				launchAfterSend: localHooksLifeCycle.afterSend.build(),
+				launchParsingBody: localHooksLifeCycle.parsingBody.build(),
+				launchBeforeSend: localHooksLifeCycle.beforeSend.build(),
+				launchOnConstructRequest: localHooksLifeCycle.onConstructRequest.build(),
+				launchOnConstructResponse: localHooksLifeCycle.onConstructResponse.build(),
+				launchOnError: localHooksLifeCycle.onError.build(),
+				launchBeforeRouteExecution: localHooksLifeCycle.beforeRouteExecution.build(),
+				launchSerializeBody: localHooksLifeCycle.serializeBody.build(),
 			},
 			ZodError, 
 			makeFloor,

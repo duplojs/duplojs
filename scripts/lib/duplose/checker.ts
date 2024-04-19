@@ -1,5 +1,5 @@
 import {Response} from "../response";
-import {DescriptionAll, Floor, PromiseOrNot} from "../utile";
+import {DescriptionAll, Floor, PromiseOrNot} from "../utils";
 
 export type CheckerOutput<
 	info extends string = string, 

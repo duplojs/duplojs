@@ -1,7 +1,7 @@
 import {Checker as DefaultChecker, CheckerOutput, Checker, CheckerOutputFunction, CheckerPrecompletion, CheckerCatchFunction} from "../duplose/checker";
 import {ServerHooksLifeCycle} from "../hook";
 import {Checkers} from "../system/checker";
-import {AnyFunction, Floor, PromiseOrNot} from "../utile";
+import {AnyFunction, Floor, PromiseOrNot} from "../utils";
 
 export type CreateChecker<
 	_options extends Record<string, any> = never,
