@@ -231,8 +231,10 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 				error = new NotError();
 			}
 			await this.serverHooksLifeCycle.onServerError.launchSubscriberAsync(serverRequest, serverResponse, error as Error);
-			if(!serverResponse.headersSent){
+			if(serverResponse.headersSent === false){
 				serverResponse.writeHead(500, {"content-type": "text/plain"});
+			}
+			if(serverResponse.writableEnded === false){
 				serverResponse.write(error?.toString?.() || "");
 				serverResponse.end();
 			}

@@ -97,7 +97,10 @@ export const routeFunctionString = (
 
 				/* before_close_response */
 				/* end_block */
-				if(response.rawResponse.writableEnded === false){
+				if(
+					response.rawResponse.writableEnded === false && 
+					response.keepAlive === false
+				){
 					response.rawResponse.end();
 				}
 				/* after_close_response */
