@@ -74,7 +74,7 @@ export abstract class AbstractRoute<
 					() => subAbstractRouteString(
 						this.subAbstractRoute?.duploseFunction.constructor.name === "AsyncFunction",
 						mapped(
-							this.subAbstractRoute?.params.pickup || [],
+							this.subAbstractRoute?.pickup || [],
 							(value) => processDrop(value)
 						)
 					)
