@@ -159,7 +159,7 @@ export type FixedFloor<floorObject extends Floor<any>> = {
 		pickup: floorObject["pickup"],
 		drop: floorObject["pickup"],
 	}
-}["fix"]
+}
 
 export function makeFloor(): Floor<{}>
 {

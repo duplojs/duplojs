@@ -8,7 +8,7 @@ export type CutFunction<
 	response extends Response,
 	floorValues extends {},
 	returnFloorValues extends Record<string, unknown>,
-> = (floor: FixedFloor<Floor<floorValues>>, response: response, request: request) => PromiseOrNot<returnFloorValues>;
+> = (floor: FixedFloor<Floor<floorValues>>["fix"], response: response, request: request) => PromiseOrNot<returnFloorValues>;
 
 export class CutStep extends Step<CutFunction<Request, Response, any, any>>{
 	constructor(
