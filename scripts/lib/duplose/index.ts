@@ -5,7 +5,7 @@ import {Response} from "../response";
 import {CheckerStep} from "../step/checker";
 import {CutStep} from "../step/cut";
 import {ProcessStep} from "../step/process";
-import {DescriptionAll, Floor} from "../utils";
+import {DescriptionAll, FixedFloor, Floor} from "../utils";
 import {DuploConfig} from "../duploInstance";
 
 export interface ExtractObject{
@@ -17,8 +17,8 @@ export interface ExtractObject{
 
 export type HandlerFunction<
 	response extends Response, 
-	floor extends {},
-> = (floor: Floor<floor>, response: response) => void;
+	floorValues extends {},
+> = (floor: FixedFloor<Floor<floorValues>>, response: response) => void;
 
 export type ErrorExtractFunction<
 	response extends Response

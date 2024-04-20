@@ -30,14 +30,14 @@ export default function makeMergeAbstractRouteBuilder(
 				? extractObj 
 				: never
 		),
-		floor extends {} = (
-			abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>
-				? floor
+		floorValues extends {} = (
+			abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floorValues>
+				? floorValues
 				: never
 		),
 		mergeFloor extends {} = (
-			UnionToIntersection<floor> extends {} 
-				? UnionToIntersection<floor>
+			UnionToIntersection<floorValues> extends {} 
+				? UnionToIntersection<floorValues>
 				: {}
 		)
 	>(
