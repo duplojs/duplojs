@@ -20,31 +20,31 @@ export type DeclareAbstractRoute<
 	response extends Response = Response,
 	extractObj extends ExtractObject = ExtractObject,
 	options extends {} = {},
-	floor extends {} = {},
+	floorValues extends {} = {},
 > = (
 	name: string, 
 	subAbstractRoute?: SubAbstractRoute,
 	...desc: any[]
-) => BuilderPatternAbstractRoute<request, response, extractObj, options, floor>;
+) => BuilderPatternAbstractRoute<request, response, extractObj, options, floorValues>;
 
 export interface AbstractRouteUseFunction<
 	request extends Request,
 	response extends Response,
 	extractObj extends ExtractObject,
 	options extends {},
-	floor extends {},
+	floorValues extends {},
 >{
 	<
 		pickup extends string,
 		// celà sert à régler un bug de vscode qui empèche de
 		// créer une union sur la fonction mergeAbstractRoute
 		// qui clc uniquement quand les abstract routes utilisées
-		// ne drop pas de valeur de leur floor
+		// ne drop pas de valeur de leur floorValues
 		key extends string = Exclude<keyof request | keyof extractObj, symbol | number | keyof Request | keyof Response | keyof ExtractObject>, 
-		localFloor extends {} = Pick<floor & {[-1]?: key}, pickup extends keyof floor? pickup : -1>
+		localFloorValue extends {} = Pick<floorValues & {[-1]?: key}, pickup extends keyof floorValues? pickup : -1>
 	>(
 		params?: SubAbstractRouteParams<
-			Exclude<keyof floor, symbol | number>,
+			Exclude<keyof floorValues, symbol | number>,
 			pickup, 
 			options
 		>, 
@@ -54,7 +54,7 @@ export interface AbstractRouteUseFunction<
 		request,
 		response,
 		extractObj,
-		localFloor
+		localFloorValue
 	>;
 
 	abstractRoute: AbstractRoute;
@@ -65,7 +65,7 @@ export interface BuilderPatternAbstractRoute<
 	response extends Response = Response,
 	extractObj extends ExtractObject = ExtractObject,
 	_options extends Record<string, any> = any,
-	floor extends {} = {},
+	floorValues extends {} = {},
 >{
 	options<
 		options extends Record<string, any>
@@ -78,7 +78,7 @@ export interface BuilderPatternAbstractRoute<
 			response,
 			extractObj,
 			options,
-			floor & {options: options}
+			floorValues & {options: options}
 		>, 
 		"options"
 	>;
@@ -90,7 +90,7 @@ export interface BuilderPatternAbstractRoute<
 				response, 
 				extractObj, 
 				_options, 
-				floor
+				floorValues
 			>,
 			"options"
 		>,
@@ -100,7 +100,7 @@ export interface BuilderPatternAbstractRoute<
 
 	extract<
 		localeExtractObj extends Omit<extractObj, "body">,
-		localFloor extends FlatExtract<localeExtractObj>
+		localFloorValue extends FlatExtract<localeExtractObj>
 	>(
 		extractObj: localeExtractObj,
 		error?: ErrorExtractFunction<response>, 
@@ -111,7 +111,7 @@ export interface BuilderPatternAbstractRoute<
 			response, 
 			extractObj, 
 			_options, 
-			floor & localFloor
+			floorValues & localFloorValue
 		>, 
 		"hook" | "extract" | "options"
 	>;
@@ -119,12 +119,12 @@ export interface BuilderPatternAbstractRoute<
 	check<
 		checker extends Checker,
 		info extends string,
-		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
+		skipObj extends {skip?: RouteStepParamsSkip<floorValues>;},
 		index extends string = never,
 		checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
 	>(
 		checker: checker, 
-		params: CheckerParamsStep<checker, response, floor, info, index> & skipObj, 
+		params: CheckerParamsStep<checker, response, floorValues, info, index> & skipObj, 
 		...desc: any[]
 	): Omit<
 		BuilderPatternAbstractRoute<
@@ -132,7 +132,7 @@ export interface BuilderPatternAbstractRoute<
 			response, 
 			extractObj, 
 			_options, 
-			floor & {
+			floorValues & {
 				[Property in index]: skipObj["skip"] extends AnyFunction ? 
 					Extract<checkerParams["output"], {info: info}>["data"] | undefined : 
 					Extract<checkerParams["output"], {info: info}>["data"]
@@ -144,10 +144,10 @@ export interface BuilderPatternAbstractRoute<
 	process<
 		process extends Process,
 		pickup extends string,
-		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
+		skipObj extends {skip?: RouteStepParamsSkip<floorValues>;},
 	>(
 		process: process, 
-		params?: ProcessParamsStep<process, pickup, floor> & skipObj, 
+		params?: ProcessParamsStep<process, pickup, floorValues> & skipObj, 
 		...desc: any[]
 	): Omit<
 		BuilderPatternAbstractRoute<
@@ -155,7 +155,7 @@ export interface BuilderPatternAbstractRoute<
 			response, 
 			extractObj, 
 			_options, 
-			floor & (
+			floorValues & (
 				skipObj["skip"] extends AnyFunction ? 
 					Partial<PickupDropProcess<process, pickup>> :
 					PickupDropProcess<process, pickup>
@@ -165,10 +165,10 @@ export interface BuilderPatternAbstractRoute<
 	>;
 
 	cut<
-		localFloor extends Record<string, unknown>, 
-		drop extends Exclude<keyof localFloor, symbol | number> = never
+		localFloorValue extends Record<string, unknown>, 
+		drop extends Exclude<keyof localFloorValue, symbol | number> = never
 	>(
-		short: CutFunction<request, response, floor, localFloor>,
+		short: CutFunction<request, response, floorValues, localFloorValue>,
 		drop?: drop[],
 		...desc: any[]
 	): Omit<
@@ -177,18 +177,18 @@ export interface BuilderPatternAbstractRoute<
 			response, 
 			extractObj, 
 			_options, 
-			floor & Pick<localFloor, drop extends keyof localFloor ? drop : never>
+			floorValues & Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
 		>, 
 		"hook" | "extract" | "options"
 	>;
 
 	handler(
-		handlerFunction: HandlerFunction<response, floor>, 
+		handlerFunction: HandlerFunction<response, floorValues>, 
 		...desc: any[]
-	): Pick<BuilderPatternAbstractRoute<request, response, extractObj, _options, floor>, "build">;
+	): Pick<BuilderPatternAbstractRoute<request, response, extractObj, _options, floorValues>, "build">;
 	
 	build<
-		drop extends Exclude<keyof floor, symbol | number> = never,
+		drop extends Exclude<keyof floorValues, symbol | number> = never,
 	>(
 		drop?: drop[], 
 		...desc: any[]
@@ -197,7 +197,7 @@ export interface BuilderPatternAbstractRoute<
 		response, 
 		extractObj, 
 		_options, 
-		Pick<floor, drop extends keyof floor ? drop : never>
+		Pick<floorValues, drop extends keyof floorValues ? drop : never>
 	>;
 }
 

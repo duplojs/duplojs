@@ -17,49 +17,48 @@ export type DeclareRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ExtractObject = ExtractObject,
-	floor extends {} = {},
+	floorValues extends {} = {},
 > = (
 	method: HttpMethods, 
 	path: string | string[], 
 	subAbstractRoute?: SubAbstractRoute, 
 	...desc: any[]
-) => BuilderPatternRoute<request, response, extractObj, floor>;
+) => BuilderPatternRoute<request, response, extractObj, floorValues>;
 
-export type RouteStepParamsSkip<floor extends {}> = (pickup: Floor<floor>["pickup"]) => boolean;
+export type RouteStepParamsSkip<floorValues extends {}> = (pickup: Floor<floorValues>["pickup"]) => boolean;
 
 export interface BuilderPatternRoute<
 	request extends Request = Request, 
 	response extends Response = Response,
 	extractObj extends ExtractObject = ExtractObject,
-	floor extends {} = {},
+	floorValues extends {} = {},
 >{
-	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj, floor>, request, response>;
+	hook: AddHooksLifeCycle<BuilderPatternRoute<request, response, extractObj, floorValues>, request, response>;
 
 	extract<
-		localeExtractObj extends extractObj,
-		localFloor extends FlatExtract<localeExtractObj>
+		localeExtractObj extends extractObj
 	>(
 		extractObj: localeExtractObj, 
 		error?: ErrorExtractFunction<response>,
 		...desc: any[]
-	): Omit<BuilderPatternRoute<request, response, extractObj, floor & localFloor>, "hook" | "extract">;
+	): Omit<BuilderPatternRoute<request, response, extractObj, floorValues & FlatExtract<localeExtractObj>>, "hook" | "extract">;
 
 	check<
 		checker extends Checker,
 		info extends string,
-		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
+		skipObj extends {skip?: RouteStepParamsSkip<floorValues>;},
 		index extends string = never,
 		checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
 	>(
 		checker: checker, 
-		params: CheckerParamsStep<checker, response, floor, info, index> & skipObj,
+		params: CheckerParamsStep<checker, response, floorValues, info, index> & skipObj,
 		...desc: any[]
 	): Omit<
 		BuilderPatternRoute<
 			request, 
 			response, 
 			extractObj, 
-			floor & {
+			floorValues & {
 				[Property in index]: skipObj["skip"] extends AnyFunction ? 
 					Extract<checkerParams["output"], {info: info}>["data"] | undefined : 
 					Extract<checkerParams["output"], {info: info}>["data"]
@@ -71,17 +70,17 @@ export interface BuilderPatternRoute<
 	process<
 		process extends Process,
 		pickup extends string,
-		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
+		skipObj extends {skip?: RouteStepParamsSkip<floorValues>;},
 	>(
 		process: process, 
-		params?: ProcessParamsStep<process, pickup, floor> & skipObj,
+		params?: ProcessParamsStep<process, pickup, floorValues> & skipObj,
 		...desc: any[]
 	): Omit<
 		BuilderPatternRoute<
 			request, 
 			response, 
 			extractObj, 
-			floor & (
+			floorValues & (
 				skipObj["skip"] extends AnyFunction ? 
 					Partial<PickupDropProcess<process, pickup>> :
 					PickupDropProcess<process, pickup>
@@ -91,10 +90,10 @@ export interface BuilderPatternRoute<
 	>;
 
 	cut<
-		localFloor extends Record<string, unknown>, 
-		drop extends Exclude<keyof localFloor, symbol | number> = never
+		localFloorValue extends Record<string, unknown>, 
+		drop extends Exclude<keyof localFloorValue, symbol | number> = never
 	>(
-		short: CutFunction<request, response, floor, localFloor>,
+		short: CutFunction<request, response, floorValues, localFloorValue>,
 		drop?: drop[],
 		...desc: any[]
 	): Omit<
@@ -102,12 +101,12 @@ export interface BuilderPatternRoute<
 			request, 
 			response, 
 			extractObj, 
-			floor & Pick<localFloor, drop extends keyof localFloor ? drop : never>
+			floorValues & Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
 		>, 
 		"hook" | "extract"
 	>;
 
-	handler(handlerFunction: HandlerFunction<response, floor>, ...desc: any[]): DefaultRoute;
+	handler(handlerFunction: HandlerFunction<response, floorValues>, ...desc: any[]): DefaultRoute;
 }
 
 export function makeRouteBuilder(

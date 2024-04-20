@@ -146,20 +146,28 @@ export function correctPath(path: string){
 	return path;
 }
 
-export interface Floor<floor extends {}>{
-	pickup<key extends Exclude<keyof floor, number>>(index: key): floor[key];
-	// pickup<key extends keyof floor>(index: string): any;
-	drop<key extends Exclude<keyof floor, number>>(index: key, value: floor[key]): void;
-	// drop(index: string, value: any): void;
+export interface Floor<
+	floorValues extends {}, 
+	floorKeys extends Exclude<keyof floorValues, number | symbol> = Exclude<keyof floorValues, number | symbol>
+>{
+	pickup<key extends floorKeys>(index: key): floorValues[key];
+	drop<key extends floorKeys>(index: key, value: floorValues[key]): void;
 }
+
+export type FixedFloor<floorObject extends Floor<any>> = {
+	fix: {
+		pickup: floorObject["pickup"],
+		drop: floorObject["pickup"],
+	}
+}["fix"]
 
 export function makeFloor(): Floor<{}>
 {
-	const floor: Record<string, any> = new Map();
+	const floorValues: Record<string, any> = new Map();
 
 	return {
-		pickup: (index) => floor.get(index),
-		drop: (index, value) => {floor.set(index, value);}
+		pickup: (index) => floorValues.get(index),
+		drop: (index, value) => {floorValues.set(index, value);}
 	};
 }
 
