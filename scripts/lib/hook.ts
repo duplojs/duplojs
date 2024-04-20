@@ -1,4 +1,3 @@
-import hook from "../../test/E2E/hook";
 import {AbstractRoute} from "./duplose/abstractRoute";
 import {MergeAbstractRoute} from "./duplose/abstractRoute/merge";
 import {Checker} from "./duplose/checker";
