@@ -1,4 +1,4 @@
-import {Checker, CheckerStep, CutStep, ProcessStep, zod} from "../../../../../scripts";
+import {Checker, CheckerStep, CutStep, ProcessStep, makeHooksLifeCycle, zod} from "../../../../../scripts";
 import {AbstractRoute} from "../../../mocks/duplose/abstractRoute";
 import {Process} from "../../../mocks/duplose/process";
 
@@ -8,6 +8,15 @@ describe("abstract route", () => {
 
 		expect(abstractRoute.name).toBe("test");
 		expect(abstractRoute.descs).toEqual([{type: "first", descStep: ["test"]}]);
+	});
+
+	it("copy hook", () => {
+		const abstractRoute1 = new AbstractRoute("test", undefined, []);
+
+		const localHooksLifeCycle = makeHooksLifeCycle();
+		abstractRoute1.copyHook(localHooksLifeCycle);
+
+		expect(localHooksLifeCycle.afterSend.subscribers[0]).toBe(abstractRoute1.hooksLifeCyle.afterSend);
 	});
 
 	it("set drop", () => {

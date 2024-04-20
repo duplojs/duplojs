@@ -1,4 +1,4 @@
-import {Checker, zod} from "../../../../scripts";
+import {Checker, makeHooksLifeCycle, zod} from "../../../../scripts";
 import {CheckerStep} from "../../../../scripts/lib/step/checker";
 import {CutStep} from "../../../../scripts/lib/step/cut";
 import {ProcessStep} from "../../../../scripts/lib/step/process";
@@ -35,6 +35,15 @@ describe("process", () => {
 
 		expect(process.input).toEqual(input);
 		expect(process.descs).toEqual([{type: "input", descStep: ["test"]}]);
+	});
+
+	it("copy hook", () => {
+		const process = new Process("test", ["test"]);
+
+		const localHooksLifeCycle = makeHooksLifeCycle();
+		process.copyHook(localHooksLifeCycle);
+
+		expect(localHooksLifeCycle.afterSend.subscribers[0]).toBe(process.hooksLifeCyle.afterSend);
 	});
 
 	it("build", () => {

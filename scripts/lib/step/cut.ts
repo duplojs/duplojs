@@ -1,14 +1,14 @@
 import {Step} from ".";
 import {Request} from "../request";
 import {Response} from "../response";
-import {Floor, PromiseOrNot} from "../utile";
+import {FixedFloor, Floor, PromiseOrNot} from "../utils";
 
 export type CutFunction<
 	request extends Request, 
 	response extends Response,
-	floor extends {},
-	returnFloor extends Record<string, unknown>,
-> = (floor: Floor<floor>, response: response, request: request) => PromiseOrNot<returnFloor>;
+	floorValues extends {},
+	returnFloorValues extends Record<string, unknown>,
+> = (floor: FixedFloor<Floor<floorValues>>, response: response, request: request) => PromiseOrNot<returnFloorValues>;
 
 export class CutStep extends Step<CutFunction<Request, Response, any, any>>{
 	constructor(

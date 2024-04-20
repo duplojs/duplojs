@@ -9,7 +9,7 @@ export * from "./lib/duploInstance.ts";
 export * from "./lib/hook.ts";
 export * from "./lib/request.ts";
 export * from "./lib/response.ts";
-export * from "./lib/utile.ts";
+export * from "./lib/utils.ts";
 
 //duplose
 export * from "./lib/duplose/index.ts";

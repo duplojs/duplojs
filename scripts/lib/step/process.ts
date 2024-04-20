@@ -1,15 +1,15 @@
 import {Step} from ".";
 import {Process} from "../duplose/process";
-import {AnyFunction, Floor} from "../utile";
+import {AnyFunction, Floor} from "../utils";
 
 export interface ProcessParamsStep<
 	process extends Process,
 	pickup extends string,
-	floor extends {},
+	floorValues extends {},
 >{
-	options?: Partial<process["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<process["options"]>);
+	options?: Partial<process["options"]> | ((pickup: Floor<floorValues>["pickup"]) => Partial<process["options"]>);
 	pickup?: process["drop"] & pickup[];
-	input?: (pickup: Floor<floor>["pickup"]) => ReturnType<Exclude<process["input"], undefined>>;
+	input?: (pickup: Floor<floorValues>["pickup"]) => ReturnType<Exclude<process["input"], undefined>>;
 }
 
 export class ProcessStep extends Step<Process>{

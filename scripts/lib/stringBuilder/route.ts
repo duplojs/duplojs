@@ -62,6 +62,9 @@ export const routeFunctionString = (
 					/* end_block */
 					response.isSend = false;
 					await this.errorHandlerFunction(request, response, error);
+					/* before_no_respose_sent_error */
+					/* end_block */
+					response.code(503).info("NO_RESPONSE_SENT").send();
 				}
 				else throw error;
 				/* last_line_second_catch */
@@ -94,7 +97,10 @@ export const routeFunctionString = (
 
 				/* before_close_response */
 				/* end_block */
-				if(response.rawResponse.writableEnded === false){
+				if(
+					response.rawResponse.writableEnded === false && 
+					response.keepAlive === false
+				){
 					response.rawResponse.end();
 				}
 				/* after_close_response */

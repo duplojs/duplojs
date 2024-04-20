@@ -4,7 +4,7 @@ import {matchRoute, routerStringFunction} from "../stringBuilder/router";
 import {Request, HttpMethods} from "../request";
 import {Response} from "../response";
 import {Routes} from "../system/route";
-import {pathToStringRegExp, PromiseOrNot} from "../utile";
+import {pathToStringRegExp, PromiseOrNot} from "../utils";
 import {CutStep} from "../step/cut";
 import {DuploConfig} from "../duploInstance";
 

@@ -6,7 +6,7 @@ import {ServerHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
 import {AbstractRoutes} from "../system/abstractRoute";
-import {UnionToIntersection} from "../utile";
+import {UnionToIntersection} from "../utils";
 
 export default function makeMergeAbstractRouteBuilder(
 	serverHooksLifeCycle: ServerHooksLifeCycle,
@@ -30,14 +30,14 @@ export default function makeMergeAbstractRouteBuilder(
 				? extractObj 
 				: never
 		),
-		floor extends {} = (
-			abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floor>
-				? floor
+		floorValues extends {} = (
+			abstractRouteInstance extends AbstractRouteInstance<any, any, any, any, infer floorValues>
+				? floorValues
 				: never
 		),
 		mergeFloor extends {} = (
-			UnionToIntersection<floor> extends {} 
-				? UnionToIntersection<floor>
+			UnionToIntersection<floorValues> extends {} 
+				? UnionToIntersection<floorValues>
 				: {}
 		)
 	>(

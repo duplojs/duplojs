@@ -7,7 +7,8 @@ import {checkerStep, cutStep, extractedTry, extractedType, extractedTypeKey, pro
 import {CutStep} from "../step/cut";
 import {CheckerStep} from "../step/checker";
 import {Duplose, ExtractObject} from ".";
-import {Floor, makeFloor} from "../utile";
+import {Floor, makeFloor} from "../utils";
+import {HooksLifeCycle, copyHooksLifeCycle} from "../hook";
 
 export type ProcessFunction = (request: Request, response: Response, options: any, input: any) => Record<string, any> | Promise<Record<string, any>>;
 
@@ -47,6 +48,11 @@ export abstract class Process<
 		this.input = input;
 
 		this.addDesc("input", desc);
+	}
+
+	copyHook(base: HooksLifeCycle){
+		copyHooksLifeCycle(base, this.hooksLifeCyle);
+		this.copyStepHooks(base);
 	}
 
 	build(){

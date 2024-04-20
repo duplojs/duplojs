@@ -5,18 +5,25 @@ import {basename} from "path";
 import {AlreadySent} from "./error/alreadySent";
 
 export abstract class Response{
+	rawResponse: InstanceType<typeof ServerResponse>;
+	status = 200;
+	information?: string;
+	headers: Record<string, string | string[]> = {};
+	file?: string;
+	body: unknown;
+	isSend = false;
+	keepAlive = false;
+
 	constructor(response: InstanceType<typeof ServerResponse>){
 		this.rawResponse = response;
 	}
 
-	rawResponse: InstanceType<typeof ServerResponse>;
 
 	code(status: number){
 		this.status = status;
 		return this;
 	}
 
-	status = 200;
 
 	info(info?: string){
 		if(info !== undefined){
@@ -26,7 +33,6 @@ export abstract class Response{
 		return this;
 	}
 
-	information?: string;
 
 	send(body?: unknown): never
 	{
@@ -96,14 +102,6 @@ export abstract class Response{
 		}
 		return this;
 	}
-
-	headers: Record<string, string | string[]> = {};
-
-	body: unknown;
-
-	file?: string;
-
-	isSend = false;
 }
 
 export class ExtendsResponse extends Response{}

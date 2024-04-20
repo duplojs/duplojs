@@ -1,26 +1,26 @@
 import {Step} from ".";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
 import {Response} from "../response";
-import {AnyFunction, Floor} from "../utile";
+import {AnyFunction, Floor} from "../utils";
 
 export interface CheckerParamsStep<
 	checker extends Checker, 
 	response extends Response,
-	floor extends {},
+	floorValues extends {},
 	info extends string,
 	index extends string,
 	checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
 >{
-	input(pickup: Floor<floor>["pickup"]): checkerParams["input"];
+	input(pickup: Floor<floorValues>["pickup"]): checkerParams["input"];
 	result?: (info & checkerParams["output"]["info"]) | (info[] & checkerParams["output"]["info"][]);
 	indexing?: index & string;
 	catch(
 		response: response, 
 		info: Exclude<checkerParams["output"], {info: info}>["info"], 
 		data: Exclude<checkerParams["output"], {info: info}>["data"],
-		pickup: Floor<floor>["pickup"]
+		pickup: Floor<floorValues>["pickup"]
 	): void;
-	options?: Partial<checkerParams["options"]> | ((pickup: Floor<floor>["pickup"]) => Partial<checkerParams["options"]>);
+	options?: Partial<checkerParams["options"]> | ((pickup: Floor<floorValues>["pickup"]) => Partial<checkerParams["options"]>);
 }
 
 export class CheckerStep extends Step<Checker>{

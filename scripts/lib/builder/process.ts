@@ -2,7 +2,7 @@ import {RouteStepParamsSkip} from "../builder/route";
 import {AddHooksLifeCycle, ServerHooksLifeCycle} from "../hook";
 import {Request} from "../request";
 import {Response} from "../response";
-import {AnyFunction, FlatExtract, Floor} from "../utile";
+import {AnyFunction, FlatExtract, Floor} from "../utils";
 import {Process as DefaultProcess, ExtendsProcess} from "../duplose/process";
 import {Processes} from "../system/process";
 import {Checker, CheckerGetParmas} from "../duplose/checker";
@@ -23,10 +23,10 @@ export type CreateProcess<
 export type PickupDropProcess<
 	process extends DefaultProcess,
 	pickup extends string,
-> = process extends DefaultProcess<infer input, infer options, infer extractObj, infer floor>?
+> = process extends DefaultProcess<infer input, infer options, infer extractObj, infer floorValues>?
 	Pick<
-		floor, 
-		pickup extends keyof floor ? pickup : never
+		floorValues, 
+		pickup extends keyof floorValues ? pickup : never
 	> : never;
 
 export interface BuilderPatternProcess<
@@ -35,7 +35,7 @@ export interface BuilderPatternProcess<
 	extractObj extends ExtractObject = ExtractObject,
 	_options extends Record<string, any> = any,
 	_input extends any = any,
-	floor extends {} = {},
+	floorValues extends {} = {},
 >{
 	options<
 		options extends Record<string, any>
@@ -49,7 +49,7 @@ export interface BuilderPatternProcess<
 			extractObj,
 			options,
 			_input,
-			floor & {options: options}
+			floorValues & {options: options}
 		>, 
 		"options"
 	>;
@@ -66,7 +66,7 @@ export interface BuilderPatternProcess<
 			extractObj,
 			_options,
 			input,
-			floor & {input: input}
+			floorValues & {input: input}
 		>, 
 		"options" | "input"
 	>;
@@ -79,17 +79,17 @@ export interface BuilderPatternProcess<
 				extractObj, 
 				_options, 
 				_input, 
-				floor
+				floorValues
 			>,
 			"options" | "input"
 		>, 
 		request, 
 		response
-	>["addHook"];
+	>;
 
 	extract<
 		localeExtractObj extends extractObj,
-		localFloor extends FlatExtract<localeExtractObj>,
+		localFloorValue extends FlatExtract<localeExtractObj>,
 	>(
 		extractObj: localeExtractObj, 
 		error?: ErrorExtractFunction<response>, 
@@ -101,7 +101,7 @@ export interface BuilderPatternProcess<
 			extractObj, 
 			_options, 
 			_input, 
-			floor & localFloor
+			floorValues & localFloorValue
 		>, 
 		"hook" | "extract" | "options" | "input"
 	>;
@@ -109,12 +109,12 @@ export interface BuilderPatternProcess<
 	check<
 		checker extends Checker,
 		info extends string,
-		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
+		skipObj extends {skip?: RouteStepParamsSkip<floorValues>;},
 		index extends string = never,
 		checkerParams extends CheckerGetParmas<checker> = CheckerGetParmas<checker>
 	>(
 		checker: checker, 
-		params: CheckerParamsStep<checker, response, floor, info, index> & skipObj, 
+		params: CheckerParamsStep<checker, response, floorValues, info, index> & skipObj, 
 		...desc: any[]
 	): Omit<
 		BuilderPatternProcess<
@@ -123,7 +123,7 @@ export interface BuilderPatternProcess<
 			extractObj, 
 			_options, 
 			_input, 
-			floor & {
+			floorValues & {
 				[Property in index]: skipObj["skip"] extends AnyFunction ? 
 					Extract<checkerParams["output"], {info: info}>["data"] | undefined : 
 					Extract<checkerParams["output"], {info: info}>["data"]
@@ -135,10 +135,10 @@ export interface BuilderPatternProcess<
 	process<
 		process extends DefaultProcess,
 		pickup extends string,
-		skipObj extends {skip?: RouteStepParamsSkip<floor>;},
+		skipObj extends {skip?: RouteStepParamsSkip<floorValues>;},
 	>(
 		process: process, 
-		params?: ProcessParamsStep<process, pickup, floor> & skipObj,
+		params?: ProcessParamsStep<process, pickup, floorValues> & skipObj,
 		...desc: any[]
 	): Omit<
 		BuilderPatternProcess<
@@ -147,7 +147,7 @@ export interface BuilderPatternProcess<
 			extractObj, 
 			_options, 
 			_input, 
-			floor & (
+			floorValues & (
 				skipObj["skip"] extends AnyFunction ? 
 					Partial<PickupDropProcess<process, pickup>> :
 					PickupDropProcess<process, pickup>
@@ -157,10 +157,10 @@ export interface BuilderPatternProcess<
 	>;
 
 	cut<
-		localFloor extends Record<string, unknown>, 
-		drop extends Exclude<keyof localFloor, symbol | number> = never
+		localFloorValue extends Record<string, unknown>, 
+		drop extends Exclude<keyof localFloorValue, symbol | number> = never
 	>(
-		short: CutFunction<request, response, floor, localFloor>,
+		short: CutFunction<request, response, floorValues, localFloorValue>,
 		drop?: drop[],
 		...desc: any[]
 	): Omit<
@@ -170,13 +170,13 @@ export interface BuilderPatternProcess<
 			extractObj, 
 			_options, 
 			_input, 
-			floor & Pick<localFloor, drop extends keyof localFloor ? drop : never>
+			floorValues & Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
 		>, 
 		"hook" | "extract" | "options" | "input"
 	>;
 
 	handler(
-		handlerFunction: HandlerFunction<response, floor>, 
+		handlerFunction: HandlerFunction<response, floorValues>, 
 		...desc: any[]
 	): Pick<
 		BuilderPatternProcess<
@@ -185,15 +185,15 @@ export interface BuilderPatternProcess<
 			extractObj, 
 			_options, 
 			_input, 
-			floor
+			floorValues
 		>, 
 		"build"
 	>;
 	
 	build<drop extends string>(
-		drop?: (keyof floor)[] & drop[], 
+		drop?: (keyof floorValues)[] & drop[], 
 		...desc: any[]
-	): DefaultProcess<_input, _options, extractObj, floor, drop>;
+	): DefaultProcess<_input, _options, extractObj, floorValues, drop>;
 }
 
 export function makeProcessBuilder(

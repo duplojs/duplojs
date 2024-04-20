@@ -9,6 +9,18 @@ export type HttpMethods = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS
 export type methods = HttpMethods;
 
 export abstract class Request{
+	rawRequest: InstanceType<typeof IncomingMessage>;
+	method: HttpMethods;
+	headers: IncomingHttpHeaders;
+	url: string;
+	host: string;
+	origin: string;
+	path: string;
+	params: Record<string, string>;
+	query: Record<string, string | string[]>;
+	matchedPath: string | null;
+	body: unknown;
+
 	constructor(
 		request: InstanceType<typeof IncomingMessage>, 
 		params: Record<string, string>, 
@@ -26,28 +38,6 @@ export abstract class Request{
 		this.query = query ? fastQueryString.parse(query) : {};
 		this.matchedPath = matchedPath;
 	}
-
-	rawRequest: InstanceType<typeof IncomingMessage>;
-
-	method: HttpMethods;
-
-	headers: IncomingHttpHeaders;
-
-	url: string;
-
-	host: string;
-
-	origin: string;
-
-	path: string;
-
-	params: Record<string, string>;
-
-	query: Record<string, string | string[]>;
-
-	matchedPath: string | null;
-
-	body: unknown;
 }
 
 export class ExtendsRequest extends Request{}
