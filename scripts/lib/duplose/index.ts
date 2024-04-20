@@ -18,7 +18,7 @@ export interface ExtractObject{
 export type HandlerFunction<
 	response extends Response, 
 	floorValues extends {},
-> = (floor: FixedFloor<Floor<floorValues>>, response: response) => void;
+> = (floor: FixedFloor<Floor<floorValues>>["fix"], response: response) => void;
 
 export type ErrorExtractFunction<
 	response extends Response
