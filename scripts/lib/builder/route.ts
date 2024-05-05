@@ -101,7 +101,8 @@ export interface BuilderPatternRoute<
 			request, 
 			response, 
 			extractObj, 
-			floorValues & Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
+			Omit<floorValues, keyof localFloorValue>
+			& Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
 		>, 
 		"hook" | "extract"
 	>;
@@ -135,7 +136,7 @@ export function makeRouteBuilder(
 			};
 		};
 
-		const extract: BuilderPatternRoute["extract"] = (extractObj, error, ...desc) => {
+		const extract: BuilderPatternRoute<any, any, any, any>["extract"] = (extractObj, error, ...desc) => {
 			currentRoute.setExtract(extractObj, error, desc);
 			
 			return {

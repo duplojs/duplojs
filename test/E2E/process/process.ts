@@ -213,3 +213,46 @@ export const processTestType = (duplo: DuploInstance<DuploConfig>) => duplo.crea
 	return {};
 })
 .build([]);
+
+export const testTypeProcess = (duplo: DuploInstance<DuploConfig>) => duplo.createProcess("testTypeProcess")
+.extract({
+	body: {
+		test: zod.string()
+	}
+})
+.cut(() => ({}), [])
+.cut(() => ({}))
+.cut(
+	({pickup}, res, req) => {
+		const test = pickup("test");
+		type testType = AssertType<string, typeof test>;
+
+		if(!true){
+			return {};
+		}
+		return {
+			test: 1
+		};
+	},
+	["test"]
+)
+.cut(
+	({pickup}, res, req) => {
+		const test = pickup("test");
+		type testType = AssertType<typeof test, undefined | number>;
+
+		if(!true){
+			return {};
+		}
+		return {
+			test: ""
+		};
+	},
+	["test"]
+)
+.handler(({pickup}) => {
+	const test = pickup("test");
+
+	type testType = AssertType<typeof test, undefined | string>;
+})
+.build();

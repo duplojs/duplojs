@@ -177,7 +177,8 @@ export interface BuilderPatternAbstractRoute<
 			response, 
 			extractObj, 
 			_options, 
-			floorValues & Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
+			Omit<floorValues, keyof localFloorValue>
+			& Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
 		>, 
 		"hook" | "extract" | "options"
 	>;

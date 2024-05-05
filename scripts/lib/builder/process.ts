@@ -170,7 +170,8 @@ export interface BuilderPatternProcess<
 			extractObj, 
 			_options, 
 			_input, 
-			floorValues & Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
+			Omit<floorValues, keyof localFloorValue>
+			& Pick<localFloorValue, drop extends keyof localFloorValue ? drop : never>
 		>, 
 		"hook" | "extract" | "options" | "input"
 	>;
