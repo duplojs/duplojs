@@ -156,4 +156,46 @@ duplo.declareRoute("GET", "/test/14")
 	res.code(200).send(["test"]);
 });
 
+duplo.declareRoute("GET", [])
+.extract({
+	body: {
+		test: zod.string()
+	}
+})
+.cut(() => ({}), [])
+.cut(() => ({}))
+.cut(
+	({pickup}, res, req) => {
+		const test = pickup("test");
+		type testType = AssertType<typeof test, string>;
+
+		if(!true){
+			return {};
+		}
+		return {
+			test: 1
+		};
+	},
+	["test"]
+)
+.cut(
+	({pickup}, res, req) => {
+		const test = pickup("test");
+		type testType = AssertType<typeof test, undefined | number>;
+
+		if(!true){
+			return {};
+		}
+		return {
+			test: ""
+		};
+	},
+	["test"]
+)
+.handler(({pickup}) => {
+	const test = pickup("test");
+
+	type testType = AssertType<typeof test, undefined | string>;
+});
+
 duplo.launch(() => parentPort?.postMessage("ready"));
