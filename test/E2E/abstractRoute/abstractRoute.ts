@@ -207,3 +207,42 @@ export const Abstract11 = (duplo: DuploInstance<DuploConfig>) => duplo.declareAb
 })
 .build();
 
+export const testTypeAbstractRoute = (duplo: DuploInstance<DuploConfig>) => duplo.declareAbstractRoute("testTypeAbstractRoute")
+.extract({
+	query: {
+		test: zod.string()
+	}
+})
+.cut(() => ({}), [])
+.cut(() => ({}))
+.cut(
+	({pickup}, res, req) => {
+		const test = pickup("test");
+		type testType = AssertType<string, typeof test>;
+
+		return {
+			test: 1
+		};
+	},
+	["test"]
+)
+.cut(
+	({pickup}, res, req) => {
+		const test = pickup("test");
+		type testType = AssertType<typeof test, number>;
+
+		if(!true){
+			return {};
+		}
+		return {
+			test: ""
+		};
+	},
+	["test"]
+)
+.handler(({pickup}) => {
+	const test = pickup("test");
+
+	type testType = AssertType<typeof test, undefined | string>;
+})
+.build();
