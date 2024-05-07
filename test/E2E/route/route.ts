@@ -159,7 +159,9 @@ duplo.declareRoute("GET", "/test/14")
 duplo.declareRoute("GET", [])
 .extract({
 	body: {
-		test: zod.string()
+		test: zod.string(),
+		test1: zod.coerce.string().optional(),
+		test2: zod.coerce.date().optional(),
 	}
 })
 .cut(() => ({}), [])
