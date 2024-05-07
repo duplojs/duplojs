@@ -7,27 +7,35 @@ import {Processes} from "./system/process";
 
 export type PromiseOrNot<T> = T | Promise<T>;
 
-export type FlatExtract<
-	T extends ExtractObject, 
-	flatten = Flatten<T>
-> = {
-	[Property in keyof flatten]: flatten[Property] extends ZodType ? zodInfer<flatten[Property]> : never
+type FlatPath = {
+    path: string;
+    type: unknown;
+}
+
+type ToPaths<T extends ExtractObject> = {
+    [K in keyof T]: T[K] extends ZodType 
+		? {
+			path: K;
+			type: zodInfer<T[K]>;
+		}
+		: {
+			[P in keyof T[K]]: T[K][P] extends ZodType
+				? {
+					path: P;
+					type: zodInfer<T[K][P]>;
+				}
+				: never
+		}[keyof T[K]];
+}[keyof T];
+
+type FromPaths<T extends FlatPath> = {
+    [P in T as P["path"]]: P["type"];
 };
 
-export type Flatten<T extends {}> = FromPaths<ToPaths<T>>;
-
-type ToPaths<T, P extends string = ""> = T extends Record<number, unknown>
-    ? {
-        [K in keyof T]: ToPaths<T[K], `${K & string}`>
-    }[keyof T]
-    : { 
-        path: P, 
-        type: T,
-    }
-
-type FromPaths<T extends { path: string; type: unknown }> = {
-    [P in T["path"]]: Extract<T, { path: P }>["type"]
-}
+export type FlatExtract<
+	T extends ExtractObject, 
+	flatPath = ToPaths<T>
+> = FromPaths<flatPath extends FlatPath ? flatPath : never>;
 
 export type AnyFunction = (...args: any) => any;
 
