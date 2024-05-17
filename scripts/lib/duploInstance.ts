@@ -219,7 +219,9 @@ export class DuploInstance<duploConfig extends DuploConfig>{
 
 	protected async serverHandler(serverRequest: http.IncomingMessage, serverResponse: http.ServerResponse){
 		try {
-			const {routeFunction, params, matchedPath} = this.findRoute(serverRequest.method as HttpMethods, serverRequest.url as string);
+			serverRequest.url = decodeURI(serverRequest.url ?? "");
+			
+			const {routeFunction, params, matchedPath} = this.findRoute(serverRequest.method as HttpMethods, serverRequest.url);
 
 			await routeFunction(new this.Request(serverRequest, params, matchedPath), new this.Response(serverResponse));
 		}
