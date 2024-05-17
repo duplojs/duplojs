@@ -204,6 +204,6 @@ declare global {
 Object.hasProp = (o, key) => key in o;
 
 export const pathToStringRegExp = (path: string) => `/^${path.replace(/\//g, "\\/").replace(/\.?\*/g, ".*")}\\/?(?:\\?[^]*)?$/`.replace(
-	/\{([a-zA-Z0-9_\-]+)\}/g,
-	(match, group1) => `(?<${group1}>[a-zA-Z0-9_\\-]+)`
+	/\{([A-zÀ-ÿ0-9_\-]+)\}/g,
+	(match, group1) => `(?<${group1}>[A-zÀ-ÿ0-9_\\-]+)`
 );
