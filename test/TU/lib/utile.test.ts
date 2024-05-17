@@ -87,7 +87,7 @@ describe("utile", () => {
 	});
 
 	it("pathToStringRegExp", () => {
-		expect(pathToStringRegExp("/test/{id}")).toBe("/^\\/test\\/(?<id>[a-zA-Z0-9_\\-]+)\\/?(?:\\?[^]*)?$/");
+		expect(pathToStringRegExp("/test/{id}")).toBe("/^\\/test\\/(?<id>[A-zÀ-ÿ0-9_\\-]+)\\/?(?:\\?[^]*)?$/");
 	});
 });
 

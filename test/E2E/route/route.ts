@@ -200,4 +200,18 @@ duplo.declareRoute("GET", [])
 	type testType = AssertType<typeof test, undefined | string>;
 });
 
+duplo.declareRoute("GET", "/test/15/ààà")
+.handler(({}, res) => {
+	res.code(200).send();
+});
+duplo.declareRoute("GET", "/test/16/{éalô}")
+.extract({
+	params: {
+		éalô: zod.string()
+	}
+})
+.handler(({pickup}, res) => {
+	res.code(200).send(pickup("éalô"));
+});
+
 duplo.launch(() => parentPort?.postMessage("ready"));
