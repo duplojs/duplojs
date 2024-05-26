@@ -200,7 +200,7 @@ duplo.declareRoute("GET", [])
 	type testType = AssertType<typeof test, undefined | string>;
 });
 
-duplo.declareRoute("GET", "/test/15/ààà")
+duplo.declareRoute("GET", "/test/15 /ààà")
 .handler(({}, res) => {
 	res.code(200).send();
 });
