@@ -255,7 +255,7 @@ export default workerTesting(
 		},
 		{
 			title: "find path with spécial chare",
-			url: "http://localhost:1506/route/test/15/ààà",
+			url: "http://localhost:1506/route/test/15 /ààà",
 			method: "GET",
 			response: {
 				code: 200,
@@ -263,11 +263,11 @@ export default workerTesting(
 		},
 		{
 			title: "find path with spécial chare",
-			url: "http://localhost:1506/route/test/16/ààà",
+			url: "http://localhost:1506/route/test/16/ ààà",
 			method: "GET",
 			response: {
 				code: 200,
-				body: zod.literal("ààà")
+				body: zod.literal(" ààà")
 			}
 		},
 	]

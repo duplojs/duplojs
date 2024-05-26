@@ -205,5 +205,5 @@ Object.hasProp = (o, key) => key in o;
 
 export const pathToStringRegExp = (path: string) => `/^${path.replace(/\//g, "\\/").replace(/\.?\*/g, ".*")}\\/?(?:\\?[^]*)?$/`.replace(
 	/\{([A-zÀ-ÿ0-9_\-]+)\}/g,
-	(match, group1) => `(?<${group1}>[A-zÀ-ÿ0-9_\\-]+)`
+	(match, group1) => `(?<${group1}>[A-zÀ-ÿ0-9_\\- ]+)`
 );
