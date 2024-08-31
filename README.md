@@ -1,3 +1,7 @@
+# Déprécier
+Ce package a été abandonner pour laissait place à [@duplojs/core](https://github.com/duplojs/core)
+ !
+
 # DuploJS
 [![NPM version](https://img.shields.io/npm/v/@duplojs/duplojs)](https://www.npmjs.com/package/@duplojs/duplojs)
 
